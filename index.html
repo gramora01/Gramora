@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111111"><title>GRAMORA — Share your world</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="#"><span class="brand-mark">G</span> GRAMORA</a><button id="themeBtn" class="icon-btn" aria-label="Toggle theme">☾</button></header>
+  <div class="layout">
+    <aside class="sidebar">
+      <button class="nav active" data-view="home">⌂ <span>Home</span></button>
+      <button class="nav" data-view="explore">⌕ <span>Explore</span></button>
+      <button class="nav" data-view="messages">✉ <span>Messages</span></button>
+      <button class="nav" data-view="saved">▣ <span>Saved</span></button>
+      <button class="nav" data-view="profile">◉ <span>Profile</span></button>
+      <button id="openCreate" class="create-btn">＋ Create post</button>
+      <p class="side-note">A place for your moments.</p>
+    </aside>
+    <main>
+      <section class="stories" aria-label="Stories">
+        <div class="story"><span class="story-ring">＋</span><small>Your story</small></div>
+        <div class="story"><span class="story-ring">A</span><small>aarav</small></div>
+        <div class="story"><span class="story-ring">M</span><small>meera</small></div>
+        <div class="story"><span class="story-ring">R</span><small>rahul</small></div>
+        <div class="story"><span class="story-ring">S</span><small>sana</small></div>
+      </section>
+      <div class="section-head"><div><p class="eyebrow">YOUR COMMUNITY</p><h1 id="viewTitle">Home feed</h1></div><span class="live-dot">● Discover</span></div>
+      <section id="feed" class="feed">
+        <article class="post">
+          <div class="post-head"><div class="avatar">G</div><div><b>gramora.daily</b><small>Welcome to GRAMORA</small></div><button class="more">•••</button></div>
+          <div class="post-art art-one"><span>YOUR WORLD.<br>YOUR AURA.</span></div>
+          <div class="post-actions"><button class="like">♡ <span>Like</span></button><button class="save">▣ <span>Save</span></button></div>
+          <p><b>gramora.daily</b> A fresh space to share the moments that make you, you.</p><small class="muted">Be the first to welcome the community.</small>
+        </article>
+        <article class="post">
+          <div class="post-head"><div class="avatar avatar-two">✦</div><div><b>creative.corner</b><small>Just now · Inspiration</small></div><button class="more">•••</button></div>
+          <div class="post-art art-two"><span>CREATE<br>CONNECT<br>GROW</span></div>
+          <div class="post-actions"><button class="like">♡ <span>Like</span></button><button class="save">▣ <span>Save</span></button></div>
+          <p><b>creative.corner</b> Every great idea starts with sharing it.</p>
+        </article>
+      </section>
+    </main>
+    <aside class="rightbar"><div class="welcome-card"><p class="eyebrow">WELCOME ABOARD</p><h2>Your space<br>starts here.</h2><p>Share a moment, find inspiration and connect with people.</p><button id="rightCreate" class="create-btn">Create your first post</button></div><p class="muted tiny">GRAMORA · Made for expression</p></aside>
+  </div>
+  <dialog id="createDialog"><form method="dialog" id="postForm"><div class="dialog-head"><h2>Create a post</h2><button class="icon-btn" value="cancel" aria-label="Close">×</button></div><label for="caption">What's on your mind?</label><textarea id="caption" rows="4" placeholder="Share something with your community..." required></textarea><label class="upload-label" for="photo">＋ Add a photo (optional)</label><input id="photo" type="file" accept="image/*"><img id="preview" alt="Image preview" hidden><button class="create-btn publish" value="default">Share post</button></form></dialog>
+  <script src="script.js"></script>
+</body></html>
