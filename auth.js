@@ -2,8 +2,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/fireba
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import { firebaseConfig } from "./firebase-config.js";
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
+  firebaseConfig.projectId !== "PASTE_YOUR_PROJECT_ID" &&
+  firebaseConfig.appId !== "PASTE_YOUR_APP_ID";
+const app = configured ? initializeApp(firebaseConfig) : null;
+const auth = app ? getAuth(app) : null;
 const gate = document.getElementById("authGate");
 const loginForm = document.getElementById("loginForm");
 const signupForm = document.getElementById("signupForm");
@@ -15,6 +18,11 @@ const accountLabel = document.getElementById("accountLabel");
 let currentUser = null;
 
 function showMessage(text, isError=false){ message.textContent=text; message.classList.toggle("error",isError); }
+if (!configured) {
+  showMessage("Firebase setup required: add your Firebase Web app config before creating accounts.", true);
+  document.querySelectorAll(".auth-form button, #forgotPassword").forEach(button => button.disabled = true);
+  document.getElementById("authSubtitle").textContent = "One-time Firebase setup is needed before account creation.";
+}
 function switchMode(mode){
   const signup=mode==="signup";
   loginForm.hidden=signup; signupForm.hidden=!signup;
@@ -61,7 +69,7 @@ document.getElementById("forgotPassword").addEventListener("click",async()=>{
 });
 
 document.getElementById("logoutBtn").addEventListener("click",()=>signOut(auth));
-onAuthStateChanged(auth,user=>{
+if (auth) onAuthStateChanged(auth,user=>{
   currentUser=user;
   gate.hidden=!!user;
   accountBar.hidden=!user;
