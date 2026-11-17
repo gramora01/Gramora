@@ -1,0 +1,15 @@
+const feed=document.getElementById('feed');
+const dialog=document.getElementById('createDialog');
+const form=document.getElementById('postForm');
+const caption=document.getElementById('caption');
+const photo=document.getElementById('photo');
+const preview=document.getElementById('preview');
+let selectedImage='';
+function openComposer(){dialog.showModal()}
+document.getElementById('openCreate').addEventListener('click',openComposer);
+document.getElementById('rightCreate').addEventListener('click',openComposer);
+document.getElementById('themeBtn').addEventListener('click',()=>document.body.classList.toggle('light'));
+photo.addEventListener('change',()=>{const file=photo.files[0];if(!file){selectedImage='';preview.hidden=true;return}const reader=new FileReader();reader.onload=()=>{selectedImage=reader.result;preview.src=selectedImage;preview.hidden=false};reader.readAsDataURL(file)});
+form.addEventListener('submit',event=>{event.preventDefault();const text=caption.value.trim();if(!text)return;const post=document.createElement('article');post.className='post';const safe=document.createElement('p');safe.textContent=text;const head=document.createElement('div');head.className='post-head';head.innerHTML='<div class="avatar">Y</div><div><b>you</b><small>Just now</small></div>';post.append(head);if(selectedImage){const img=document.createElement('img');img.src=selectedImage;img.alt='Your post';img.style.cssText='width:100%;max-height:420px;object-fit:cover;border-radius:11px';post.append(img)}const actions=document.createElement('div');actions.className='post-actions';actions.innerHTML='<button class="like">♡ <span>Like</span></button><button class="save">▣ <span>Save</span></button>';post.append(actions,safe);feed.prepend(post);caption.value='';photo.value='';selectedImage='';preview.hidden=true;dialog.close();post.scrollIntoView({behavior:'smooth',block:'start'})});
+document.addEventListener('click',event=>{const like=event.target.closest('.like');if(like){like.classList.toggle('liked');like.firstChild.textContent=like.classList.contains('liked')?'♥ ':'♡ ';like.style.color=like.classList.contains('liked')?'#d6ff6b':''}const save=event.target.closest('.save');if(save){save.classList.toggle('saved');save.style.color=save.classList.contains('saved')?'#d6ff6b':''}});
+document.querySelectorAll('.nav').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.nav').forEach(item=>item.classList.remove('active'));button.classList.add('active');const view=button.dataset.view;const titles={home:'Home feed',explore:'Explore',messages:'Messages',saved:'Saved posts',profile:'Your profile'};document.getElementById('viewTitle').textContent=titles[view]||'Home feed';if(view!=='home')document.getElementById('feed').innerHTML='<div class="welcome-card"><p class="eyebrow">COMING NEXT</p><h2>'+titles[view]+'</h2><p>This section will be connected in the next GRAMORA development phase.</p></div>'}));
