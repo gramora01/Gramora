@@ -312,3 +312,25 @@ body.view-explore .feed,body.view-messages .feed,body.view-saved .feed{margin-to
  .ig-profile-grid{gap:2px}
  .ig-post-wrap,.ig-post-wrap .ig-post-tile{min-height:0}
 }
+
+
+/* Auth startup: do not flash login or protected app while Firebase restores session */
+body.auth-pending .auth-gate{display:none!important}
+body.auth-pending .topbar,
+body.auth-pending .app-shell,
+body.auth-pending .mobile-nav{visibility:hidden!important}
+body.auth-required .topbar,
+body.auth-required .app-shell,
+body.auth-required .mobile-nav{display:none!important}
+
+/* Dedicated Edit Profile screen */
+.profile-edit-page{width:100%;max-width:620px;min-height:calc(100dvh - 150px);margin:0 auto;padding:0 0 30px;color:var(--text)}
+.profile-edit-page-head{height:58px;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:0 14px;border-bottom:1px solid var(--line)}
+.profile-edit-page-head h2{margin:0;text-align:center;font-size:18px}
+.profile-edit-back{width:38px;height:38px;border:0;border-radius:50%;background:transparent;color:inherit;font-size:27px;cursor:pointer}
+.profile-edit-page .ig-edit-form{display:block!important;margin:18px auto;padding:20px;max-width:540px;border:0;background:transparent}
+.profile-edit-page .ig-edit-form[hidden]{display:block!important}
+@media(max-width:680px){
+ .profile-edit-page{min-height:calc(100dvh - 160px)}
+ .profile-edit-page .ig-edit-form{margin:8px 12px;padding:14px 4px}
+}
