@@ -318,6 +318,31 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // IN-APP NOTIFICATIONS: recipients can read their own; senders create their own activity.
+    match /notifications/{notificationId} {
+      allow get, list: if signedIn()
+        && resource.data.toUid == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.toUid is string
+        && request.resource.data.toUid != request.auth.uid
+        && request.resource.data.fromName is string
+        && request.resource.data.fromName.size() <= 60
+        && request.resource.data.message is string
+        && request.resource.data.message.size() <= 180
+        && request.resource.data.type in ['post_like','post_comment','follow','story_like','story_reply']
+        && request.resource.data.postId is string
+        && request.resource.data.storyId is string
+        && request.resource.data.read == false
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.keys().hasOnly(['toUid','fromUid','fromName','type','message','postId','storyId','createdAt','read']);
+      allow update: if signedIn()
+        && resource.data.toUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        && request.resource.data.read is bool;
+      allow delete: if false;
+    }
+
     // DENY ALL OTHER COLLECTIONS
     match /{document=**} {
       allow read, write: if false;
