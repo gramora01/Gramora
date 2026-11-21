@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=61">
+  <link rel="stylesheet" href="style.css?v=63">
   <link rel="stylesheet" href="auth.css?v=58">
 </head>
 <body>
@@ -88,7 +88,7 @@
         <label for="signupName">Full name</label><input id="signupName" type="text" autocomplete="name" required maxlength="60" placeholder="Your name">
         <label for="signupUsername">Username</label><input id="signupUsername" type="text" autocomplete="username" required minlength="3" maxlength="20" pattern="[A-Za-z0-9_.]+" placeholder="yourname">
         <label for="signupEmail">Email address</label><input id="signupEmail" type="email" autocomplete="email" required placeholder="you@example.com">
-        <label for="signupPassword">Password</label><input id="signupPassword" type="password" autocomplete="new-password" required minlength="6" placeholder="At least 6 characters">
+        <label for="signupPassword">Password</label><input id="signupPassword" type="password" autocomplete="new-password" required minlength="8" placeholder="At least 8 characters">
         <button class="create-btn auth-submit" type="submit">Create my account <span>↗</span></button>
       </form>
       <p id="authMessage" class="auth-message" role="status" aria-live="polite"></p>
@@ -96,6 +96,6 @@
     </section>
   </div>
   <script src="script.js?v=58"></script>
-  <script type="module" src="auth.js?v=62"></script>
+  <script type="module" src="auth.js?v=63"></script>
 </body>
 </html>
