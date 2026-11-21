@@ -277,6 +277,7 @@ function renderStories(docs){
 function openStoryViewer(docs,id){
   const storyDoc=docs.find(item=>item.id===id);if(!storyDoc)return;
   const data=storyDoc.data(),dialog=document.getElementById("storyViewerDialog");
+  dialog.dataset.storyId=id;
   const content=document.getElementById("storyViewerText");
   const byline=document.getElementById("storyViewerByline");
   const song=document.getElementById("storyViewerSong");
@@ -309,8 +310,82 @@ function openStoryViewer(docs,id){
     };
   }
   renderStories(activeStoryDocs);
+  loadStoryEngagement(id,data);
   dialog.showModal();
+  if(audio&&!audio.hidden){
+    const playAttempt=audio.play();
+    if(playAttempt&&typeof playAttempt.catch==="function")playAttempt.catch(()=>{});
+  }
 }
+async function loadStoryEngagement(storyId,storyData){
+  const likeButton=document.getElementById("storyViewerLike");
+  const likeCount=document.getElementById("storyViewerLikeCount");
+  const replyList=document.getElementById("storyReplyList");
+  const replyStatus=document.getElementById("storyReplyStatus");
+  const currentUid=auth?.currentUser?.uid;
+  if(!currentUid)return;
+  try{
+    const likesSnap=await getDocs(query(collection(db,"storyLikes"),where("storyId","==",storyId)));
+    const ownLikeId=storyId+"_"+currentUid;
+    const liked=likesSnap.docs.some(item=>item.id===ownLikeId);
+    if(likeCount)likeCount.textContent=String(likesSnap.size);
+    if(likeButton){
+      likeButton.classList.toggle("liked",liked);
+      likeButton.setAttribute("aria-pressed",String(liked));
+      likeButton.innerHTML=(liked?"♥":"♡")+" <span>Like</span>";
+      likeButton.onclick=async()=>{
+        likeButton.disabled=true;
+        try{
+          const ref=doc(db,"storyLikes",ownLikeId);
+          const snap=await getDoc(ref);
+          if(snap.exists())await deleteDoc(ref);
+          else await setDoc(ref,{storyId,storyUid:storyData.uid,uid:currentUid,createdAt:serverTimestamp()});
+          await loadStoryEngagement(storyId,storyData);
+        }catch(error){console.error("Story like failed:",error);if(replyStatus)replyStatus.textContent="Like save nahi hua. Firestore Rules check karein.";}
+        finally{likeButton.disabled=false;}
+      };
+    }
+  }catch(error){console.error("Story likes load failed:",error);}
+  try{
+    const repliesSnap=await getDocs(query(collection(db,"storyReplies"),where("storyId","==",storyId)));
+    const replies=repliesSnap.docs.map(item=>({id:item.id,...item.data()})).sort((x,y)=>(y.createdAt?.toMillis?.()||0)-(x.createdAt?.toMillis?.()||0));
+    if(replyList){
+      replyList.replaceChildren();
+      replies.forEach(reply=>{
+        const row=document.createElement("p");row.className="story-reply-item";
+        const who=document.createElement("b");who.textContent=(reply.displayName||"Member")+": ";
+        const body=document.createElement("span");body.textContent=reply.text||"";
+        row.append(who,body);replyList.append(row);
+      });
+      if(!replies.length)replyList.textContent="Abhi koi reply nahi hai.";
+    }
+  }catch(error){console.error("Story replies load failed:",error);}
+}
+const storyReplyForm=document.getElementById("storyReplyForm");
+storyReplyForm?.addEventListener("submit",async event=>{
+  event.preventDefault();
+  const input=document.getElementById("storyReplyInput");
+  const status=document.getElementById("storyReplyStatus");
+  const text=input?.value.trim();
+  const storyId=document.getElementById("storyViewerDialog")?.dataset.storyId;
+  const story=activeStoryDocs.find(item=>item.id===storyId);
+  if(!story||!text||!auth?.currentUser)return;
+  const button=storyReplyForm.querySelector('button[type="submit"]');
+  button.disabled=true;status.textContent="Reply bhej rahe hain…";
+  try{
+    const user=auth.currentUser;
+    const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
+    const profile=profileSnap.exists()?profileSnap.data():{};
+    await addDoc(collection(db,"storyReplies"),{
+      storyId,storyOwnerUid:story.data().uid,uid:user.uid,
+      displayName:profile.displayName||user.displayName||"GRAMORA member",
+      text,createdAt:serverTimestamp()
+    });
+    input.value="";status.textContent="Reply bhej diya!";
+    await loadStoryEngagement(storyId,story.data());
+  }catch(error){console.error("Story reply failed:",error);status.textContent="Reply nahi bhej paye. Firestore Rules check karein.";}
+  finally{button.disabled=false;}
+});
 const songSearchButton=document.getElementById("storySongSearchButton");
 const songSearchInput=document.getElementById("storySongSearch");
 const songSearchResults=document.getElementById("storySongResults");
