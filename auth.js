@@ -822,7 +822,7 @@ function bindBackgroundPicker(selector,inputId,previewId){
     input.value=button.dataset.bg;picker.querySelectorAll("[data-bg]").forEach(item=>item.classList.toggle("selected",item===button));
     if(preview){preview.style.background=button.dataset.bg;preview.style.color="#fff";}
   }));
-  const first=picker.querySelector("[data-bg]");if(first){input.value=first.dataset.bg;first.classList.add("selected");}
+  const first=picker.querySelector("[data-bg]");if(first){input.value=first.dataset.bg;first.classList.add("selected");if(preview){preview.style.background=first.dataset.bg;preview.style.color="#fff";}}
 }
 bindBackgroundPicker("#postBackgroundPicker","postBackground","caption");
 bindBackgroundPicker("#storyBackgroundPicker","storyBackground","storyText");
