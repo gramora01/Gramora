@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
@@ -7,6 +8,7 @@ const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
   firebaseConfig.appId !== "PASTE_YOUR_APP_ID";
 const app = configured ? initializeApp(firebaseConfig) : null;
 const auth = app ? getAuth(app) : null;
+const db = app ? getFirestore(app) : null;
 const gate = document.getElementById("authGate");
 const loginForm = document.getElementById("loginForm");
 const signupForm = document.getElementById("signupForm");
@@ -15,13 +17,12 @@ const title = document.getElementById("authTitle");
 const subtitle = document.getElementById("authSubtitle");
 const accountBar = document.getElementById("accountBar");
 const accountLabel = document.getElementById("accountLabel");
-let currentUser = null;
 
 function showMessage(text, isError=false){ message.textContent=text; message.classList.toggle("error",isError); }
 if (!configured) {
   showMessage("Firebase setup required: add your Firebase Web app config before creating accounts.", true);
   document.querySelectorAll(".auth-form button, #forgotPassword").forEach(button => button.disabled = true);
-  document.getElementById("authSubtitle").textContent = "One-time Firebase setup is needed before account creation.";
+  subtitle.textContent = "One-time Firebase setup is needed before account creation.";
 }
 function switchMode(mode){
   const signup=mode==="signup";
@@ -35,6 +36,33 @@ function switchMode(mode){
 document.getElementById("showLogin").addEventListener("click",()=>switchMode("login"));
 document.getElementById("showSignup").addEventListener("click",()=>switchMode("signup"));
 
+async function saveNewUserProfile(user, name, username) {
+  const profileRef=doc(db,"userProfiles",user.uid);
+  const usernameRef=doc(db,"usernames",username);
+  await runTransaction(db,async transaction=>{
+    const existing=await transaction.get(usernameRef);
+    if(existing.exists()) throw new Error("GRAMORA_USERNAME_TAKEN");
+    transaction.set(usernameRef,{uid:user.uid,createdAt:serverTimestamp()});
+    transaction.set(profileRef,{
+      uid:user.uid,displayName:name,username,email:user.email||"",
+      bio:"",photoURL:"",followersCount:0,followingCount:0,
+      createdAt:serverTimestamp(),updatedAt:serverTimestamp()
+    });
+  });
+}
+async function ensureProfile(user) {
+  const profileRef=doc(db,"userProfiles",user.uid);
+  const snap=await getDoc(profileRef);
+  if(!snap.exists()){
+    await setDoc(profileRef,{
+      uid:user.uid,displayName:user.displayName||"GRAMORA member",
+      username:"",email:user.email||"",bio:"",photoURL:"",
+      followersCount:0,followingCount:0,
+      createdAt:serverTimestamp(),updatedAt:serverTimestamp()
+    });
+  }
+}
+
 signupForm.addEventListener("submit",async event=>{
   event.preventDefault();
   const name=document.getElementById("signupName").value.trim();
@@ -46,9 +74,12 @@ signupForm.addEventListener("submit",async event=>{
   try{
     const credential=await createUserWithEmailAndPassword(auth,email,password);
     await updateProfile(credential.user,{displayName:name});
-    showMessage("Account created successfully. Welcome to GRAMORA!");
-  }catch(error){showMessage(authError(error.code),true);}
-  finally{button.disabled=false;button.textContent="Create my account";}
+    await saveNewUserProfile(credential.user,name,username);
+    showMessage("Account created and profile saved. Welcome to GRAMORA!");
+  }catch(error){
+    if(error.message==="GRAMORA_USERNAME_TAKEN") showMessage("This username is already taken. Please choose another.",true);
+    else showMessage(authError(error.code),true);
+  }finally{button.disabled=false;button.textContent="Create my account";}
 });
 
 loginForm.addEventListener("submit",async event=>{
@@ -67,41 +98,59 @@ document.getElementById("forgotPassword").addEventListener("click",async()=>{
   try{await sendPasswordResetEmail(auth,email);showMessage("Password reset email sent. Check your inbox.");}
   catch(error){showMessage(authError(error.code),true);}
 });
-
 document.getElementById("logoutBtn").addEventListener("click",()=>signOut(auth));
-if (auth) onAuthStateChanged(auth,user=>{
-  currentUser=user;
+
+if(auth) onAuthStateChanged(auth,async user=>{
   gate.hidden=!!user;
   accountBar.hidden=!user;
-  if(user){accountLabel.textContent=user.displayName||user.email;renderProfile(user);}
+  if(user){
+    accountLabel.textContent=user.displayName||user.email;
+    try{await ensureProfile(user);renderProfile(user);}
+    catch(error){console.error(error);showMessage("Could not load your profile. Check Firestore Security Rules.",true);}
+  }
 });
 
 function renderProfile(user){
   const profileButton=document.querySelector('[data-view="profile"]');
   if(!profileButton||profileButton.dataset.profileBound)return;
   profileButton.dataset.profileBound="yes";
-  profileButton.addEventListener("click",()=>{
+  profileButton.addEventListener("click",async()=>{
     const feed=document.getElementById("feed");
-    const name=user.displayName||"GRAMORA member";
     feed.innerHTML="";
     const panel=document.createElement("section");panel.className="profile-panel";
-    const avatar=document.createElement("div");avatar.className="profile-avatar";avatar.textContent=name.charAt(0).toUpperCase();
+    const avatar=document.createElement("div");avatar.className="profile-avatar";
     const heading=document.createElement("h2");heading.textContent="Your profile";
     const email=document.createElement("p");email.className="muted";email.textContent=user.email||"";
     const nameLabel=document.createElement("label");nameLabel.textContent="Display name";
-    const nameInput=document.createElement("input");nameInput.value=name;nameInput.maxLength=60;
+    const nameInput=document.createElement("input");nameInput.maxLength=60;
+    const bioLabel=document.createElement("label");bioLabel.textContent="Bio";
+    const bioInput=document.createElement("input");bioInput.maxLength=160;bioInput.placeholder="Tell the community about yourself";
+    const usernameText=document.createElement("p");usernameText.className="muted";
     const save=document.createElement("button");save.type="button";save.textContent="Save profile";
     const status=document.createElement("p");status.className="muted";
+    panel.append(avatar,heading,email,usernameText,nameLabel,nameInput,bioLabel,bioInput,save,status);feed.append(panel);
+    document.getElementById("viewTitle").textContent="Your profile";
+    try{
+      const snap=await getDoc(doc(db,"userProfiles",user.uid));
+      const data=snap.exists()?snap.data():{};
+      nameInput.value=data.displayName||user.displayName||"";
+      bioInput.value=data.bio||"";
+      usernameText.textContent=data.username?"@"+data.username:"Username not set";
+      avatar.textContent=(nameInput.value||"G").charAt(0).toUpperCase();
+    }catch(error){status.textContent="Could not load profile. Check Firestore Rules.";return;}
     save.addEventListener("click",async()=>{
-      const newName=nameInput.value.trim();if(!newName){status.textContent="Please enter your name.";return;}
+      const newName=nameInput.value.trim(),bio=bioInput.value.trim();
+      if(!newName){status.textContent="Please enter your name.";return;}
       save.disabled=true;
-      try{await updateProfile(auth.currentUser,{displayName:newName});accountLabel.textContent=newName;avatar.textContent=newName.charAt(0).toUpperCase();status.textContent="Profile updated successfully.";}
-      catch(error){status.textContent=authError(error.code);}
+      try{
+        await updateProfile(auth.currentUser,{displayName:newName});
+        await setDoc(doc(db,"userProfiles",user.uid),{displayName:newName,bio,updatedAt:serverTimestamp()},{merge:true});
+        accountLabel.textContent=newName;avatar.textContent=newName.charAt(0).toUpperCase();
+        status.textContent="Profile updated successfully.";
+      }catch(error){status.textContent=error.code==="permission-denied"?"Firestore rules blocked this update. Publish the supplied rules.":authError(error.code);}
       finally{save.disabled=false;}
     });
-    panel.append(avatar,heading,email,nameLabel,nameInput,save,status);feed.append(panel);
-    document.getElementById("viewTitle").textContent="Your profile";
-  },{once:true});
+  });
 }
 function authError(code){
   const messages={
@@ -112,7 +161,8 @@ function authError(code){
     "auth/user-not-found":"No account found with this email.",
     "auth/network-request-failed":"Network error. Check your internet connection.",
     "auth/too-many-requests":"Too many attempts. Please wait and try again.",
-    "auth/operation-not-allowed":"Email/password sign-in is not enabled in Firebase yet."
+    "auth/operation-not-allowed":"Email/password sign-in is not enabled in Firebase yet.",
+    "permission-denied":"Firestore denied access. Publish the GRAMORA Firestore rules."
   };
   return messages[code]||"Something went wrong. Please try again.";
 }
