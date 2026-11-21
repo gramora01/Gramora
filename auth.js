@@ -234,6 +234,43 @@ async function getStoryProfile(uid){
     storyProfileCache.set(uid,profile);return profile;
   }catch(error){return {};}
 }
+function bindAvatarLongPress(element,uid,initialProfile={}){
+  if(!element||!uid||element.dataset.longPressBound==="1")return;
+  element.dataset.longPressBound="1";
+  let pressTimer=null,openedByHold=false;
+  const cancel=()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}};
+  const showActions=async()=>{
+    openedByHold=true;
+    let profile=initialProfile||{};
+    try{if(!profile.photoURL||!profile.displayName){const snap=await getDoc(doc(db,"userProfiles",uid));if(snap.exists())profile={...profile,...snap.data()};}}catch(error){console.warn("Avatar profile unavailable:",error);}
+    const story=activeStoryDocs.find(item=>item.data().uid===uid);
+    const dialog=document.createElement("dialog");dialog.className="dp-action-dialog";
+    const heading=document.createElement("h3");heading.textContent=profile.displayName||"Profile";
+    const actions=document.createElement("div");actions.className="dp-action-buttons";
+    if(story){
+      const viewStory=document.createElement("button");viewStory.type="button";viewStory.textContent="◉  View Story";
+      viewStory.addEventListener("click",()=>{dialog.close();openStoryViewer(activeStoryDocs,story.id);});
+      actions.append(viewStory);
+    }
+    const viewDp=document.createElement("button");viewDp.type="button";viewDp.textContent="◎  View DP";
+    viewDp.addEventListener("click",()=>{
+      dialog.close();
+      const viewer=document.createElement("dialog");viewer.className="dp-viewer-dialog";
+      const close=document.createElement("button");close.type="button";close.className="dp-viewer-close";close.textContent="×";close.addEventListener("click",()=>viewer.close());
+      const imageWrap=document.createElement("div");imageWrap.className="dp-viewer-image";
+      if(profile.photoURL){const img=document.createElement("img");img.src=profile.photoURL;img.alt=(profile.displayName||"User")+" profile photo";imageWrap.append(img);}
+      else{const initial=document.createElement("span");initial.textContent=(profile.displayName||"G").trim().charAt(0).toUpperCase();imageWrap.append(initial);}
+      viewer.append(close,imageWrap);document.body.append(viewer);viewer.addEventListener("close",()=>viewer.remove(),{once:true});viewer.showModal();
+    });
+    actions.append(viewDp);
+    const cancelButton=document.createElement("button");cancelButton.type="button";cancelButton.className="dp-action-cancel";cancelButton.textContent="Cancel";cancelButton.addEventListener("click",()=>dialog.close());
+    dialog.append(heading,actions,cancelButton);document.body.append(dialog);dialog.addEventListener("close",()=>dialog.remove(),{once:true});dialog.showModal();
+  };
+  element.addEventListener("pointerdown",event=>{if(event.pointerType==="mouse"&&event.button!==0)return;openedByHold=false;cancel();pressTimer=setTimeout(()=>{pressTimer=null;showActions();},550);});
+  ["pointerup","pointerleave","pointercancel"].forEach(type=>element.addEventListener(type,cancel));
+  element.addEventListener("click",event=>{if(openedByHold){event.preventDefault();event.stopPropagation();openedByHold=false;}},true);
+  element.addEventListener("contextmenu",event=>{event.preventDefault();cancel();showActions();});
+}
 function makeStoryAvatar(ring,profile,name){
   ring.replaceChildren();
   if(profile?.photoURL){
@@ -716,6 +753,7 @@ function renderPosts(docs){
     if(isRepost){const by=document.createElement("div");by.className="post-reposted-by";by.textContent="↻ "+(data.displayName||"GRAMORA member")+" reposted";article.append(by);}
     const head=document.createElement("button");head.className="post-head post-author-link";head.type="button";
     const avatar=document.createElement("div");avatar.className="avatar";avatar.textContent=(authorName||"G").trim().charAt(0).toUpperCase();
+     bindAvatarLongPress(avatar,authorUid,{displayName:authorName||"GRAMORA member",photoURL:authorPhoto||""});
     if(authorPhoto){const img=document.createElement("img");img.src=authorPhoto;img.alt="";avatar.textContent="";avatar.append(img);}
     else if(authorUid){getDoc(doc(db,"userProfiles",authorUid)).then(profileSnap=>{if(profileSnap.exists()){const photo=profileSnap.data().photoURL;if(photo&&avatar.isConnected){const img=document.createElement("img");img.src=photo;img.alt="";avatar.textContent="";avatar.append(img);}}}).catch(error=>console.warn("Post author photo unavailable:",error));}
     const identity=document.createElement("span");identity.className="post-author-identity";
@@ -881,6 +919,7 @@ async function loadPublicProfile(viewer,targetUid){
     const avatar=p.photoURL?'<img alt="" src="'+escapeHtml(p.photoURL)+'">':escapeHtml((p.displayName||"G").charAt(0).toUpperCase());
     panel.innerHTML='<div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>@'+escapeHtml(p.username||"member")+'</strong></div><div class="ig-profile-stats"><span class="profile-stat"><b>'+posts.length+'</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>'+followersCount+'</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>'+followingCount+'</b><small>following</small></button></div></div></div><div class="ig-profile-bio"><b>'+escapeHtml(p.displayName||"GRAMORA member")+'</b><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already?"Following":"Follow")+'</button></div><div class="ig-profile-grid"></div>';
     feed.replaceChildren(panel);
+    bindAvatarLongPress(panel.querySelector(".ig-profile-avatar"),targetUid,p);
     panel.querySelectorAll(".stat-open").forEach(btn=>btn.addEventListener("click",()=>showFollowList(targetUid,btn.dataset.list)));
     panel.querySelector(".public-follow").addEventListener("click",async e=>{
       const btn=e.currentTarget;
@@ -1151,6 +1190,7 @@ async function loadProfilePage(user){
       <form class="ig-edit-form" hidden><h3>Edit profile</h3><label>Display name<input name="displayName" maxlength="60"></label><label>Username<input name="username" value="${escapeHtml(username)}" minlength="3" maxlength="20" pattern="[a-zA-Z0-9_.]{3,20}" autocomplete="username" required><small>3–20 characters: letters, numbers, dot or underscore.</small></label><label>Bio<textarea name="bio" maxlength="160" rows="3"></textarea></label><button class="ig-save-profile" type="submit">Save changes</button><p class="ig-edit-status" role="status"></p></form>
     `;
     feed.replaceChildren(panel);
+    bindAvatarLongPress(panel.querySelector(".ig-profile-avatar"),user.uid,{...data,displayName:name});
     const avatarWrap=panel.querySelector(".ig-avatar-wrap");
     const photoButton=document.createElement("label");photoButton.className="dp-add";photoButton.textContent="＋";photoButton.title="Add profile photo";
     const photoInput=document.createElement("input");photoInput.type="file";photoInput.accept="image/*";photoInput.className="dp-file";photoButton.append(photoInput);avatarWrap.append(photoButton);
