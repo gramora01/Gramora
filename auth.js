@@ -7,8 +7,75 @@ const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
   firebaseConfig.projectId !== "PASTE_YOUR_PROJECT_ID" &&
   firebaseConfig.appId !== "PASTE_YOUR_APP_ID";
 const app = configured ? initializeApp(firebaseConfig) : null;
-const auth = app ? getAuth(app) : null;
-const db = app ? getFirestore(app) : null;
+let auth = app ? getAuth(app) : null;
+let db = app ? getFirestore(app) : null;
+let activeApp = app;
+let activeAuthUnsubscribe = null;
+const accountInstances = new Map();
+let savedAccounts = [];
+try { savedAccounts = JSON.parse(localStorage.getItem("gramoraAccounts") || "[]"); } catch { savedAccounts = []; }
+function saveAccountList(){ localStorage.setItem("gramoraAccounts", JSON.stringify(savedAccounts)); }
+function accountAppName(uid){ return "gramora-account-" + uid; }
+function getAccountInstance(uid){
+  if(accountInstances.has(uid)) return accountInstances.get(uid);
+  const name=accountAppName(uid);
+  const secondaryApp=initializeApp(firebaseConfig,name);
+  const secondaryAuth=getAuth(secondaryApp);
+  const secondaryDb=getFirestore(secondaryApp);
+  const instance={app:secondaryApp,auth:secondaryAuth,db:secondaryDb};
+  accountInstances.set(uid,instance);
+  return instance;
+}
+function rememberAccount(user, appName){
+  if(!user)return;
+  const record={uid:user.uid,email:user.email||"",displayName:user.displayName||"",appName};
+  savedAccounts=[record,...savedAccounts.filter(x=>x.uid!==user.uid)];
+  saveAccountList();
+  renderAccountSwitcher();
+}
+function activateAccount(instance){
+  if(activeAuthUnsubscribe) activeAuthUnsubscribe();
+  activeApp=instance.app; auth=instance.auth; db=instance.db;
+  activeAuthUnsubscribe=onAuthStateChanged(auth,async user=>{
+    gate.hidden=!!user;
+    if(accountBar) accountBar.hidden=!user;
+    if(user){
+      rememberAccount(user,activeApp===app?"[DEFAULT]":activeApp.name);
+      if(accountLabel) accountLabel.textContent=user.displayName||user.email||"Account";
+      try{await ensureProfile(user);renderProfile(user);startPostsFeed(user);}
+      catch(error){console.error(error);showMessage("Could not load your profile. Check Firestore Security Rules.",true);}
+    }
+    renderAccountSwitcher();
+  });
+}
+function renderAccountSwitcher(){
+  const list=document.getElementById("accountSwitcherList");
+  if(!list)return;
+  list.replaceChildren();
+  const currentUid=auth?.currentUser?.uid;
+  savedAccounts.forEach(record=>{
+    const row=document.createElement("div");row.className="account-switch-row";
+    const info=document.createElement("div");info.className="account-switch-info";
+    const avatar=document.createElement("span");avatar.className="account-switch-avatar";
+    avatar.textContent=(record.displayName||record.email||"G").charAt(0).toUpperCase();
+    const labels=document.createElement("span");
+    const name=document.createElement("b");name.textContent=record.displayName||"GRAMORA member";
+    const email=document.createElement("small");email.textContent=record.email||"";
+    labels.append(name,email);info.append(avatar,labels);
+    const button=document.createElement("button");button.type="button";
+    button.className="account-switch-button";button.textContent=record.uid===currentUid?"Active":"Switch";
+    button.disabled=record.uid===currentUid;
+    button.addEventListener("click",async()=>{
+      try{
+        const instance=record.appName==="[DEFAULT]"?{app,auth:getAuth(app),db:getFirestore(app)}:getAccountInstance(record.uid);
+        activateAccount(instance);
+        document.getElementById("settingsDialog")?.close();
+      }catch(error){console.error(error);alert("Account switch nahi ho paya. Dobara try karein.");}
+    });
+    row.append(info,button);list.append(row);
+  });
+}
+
 const gate = document.getElementById("authGate");
 const loginForm = document.getElementById("loginForm");
 const signupForm = document.getElementById("signupForm");
@@ -100,14 +167,7 @@ document.getElementById("forgotPassword").addEventListener("click",async()=>{
 });
 
 
-if(auth) onAuthStateChanged(auth,async user=>{
-  gate.hidden=!!user;
-  if(accountBar) accountBar.hidden=!user;
-  if(user){
-    try{await ensureProfile(user);renderProfile(user);startPostsFeed(user);}
-    catch(error){console.error(error);showMessage("Could not load your profile. Check Firestore Security Rules.",true);}
-  }
-});
+if(auth) activateAccount({app,auth,db});
 
 let activeFeedUnsubscribe=null;
 let activeView="home";
@@ -141,6 +201,8 @@ function renderPosts(docs){
     const head=document.createElement("div");head.className="post-head";
     const avatar=document.createElement("div");avatar.className="avatar";
     avatar.textContent=(data.displayName||"G").trim().charAt(0).toUpperCase();
+    if(data.photoURL){const img=document.createElement("img");img.src=data.photoURL;img.alt=(data.displayName||"User")+" profile photo";avatar.textContent="";avatar.append(img);}
+    else if(data.uid){getDoc(doc(db,"userProfiles",data.uid)).then(profileSnap=>{if(profileSnap.exists()){const photo=profileSnap.data().photoURL;if(photo&&avatar.isConnected){const img=document.createElement("img");img.src=photo;img.alt=(data.displayName||"User")+" profile photo";avatar.textContent="";avatar.append(img);}}}).catch(error=>console.warn("Post author photo unavailable:",error));}
     const identity=document.createElement("div");
     const name=document.createElement("b");name.textContent=data.displayName||"GRAMORA member";
     const meta=document.createElement("small");
@@ -357,7 +419,7 @@ postForm.addEventListener("submit",async event=>{
     const user=auth.currentUser;
     const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
     const profile=profileSnap.exists()?profileSnap.data():{};
-    await addDoc(collection(db,"posts"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",text,createdAt:serverTimestamp()});
+    await addDoc(collection(db,"posts"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",photoURL:profile.photoURL||"",text,createdAt:serverTimestamp()});
     document.getElementById("caption").value="";
     status.textContent="Posted successfully!";
     dialog.close();
