@@ -219,6 +219,7 @@ async function loadPublicProfile(viewer,targetUid){
     const avatar=p.photoURL?'<img alt="" src="'+escapeHtml(p.photoURL)+'">':escapeHtml((p.displayName||"G").charAt(0).toUpperCase());
     panel.innerHTML='<div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>@'+escapeHtml(p.username||"member")+'</strong></div><div class="ig-profile-stats"><span><b>'+posts.size+'</b> posts</span><button class="stat-open" data-list="followers" type="button"><b>'+followers.size+'</b> followers</button><button class="stat-open" data-list="following" type="button"><b>'+following.size+'</b> following</button></div></div></div><div class="ig-profile-bio"><b>'+escapeHtml(p.displayName||"GRAMORA member")+'</b><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already.exists()?"Following":"Follow")+'</button></div><div class="ig-profile-grid"></div>';
     feed.replaceChildren(panel);
+    panel.querySelectorAll(".stat-open").forEach(btn=>btn.addEventListener("click",()=>showFollowList(user.uid,btn.dataset.list)));
     const avatarWrap=panel.querySelector(".ig-avatar-wrap");
     const photoButton=document.createElement("label");
     photoButton.className="dp-add";
@@ -331,7 +332,7 @@ async function loadProfilePage(user){
         <div class="ig-avatar-wrap"><div class="ig-profile-avatar">${data.photoURL?'<img alt="Profile photo" src="'+escapeHtml(data.photoURL)+'">':escapeHtml(name.charAt(0).toUpperCase())}</div></div>
         <div class="ig-profile-summary">
           <div class="ig-profile-username"><strong>${escapeHtml(username)}</strong><button class="profile-more" type="button" aria-label="More profile options">•••</button></div>
-          <div class="ig-profile-stats"><span><b>${posts.length}</b> posts</span><span><b>${Number(data.followersCount)||0}</b> followers</span><span><b>${Number(data.followingCount)||0}</b> following</span></div>
+          <div class="ig-profile-stats"><span><b>${posts.length}</b> posts</span><button class="stat-open" data-list="followers" type="button"><b>${Number(data.followersCount)||0}</b> followers</button><button class="stat-open" data-list="following" type="button"><b>${Number(data.followingCount)||0}</b> following</button></div>
         </div>
       </div>
       <div class="ig-profile-bio"><b>${escapeHtml(name)}</b><p>${escapeHtml(data.bio||"")}</p></div>
