@@ -166,14 +166,21 @@ async function openGramoraNotifications(){
     list.replaceChildren();
     if(!items.length){list.textContent="You’re all caught up. No notifications yet.";return;}
     for(const item of items){
-      const row=document.createElement("button");row.type="button";row.className="gramora-notification"+(item.read?"":" unread");
+      const row=document.createElement("div");row.className="gramora-notification"+(item.read?"":" unread");row.setAttribute("role","button");row.tabIndex=0;
       const avatar=document.createElement("span");avatar.className="gramora-notification-avatar";avatar.textContent=(item.fromName||"G").trim().charAt(0).toUpperCase();
       const body=document.createElement("span");body.className="gramora-notification-copy";
       const message=document.createElement("span");message.textContent=(item.fromName||"Someone")+" "+(item.message||"interacted with you.");
       const time=document.createElement("small");const stamp=item.createdAt?.toDate?.();time.textContent=stamp?stamp.toLocaleString():"";
       body.append(message,time);row.append(avatar,body);
       if(!item.read){const dot=document.createElement("i");dot.className="notification-unread-dot";row.append(dot);}
-      row.addEventListener("click",async()=>{
+      const remove=document.createElement("button");remove.type="button";remove.className="notification-delete-btn";remove.textContent="Delete";remove.setAttribute("aria-label","Delete notification");
+      remove.addEventListener("click",async event=>{
+        event.stopPropagation();remove.disabled=true;remove.textContent="…";
+        try{await deleteDoc(doc(db,"notifications",item.id));row.remove();refreshNotificationBadge();if(!list.querySelector(".gramora-notification"))list.textContent="You’re all caught up. No notifications yet.";}
+        catch(error){console.error("Notification delete failed:",error);remove.disabled=false;remove.textContent="Delete";alert(error.code==="permission-denied"?"Publish the latest Firestore Rules to delete notifications.":"Notification delete nahi hui. Dobara try karein.");}
+      });
+      row.append(remove);
+      const openItem=async()=>{
         try{if(!item.read)await updateDoc(doc(db,"notifications",item.id),{read:true});}catch(error){console.warn("Notification read status failed:",error);}
         dialog.close();refreshNotificationBadge();
         if(item.postId){
@@ -185,7 +192,8 @@ async function openGramoraNotifications(){
           if(story)openStoryViewer(activeStoryDocs,story.id);
           else showMessage("This story has expired.");
         }else if(item.fromUid)await openPersonProfile(item.fromUid);
-      });
+      };
+      row.addEventListener("click",openItem);row.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();openItem();}});
       list.append(row);
     }
     refreshNotificationBadge();
