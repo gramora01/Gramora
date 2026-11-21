@@ -30,6 +30,13 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /follows/{followId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.followerUid == request.auth.uid && request.resource.data.followingUid is string && request.resource.data.followingUid != request.auth.uid && request.resource.data.keys().hasOnly(['followerUid','followingUid','createdAt']);
+      allow delete: if signedIn() && resource.data.followerUid == request.auth.uid;
+      allow update: if false;
+    }
+
     match /posts/{postId} {
       allow read: if signedIn();
       allow create: if signedIn()
