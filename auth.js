@@ -557,11 +557,22 @@ const settingsDialog=document.getElementById("settingsDialog");
 document.getElementById("closeCreate")?.addEventListener("click",()=>document.getElementById("createDialog").close());
 document.getElementById("settingsBtn")?.addEventListener("click",()=>settingsDialog.showModal());
 document.getElementById("addAccountBtn")?.addEventListener("click",()=>{
+  document.getElementById("addAccountStatus").textContent="";
   document.getElementById("addAccountDialog")?.showModal();
 });
 document.getElementById("closeAddAccount")?.addEventListener("click",()=>{
   document.getElementById("addAccountDialog")?.close();
 });
+function setAddAccountMode(mode){
+  const login=mode==="login";
+  document.getElementById("accountLoginTab").classList.toggle("active",login);
+  document.getElementById("accountSignupTab").classList.toggle("active",!login);
+  document.getElementById("addAccountForm").hidden=!login;
+  document.getElementById("createAddedAccountForm").hidden=login;
+  document.getElementById("addAccountStatus").textContent="";
+}
+document.getElementById("accountLoginTab")?.addEventListener("click",()=>setAddAccountMode("login"));
+document.getElementById("accountSignupTab")?.addEventListener("click",()=>setAddAccountMode("signup"));
 document.getElementById("addAccountForm")?.addEventListener("submit",async event=>{
   event.preventDefault();
   const email=document.getElementById("addAccountEmail").value.trim().toLowerCase();
@@ -579,8 +590,7 @@ document.getElementById("addAccountForm")?.addEventListener("submit",async event
     }else{
       const appName="gramora-login-"+email.replace(/[^a-z0-9]/g,"-").slice(0,45);
       const secondaryApp=getApps().find(x=>x.name===appName)||initializeApp(firebaseConfig,appName);
-      const secondaryAuth=getAuth(secondaryApp);
-      const secondaryDb=getFirestore(secondaryApp);
+      const secondaryAuth=getAuth(secondaryApp),secondaryDb=getFirestore(secondaryApp);
       const credential=await signInWithEmailAndPassword(secondaryAuth,email,password);
       instance={app:secondaryApp,auth:secondaryAuth,db:secondaryDb};
       accountInstances.set(credential.user.uid,instance);
@@ -591,9 +601,47 @@ document.getElementById("addAccountForm")?.addEventListener("submit",async event
     document.getElementById("settingsDialog")?.close();
     event.currentTarget.reset();
   }catch(error){
-    console.error("Add account failed:",error);
+    console.error("Add account login failed:",error);
     status.textContent=authError(error.code);
-  }finally{button.disabled=false;button.innerHTML='Add account <span>↗</span>';}
+  }finally{button.disabled=false;button.innerHTML='Log in and add account <span>↗</span>';}
+});
+document.getElementById("createAddedAccountForm")?.addEventListener("submit",async event=>{
+  event.preventDefault();
+  const form=event.currentTarget;
+  const name=document.getElementById("newAccountName").value.trim();
+  const username=document.getElementById("newAccountUsername").value.trim().toLowerCase().replace(/^@/,"");
+  const email=document.getElementById("newAccountEmail").value.trim().toLowerCase();
+  const password=document.getElementById("newAccountPassword").value;
+  const status=document.getElementById("addAccountStatus");
+  const button=form.querySelector('button[type="submit"]');
+  if(!/^[a-z0-9_.]{3,20}$/.test(username)){status.textContent="Username 3–20 characters ka hona chahiye (letters, numbers, _ ya .).";return;}
+  if(savedAccounts.some(x=>x.email?.toLowerCase()===email)){status.textContent="Ye account pehle se add hai. Log in tab se switch karein.";return;}
+  button.disabled=true;button.textContent="Creating account…";status.textContent="Naya account banaya ja raha hai…";
+  try{
+    const appName="gramora-new-"+email.replace(/[^a-z0-9]/g,"-").slice(0,45);
+    const secondaryApp=getApps().find(x=>x.name===appName)||initializeApp(firebaseConfig,appName);
+    const secondaryAuth=getAuth(secondaryApp),secondaryDb=getFirestore(secondaryApp);
+    const credential=await createUserWithEmailAndPassword(secondaryAuth,email,password);
+    await updateProfile(credential.user,{displayName:name});
+    const profileRef=doc(secondaryDb,"userProfiles",credential.user.uid);
+    const usernameRef=doc(secondaryDb,"usernames",username);
+    await runTransaction(secondaryDb,async tx=>{
+      const existing=await tx.get(usernameRef);
+      if(existing.exists())throw new Error("GRAMORA_USERNAME_TAKEN");
+      tx.set(usernameRef,{uid:credential.user.uid,createdAt:serverTimestamp()});
+      tx.set(profileRef,{uid:credential.user.uid,displayName:name,username,email,bio:"",photoURL:"",followersCount:0,followingCount:0,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+    });
+    const instance={app:secondaryApp,auth:secondaryAuth,db:secondaryDb};
+    accountInstances.set(credential.user.uid,instance);
+    rememberAccount(credential.user,appName);
+    activateAccount(instance);
+    document.getElementById("addAccountDialog").close();
+    document.getElementById("settingsDialog")?.close();
+    form.reset();
+  }catch(error){
+    console.error("Create added account failed:",error);
+    status.textContent=error.message==="GRAMORA_USERNAME_TAKEN"?"Ye username pehle se kisi ne le rakha hai. Dusra username chunein.":authError(error.code);
+  }finally{button.disabled=false;button.innerHTML='Create account and add <span>↗</span>';}
 });
 
 document.getElementById("closeSettings")?.addEventListener("click",()=>settingsDialog.close());
