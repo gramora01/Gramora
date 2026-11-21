@@ -46,6 +46,7 @@ function activateAccount(instance){
   activeAuthUnsubscribe=onAuthStateChanged(selectedAuth,async user=>{
     if(auth!==selectedAuth || db!==selectedDb)return;
     gate.hidden=!!user;
+    document.body.classList.toggle("auth-required",!user);
     if(accountBar) accountBar.hidden=!user;
     if(user){
       rememberAccount(user,selectedApp===app?"[DEFAULT]":selectedApp.name);
