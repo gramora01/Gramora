@@ -199,7 +199,7 @@ function renderProfile(user){
   const profileButton=document.querySelector('[data-view="profile"]');
   if(!profileButton||profileButton.dataset.profileBound)return;
   profileButton.dataset.profileBound="yes";
-  profileButton.addEventListener("click",()=>loadProfilePage(user));
+  profileButton.addEventListener("click",()=>loadProfilePage(auth.currentUser||user));
 }
 async function loadProfilePage(user){
   const feed=document.getElementById("feed");
@@ -209,8 +209,14 @@ async function loadProfilePage(user){
   try{
     const snap=await getDoc(doc(db,"userProfiles",user.uid));
     const data=snap.exists()?snap.data():{};
-    const postsSnap=await getDocs(query(collection(db,"posts"),where("uid","==",user.uid)));
-    const posts=postsSnap.docs.map(d=>({id:d.id,...d.data()}));
+    let posts=[],postsLoadError="";
+    try{
+      const postsSnap=await getDocs(query(collection(db,"posts"),where("uid","==",user.uid)));
+      posts=postsSnap.docs.map(d=>({id:d.id,...d.data()}));
+    }catch(postsError){
+      console.error("Profile posts query failed:",postsError);
+      postsLoadError=postsError.code==="permission-denied"?"Posts are blocked by Firestore Rules. Your profile is available, but posts cannot be shown until the posts read rule is published.":(postsError.message||"Posts could not be loaded.");
+    }
     const username=data.username||"gramora_user";
     const name=data.displayName||user.displayName||"GRAMORA member";
     const panel=document.createElement("section");panel.className="ig-profile";
@@ -235,6 +241,7 @@ async function loadProfilePage(user){
       panel.querySelectorAll("[data-profile-tab]").forEach(b=>b.classList.toggle("active",b.dataset.profileTab===tab));
       grid.replaceChildren();
       if(tab==="posts"){
+        if(postsLoadError){grid.innerHTML='<div class="ig-no-posts"><strong>!</strong><b>Posts unavailable</b><span>'+escapeHtml(postsLoadError)+'</span></div>';return;}
         if(!posts.length){grid.innerHTML='<div class="ig-no-posts"><strong>▧</strong><b>Share your first post</b><span>When you share posts, they will appear on your profile.</span></div>';return;}
         posts.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).forEach(post=>{
           const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.textContent=post.text||"";
