@@ -504,3 +504,24 @@ body.light .story-add-ring i{border-color:#fff}
 .story-reply-form input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line,#393d48);border-radius:999px;background:var(--input-bg,#20232b);color:inherit;font:inherit}
 .story-reply-form button{padding:9px 14px;border:0;border-radius:999px;background:linear-gradient(135deg,#e1306c,#833ab4);color:#fff;font-weight:800}
 body.light .story-reply-form input{background:#f7f5f2;color:#202127;border-color:#e5e1dc}
+
+
+/* Story highlights */
+.ig-highlights{display:flex;align-items:flex-start;gap:14px;overflow-x:auto}
+.ig-highlight{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:transparent;color:inherit;cursor:pointer}
+.ig-highlight>span{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line,#393d48);background:linear-gradient(145deg,#28233b,#171920);font-size:20px;font-weight:800;overflow:hidden}
+.ig-highlight small{font-size:12px;max-width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.highlight-story-choices{display:flex;flex-direction:column;gap:8px;max-height:230px;overflow:auto}
+.highlight-choice{display:flex!important;align-items:center;gap:10px;padding:10px;border:1px solid var(--line,#393d48);border-radius:10px;background:var(--input-bg,#20232b)}
+.highlight-choice input{width:auto!important;flex:0 0 auto}
+.highlight-choice span{font-size:13px;overflow:hidden;text-overflow:ellipsis}
+.highlight-story-nav{display:flex;justify-content:space-between;gap:10px;padding:8px 0}
+.highlight-story-nav[hidden]{display:none}
+.highlight-story-nav button,.story-viewers button{border:1px solid var(--line,#393d48);border-radius:999px;background:transparent;color:inherit;padding:8px 13px;font-weight:700}
+.highlight-story-nav button:disabled{opacity:.35}
+.story-viewers{padding:8px 2px;border-top:1px solid var(--line,#393d48)}
+.story-viewers[hidden]{display:none}
+.story-viewer-view-list{max-height:130px;overflow:auto;padding:6px 10px}
+.story-viewer-person{margin:6px 0;font-size:13px}
+body.light .ig-highlight>span{background:#f6f3fb;border-color:#e3e0e8}
+body.light .highlight-choice{background:#f7f5f2;border-color:#e5e1dc}
