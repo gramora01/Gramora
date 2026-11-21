@@ -185,3 +185,9 @@ body.profile-active .stories-section{display:none!important}
 .follow-person-info strong{display:block;font-size:14px;font-weight:650;line-height:1.3}
 .follow-person-info small{display:block;font-size:13px;line-height:1.3;color:#a5a7b0}
 .follow-person-action{flex:0 0 auto;min-width:104px;margin-left:8px;white-space:nowrap}
+
+
+/* Editable profile username field */
+.ig-edit-form label{display:grid;gap:7px;margin:12px 0;color:var(--text,#f4f4f5);font-size:13px}
+.ig-edit-form input,.ig-edit-form textarea{width:100%;box-sizing:border-box;padding:12px;border:1px solid #343844;border-radius:10px;background:#171a22;color:#fff;font:inherit}
+.ig-edit-form label small{color:#9da3b1;font-size:11px}
