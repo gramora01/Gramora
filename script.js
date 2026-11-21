@@ -33,7 +33,7 @@ document.querySelectorAll(".nav").forEach(button=>button.addEventListener("click
   document.querySelectorAll(".nav").forEach(item=>item.classList.toggle("active",item.dataset.view===view));
   const titles={home:"Your feed",explore:"Explore",messages:"Messages",saved:"Saved posts",profile:"My profile"};
   document.getElementById("viewTitle").textContent=titles[view]||"Your feed";
-  if(view!=="home"&&view!=="profile")showPlaceholder(view,titles[view]);
+  if(view!=="home"&&view!=="profile"&&view!=="explore")showPlaceholder(view,titles[view]);
   document.dispatchEvent(new CustomEvent("gramora:view",{detail:view}));
 }));
 document.addEventListener("click",event=>{
