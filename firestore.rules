@@ -29,5 +29,18 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['uid','createdAt']);
       allow update, delete: if false;
     }
+
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'uid','displayName','username','text','createdAt'
+        ])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 2000;
+      allow update, delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
   }
 }
