@@ -206,40 +206,72 @@ else { document.body.classList.remove("auth-pending"); gate.hidden=false; docume
 
 
 let activeStoriesUnsubscribe=null;
+let activeStoryDocs=[];
+const storyProfileCache=new Map();
+function storySeenKey(id){return "gramora-story-seen-"+(auth?.currentUser?.uid||"guest")+"-"+id;}
+function storyWasSeen(id){try{return localStorage.getItem(storySeenKey(id))==="1";}catch(error){return false;}}
+function markStorySeen(id){try{localStorage.setItem(storySeenKey(id),"1");}catch(error){}}
 function startStoriesFeed(user){
   if(activeStoriesUnsubscribe)activeStoriesUnsubscribe();
   const storiesQuery=query(collection(db,"stories"),orderBy("createdAt","desc"),limit(100));
   activeStoriesUnsubscribe=onSnapshot(storiesQuery,snapshot=>{
-    renderStories(snapshot.docs.filter(item=>{
+    activeStoryDocs=snapshot.docs.filter(item=>{
       const expiry=item.data().expiresAt;
       return expiry?.toMillis ? expiry.toMillis()>Date.now() : false;
-    }));
+    });
+    renderStories(activeStoryDocs);
   },error=>{
     console.error("Stories feed error:",error);
-    const hint=document.getElementById("storyStatus");
-    if(hint)hint.textContent="Stories load nahi hui. Firestore Rules publish karein.";
+    const hint=document.getElementById("storyCreateStatus");
+    if(hint)hint.textContent="Stories load nahi hui. Firestore Rules check karein.";
   });
 }
+async function getStoryProfile(uid){
+  if(storyProfileCache.has(uid))return storyProfileCache.get(uid);
+  try{
+    const snap=await getDoc(doc(db,"userProfiles",uid));
+    const profile=snap.exists()?snap.data():{};
+    storyProfileCache.set(uid,profile);return profile;
+  }catch(error){return {};}
+}
+function makeStoryAvatar(ring,profile,name){
+  ring.replaceChildren();
+  if(profile?.photoURL){
+    const img=document.createElement("img");img.src=profile.photoURL;img.alt=name+" profile photo";
+    img.onerror=()=>{ring.replaceChildren();const fallback=document.createElement("span");fallback.textContent=(name||"G").trim().charAt(0).toUpperCase();ring.append(fallback);};
+    ring.append(img);
+  }else{
+    const initials=document.createElement("span");initials.textContent=(name||"G").trim().charAt(0).toUpperCase();ring.append(initials);
+  }
+}
 function renderStories(docs){
-  const strip=document.querySelector(".stories");
-  if(!strip)return;
+  const strip=document.querySelector(".stories");if(!strip)return;
   strip.replaceChildren();
-  const create=document.createElement("button");
-  create.className="story your-story";create.type="button";
-  create.innerHTML='<span class="story-ring"><span>＋</span></span><small>Your story</small>';
+  const create=document.createElement("button");create.className="story your-story";create.type="button";
+  const createRing=document.createElement("span");createRing.className="story-ring story-add-ring";
+  const current=auth?.currentUser;const currentProfile=storyProfileCache.get(current?.uid)||{};
+  makeStoryAvatar(createRing,currentProfile,currentProfile.displayName||current?.displayName||"G");
+  const plus=document.createElement("i");plus.textContent="＋";createRing.append(plus);
+  const createLabel=document.createElement("small");createLabel.textContent="Your story";
+  create.append(createRing,createLabel);
   create.addEventListener("click",()=>document.getElementById("storyCreateDialog")?.showModal());
   strip.append(create);
-  const seen=new Set();
-  docs.forEach(storyDoc=>{
-    const data=storyDoc.data();
-    if(seen.has(data.uid))return;
-    seen.add(data.uid);
+  const latestByUser=new Map();
+  docs.forEach(storyDoc=>{const uid=storyDoc.data().uid;if(uid&&!latestByUser.has(uid))latestByUser.set(uid,storyDoc);});
+  latestByUser.forEach((storyDoc,uid)=>{
+    const data=storyDoc.data(),name=data.displayName||"GRAMORA member";
     const item=document.createElement("button");item.type="button";item.className="story";
-    const ring=document.createElement("span");ring.className="story-ring ring-lilac";
-    const initials=document.createElement("span");initials.textContent=(data.displayName||"G").trim().charAt(0).toUpperCase();ring.append(initials);
-    const label=document.createElement("small");label.textContent=data.uid===auth?.currentUser?.uid?"Your story":(data.displayName||"GRAMORA member");
+    const ring=document.createElement("span");ring.className="story-ring story-user-ring "+(storyWasSeen(storyDoc.id)?"story-seen":"story-unseen");
+    const label=document.createElement("small");label.textContent=uid===current?.uid?"Your story":name;
+    const profile=storyProfileCache.get(uid)||{};
+    makeStoryAvatar(ring,profile,name);
     item.append(ring,label);item.addEventListener("click",()=>openStoryViewer(docs,storyDoc.id));
     strip.append(item);
+    if(!storyProfileCache.has(uid))getStoryProfile(uid).then(p=>{if(ring.isConnected)makeStoryAvatar(ring,p,name);});
+  });
+  if(current&&!storyProfileCache.has(current.uid))getStoryProfile(current.uid).then(p=>{
+    if(createRing.isConnected)makeStoryAvatar(createRing,p,p.displayName||current.displayName||"G");
+    if(createRing.isConnected&&!createRing.querySelector("i")){const plusIcon=document.createElement("i");plusIcon.textContent="＋";createRing.append(plusIcon);}
   });
 }
 function openStoryViewer(docs,id){
@@ -248,16 +280,70 @@ function openStoryViewer(docs,id){
   const content=document.getElementById("storyViewerText");
   const byline=document.getElementById("storyViewerByline");
   const song=document.getElementById("storyViewerSong");
+  const deleteButton=document.getElementById("storyViewerDelete");
   content.textContent=data.text||"";
   byline.textContent=(data.displayName||"GRAMORA member")+" · "+formatPostDate(data.createdAt);
+  markStorySeen(id);
   song.replaceChildren();
+  const audio=document.getElementById("storyViewerAudio");
+  if(audio){audio.pause();audio.removeAttribute("src");audio.load();audio.hidden=true;}
   if(data.songTitle){
-    const link=document.createElement("a");link.className="story-song-link";
-    link.textContent="♫ "+data.songTitle+(data.songArtist?" — "+data.songArtist:"")+" · Play song ↗";
-    link.href=data.songUrl;link.target="_blank";link.rel="noopener noreferrer";song.append(link);
+    const title=document.createElement("p");title.className="story-song-title";title.textContent="♫ "+data.songTitle+(data.songArtist?" — "+data.songArtist:"");
+    song.append(title);
+    if(data.previewUrl&&audio){
+      audio.src=data.previewUrl;audio.hidden=false;audio.currentTime=0;
+    }else if(data.songUrl){
+      const link=document.createElement("a");link.className="story-song-link";link.textContent="Open song ↗";
+      link.href=data.songUrl;link.target="_blank";link.rel="noopener noreferrer";song.append(link);
+    }
   }
+  if(deleteButton){
+    deleteButton.hidden=data.uid!==auth?.currentUser?.uid;
+    deleteButton.onclick=async()=>{
+      if(!confirm("Delete this story?"))return;
+      deleteButton.disabled=true;deleteButton.textContent="Deleting…";
+      try{
+        await deleteDoc(doc(db,"stories",id));audio?.pause();dialog.close();
+      }catch(error){console.error("Story delete failed:",error);alert("Story delete nahi hui. Firestore Rules check karein.");}
+      finally{deleteButton.disabled=false;deleteButton.textContent="Delete story";}
+    };
+  }
+  renderStories(activeStoryDocs);
   dialog.showModal();
 }
+const songSearchButton=document.getElementById("storySongSearchButton");
+const songSearchInput=document.getElementById("storySongSearch");
+const songSearchResults=document.getElementById("storySongResults");
+const selectedPreview=document.getElementById("storySongPreviewUrl");
+songSearchButton?.addEventListener("click",async()=>{
+  const term=songSearchInput?.value.trim();
+  if(!term){songSearchResults.textContent="Song ka naam ya singer likhein.";return;}
+  songSearchButton.disabled=true;songSearchResults.textContent="Songs search ho rahe hain…";
+  try{
+    const response=await fetch("https://itunes.apple.com/search?term="+encodeURIComponent(term)+"&entity=song&limit=12&country=IN");
+    if(!response.ok)throw new Error("Song search service unavailable");
+    const result=await response.json();songSearchResults.replaceChildren();
+    if(!result.results?.length){songSearchResults.textContent="Koi song nahi mila. Dusra naam try karein.";return;}
+    result.results.forEach(track=>{
+      const option=document.createElement("button");option.type="button";option.className="story-song-result";
+      const title=document.createElement("b");title.textContent=track.trackName||"Unknown song";
+      const artist=document.createElement("small");artist.textContent=track.artistName||"Unknown artist";
+      option.append(title,artist);
+      option.addEventListener("click",()=>{
+        document.getElementById("storySongTitle").value=track.trackName||"";
+        document.getElementById("storySongArtist").value=track.artistName||"";
+        document.getElementById("storySongUrl").value=track.trackViewUrl||"";
+        selectedPreview.value=track.previewUrl||"";
+        songSearchResults.replaceChildren();
+        const chosen=document.createElement("p");chosen.className="muted tiny";
+        chosen.textContent=(track.trackName||"Song")+" selected · "+(track.previewUrl?"30-second preview will play in your story.":"Is song ka preview available nahi hai.");
+        songSearchResults.append(chosen);
+      });
+      songSearchResults.append(option);
+    });
+  }catch(error){console.error("Song search failed:",error);songSearchResults.textContent="Song search abhi nahi ho payi. Internet connection check karein.";}
+  finally{songSearchButton.disabled=false;}
+});
 const storyForm=document.getElementById("storyForm");
 storyForm?.addEventListener("submit",async event=>{
   event.preventDefault();
@@ -267,10 +353,11 @@ storyForm?.addEventListener("submit",async event=>{
   const songTitle=document.getElementById("storySongTitle").value.trim();
   const songArtist=document.getElementById("storySongArtist").value.trim();
   const songUrl=document.getElementById("storySongUrl").value.trim();
+  const previewUrl=selectedPreview?.value.trim()||"";
   if(!auth?.currentUser){status.textContent="Story share karne ke liye login karein.";return;}
   if(!text){status.textContent="Pehle apni text story likhein.";return;}
-  if(songUrl&&!/^https:\/\/(open\.spotify\.com|music\.youtube\.com|www\.youtube\.com|youtu\.be)\//i.test(songUrl)){
-    status.textContent="Spotify ya YouTube Music ka valid link add karein.";return;
+  if(songUrl&&!/^https:\/\/(open\.spotify\.com|music\.apple\.com|music\.youtube\.com|www\.youtube\.com|youtu\.be)\//i.test(songUrl)){
+    status.textContent="Valid Apple Music, Spotify ya YouTube song link add karein.";return;
   }
   button.disabled=true;button.textContent="Sharing…";status.textContent="Story publish ho rahi hai…";
   try{
@@ -279,19 +366,20 @@ storyForm?.addEventListener("submit",async event=>{
     const profile=profileSnap.exists()?profileSnap.data():{};
     await addDoc(collection(db,"stories"),{
       uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",
-      text,songTitle,songArtist,songUrl,
+      text,songTitle,songArtist,songUrl,previewUrl,
       createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)
     });
-    storyForm.reset();status.textContent="Story share ho gayi!";
+    storyForm.reset();if(selectedPreview)selectedPreview.value="";
+    songSearchResults?.replaceChildren();status.textContent="Story share ho gayi!";
     document.getElementById("storyCreateDialog").close();
   }catch(error){
     console.error("Story publish failed:",error);
-    status.textContent=error.code==="permission-denied"?"Firestore Rules publish karne ke baad dobara try karein.":"Story publish nahi hui: "+(error.message||"Try again.");
+    status.textContent=error.code==="permission-denied"?"Firestore Rules publish karein.":"Story publish nahi hui: "+(error.message||"Try again.");
   }finally{button.disabled=false;button.textContent="Share story";}
 });
 document.getElementById("closeStoryCreate")?.addEventListener("click",()=>document.getElementById("storyCreateDialog").close());
-document.getElementById("closeStoryViewer")?.addEventListener("click",()=>document.getElementById("storyViewerDialog").close());
-
+document.getElementById("closeStoryViewer")?.addEventListener("click",()=>{const audio=document.getElementById("storyViewerAudio");audio?.pause();document.getElementById("storyViewerDialog").close();});
+document.getElementById("storyViewerDialog")?.addEventListener("close",()=>{const audio=document.getElementById("storyViewerAudio");audio?.pause();});
 function startPostsFeed(user){
   if(activeFeedUnsubscribe) activeFeedUnsubscribe();
   const postsQuery=query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40));
