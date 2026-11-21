@@ -300,7 +300,15 @@ service cloud.firestore {
 
     // SAVED POSTS: each user manages only their own saved-post references.
     match /savedPosts/{savedId} {
-      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      // Allow checking the deterministic own-save document, even before it exists.
+      allow get: if signedIn()
+        && (savedId.matches('.*_' + request.auth.uid)
+          || resource.data.uid == request.auth.uid);
+
+      // Queries must be constrained to the signed-in user's own saved posts.
+      allow list: if signedIn()
+        && resource.data.uid == request.auth.uid;
+
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.postId is string
