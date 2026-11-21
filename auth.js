@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs, where } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
@@ -200,43 +200,84 @@ function renderProfile(user){
   const profileButton=document.querySelector('[data-view="profile"]');
   if(!profileButton||profileButton.dataset.profileBound)return;
   profileButton.dataset.profileBound="yes";
-  profileButton.addEventListener("click",async()=>{
-    const feed=document.getElementById("feed");
-    feed.innerHTML="";
-    const panel=document.createElement("section");panel.className="profile-panel";
-    const avatar=document.createElement("div");avatar.className="profile-avatar";
-    const heading=document.createElement("h2");heading.textContent="Your profile";
-    const email=document.createElement("p");email.className="muted";email.textContent=user.email||"";
-    const nameLabel=document.createElement("label");nameLabel.textContent="Display name";
-    const nameInput=document.createElement("input");nameInput.maxLength=60;
-    const bioLabel=document.createElement("label");bioLabel.textContent="Bio";
-    const bioInput=document.createElement("input");bioInput.maxLength=160;bioInput.placeholder="Tell the community about yourself";
-    const usernameText=document.createElement("p");usernameText.className="muted";
-    const save=document.createElement("button");save.type="button";save.textContent="Save profile";
-    const status=document.createElement("p");status.className="muted";
-    panel.append(avatar,heading,email,usernameText,nameLabel,nameInput,bioLabel,bioInput,save,status);feed.append(panel);
-    document.getElementById("viewTitle").textContent="Your profile";
-    try{
-      const snap=await getDoc(doc(db,"userProfiles",user.uid));
-      const data=snap.exists()?snap.data():{};
-      nameInput.value=data.displayName||user.displayName||"";
-      bioInput.value=data.bio||"";
-      usernameText.textContent=data.username?"@"+data.username:"Username not set";
-      avatar.textContent=(nameInput.value||"G").charAt(0).toUpperCase();
-    }catch(error){status.textContent="Could not load profile. Check Firestore Rules.";return;}
-    save.addEventListener("click",async()=>{
-      const newName=nameInput.value.trim(),bio=bioInput.value.trim();
+  profileButton.addEventListener("click",()=>loadProfilePage(user));
+}
+async function loadProfilePage(user){
+  const feed=document.getElementById("feed");
+  const title=document.getElementById("viewTitle");
+  title.textContent="";
+  feed.innerHTML='<div class="profile-loading">Loading profile…</div>';
+  try{
+    const snap=await getDoc(doc(db,"userProfiles",user.uid));
+    const data=snap.exists()?snap.data():{};
+    const postsSnap=await getDocs(query(collection(db,"posts"),where("uid","==",user.uid)));
+    const posts=postsSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const username=data.username||"gramora_user";
+    const name=data.displayName||user.displayName||"GRAMORA member";
+    const panel=document.createElement("section");panel.className="ig-profile";
+    panel.innerHTML=`
+      <div class="ig-profile-top">
+        <div class="ig-avatar-wrap"><div class="ig-profile-avatar">${data.photoURL?'<img alt="Profile photo" src="'+escapeHtml(data.photoURL)+'">':escapeHtml(name.charAt(0).toUpperCase())}</div></div>
+        <div class="ig-profile-summary">
+          <div class="ig-profile-username"><strong>${escapeHtml(username)}</strong><button class="profile-more" type="button" aria-label="More profile options">•••</button></div>
+          <div class="ig-profile-stats"><span><b>${posts.length}</b> posts</span><span><b>${Number(data.followersCount)||0}</b> followers</span><span><b>${Number(data.followingCount)||0}</b> following</span></div>
+        </div>
+      </div>
+      <div class="ig-profile-bio"><b>${escapeHtml(name)}</b><p>${escapeHtml(data.bio||"")}</p></div>
+      <div class="ig-profile-actions"><button type="button" class="profile-edit">Edit profile</button><button type="button" class="profile-share">Share profile</button><button type="button" class="profile-add" aria-label="Discover people">♙+</button></div>
+      <div class="ig-highlights"><button class="ig-highlight add-highlight" type="button"><span>＋</span><small>New</small></button><div class="ig-highlight"><span>✦</span><small>Highlights</small></div><div class="ig-highlight"><span>♡</span><small>Moments</small></div></div>
+      <div class="ig-profile-tabs" role="tablist"><button class="active" data-profile-tab="posts" type="button" aria-label="Posts">▦</button><button data-profile-tab="reels" type="button" aria-label="Reels">▣</button><button data-profile-tab="reposts" type="button" aria-label="Reposts">⟳</button><button data-profile-tab="tagged" type="button" aria-label="Tagged">♙</button></div>
+      <div class="ig-profile-grid"></div>
+      <form class="ig-edit-form" hidden><h3>Edit profile</h3><label>Display name<input name="displayName" maxlength="60"></label><label>Username<input name="username" value="${escapeHtml(username)}" disabled></label><label>Bio<textarea name="bio" maxlength="160" rows="3"></textarea></label><button class="ig-save-profile" type="submit">Save changes</button><p class="ig-edit-status" role="status"></p></form>
+    `;
+    feed.replaceChildren(panel);
+    const grid=panel.querySelector(".ig-profile-grid");
+    function showTab(tab){
+      panel.querySelectorAll("[data-profile-tab]").forEach(b=>b.classList.toggle("active",b.dataset.profileTab===tab));
+      grid.replaceChildren();
+      if(tab==="posts"){
+        if(!posts.length){grid.innerHTML='<div class="ig-no-posts"><strong>▧</strong><b>Share your first post</b><span>When you share posts, they will appear on your profile.</span></div>';return;}
+        posts.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).forEach(post=>{
+          const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.textContent=post.text||"";
+          tile.addEventListener("click",()=>{tile.classList.toggle("expanded");});
+          grid.append(tile);
+        });
+      }else{
+        const empty=document.createElement("div");empty.className="ig-no-posts";empty.innerHTML='<strong>▧</strong><b>'+({reels:"No Reels yet",reposts:"No reposts yet",tagged:"No tagged posts yet"}[tab])+'</b><span>This section will show your '+tab+' here.</span>';grid.append(empty);
+      }
+    }
+    showTab("posts");
+    panel.querySelectorAll("[data-profile-tab]").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.profileTab)));
+    const editForm=panel.querySelector(".ig-edit-form");
+    panel.querySelector(".profile-edit").addEventListener("click",()=>{editForm.hidden=!editForm.hidden;editForm.elements.displayName.value=name;editForm.elements.bio.value=data.bio||"";});
+    panel.querySelector(".profile-share").addEventListener("click",async()=>{
+      const url=location.href.split("#")[0]+"#profile";
+      try{await navigator.clipboard.writeText(url);panel.querySelector(".profile-share").textContent="Link copied";}
+      catch{panel.querySelector(".profile-share").textContent=url;}
+    });
+    panel.querySelector(".profile-add").addEventListener("click",()=>{showTab("tagged");});
+    panel.querySelector(".add-highlight").addEventListener("click",()=>alert("Story Highlights will be available when Stories launch."));
+    panel.querySelector(".profile-more").addEventListener("click",()=>alert("More profile options will be added in Settings."));
+    editForm.addEventListener("submit",async event=>{
+      event.preventDefault();
+      const newName=editForm.elements.displayName.value.trim(),bio=editForm.elements.bio.value.trim(),status=editForm.querySelector(".ig-edit-status"),save=editForm.querySelector("button[type=submit]");
       if(!newName){status.textContent="Please enter your name.";return;}
-      save.disabled=true;
+      save.disabled=true;status.textContent="Saving…";
       try{
         await updateProfile(auth.currentUser,{displayName:newName});
         await setDoc(doc(db,"userProfiles",user.uid),{displayName:newName,bio,updatedAt:serverTimestamp()},{merge:true});
-        accountLabel.textContent=newName;avatar.textContent=newName.charAt(0).toUpperCase();
+        panel.querySelector(".ig-profile-bio").innerHTML="<b>"+escapeHtml(newName)+"</b><p>"+escapeHtml(bio)+"</p>";
         status.textContent="Profile updated successfully.";
-      }catch(error){status.textContent=error.code==="permission-denied"?"Firestore rules blocked this update. Publish the supplied rules.":authError(error.code);}
+      }catch(error){status.textContent=authError(error.code);}
       finally{save.disabled=false;}
     });
-  });
+  }catch(error){
+    console.error("Profile load error:",error);
+    feed.innerHTML='<p class="muted">Could not load profile: '+escapeHtml(error.message||"Please try again.")+'</p>';
+  }
+}
+function escapeHtml(value){
+  return String(value||"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 }
 
 // Settings center
