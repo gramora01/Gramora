@@ -117,3 +117,13 @@ body.profile-active .ig-post-tile{padding:0;border-radius:0;display:flex;align-i
 /* Ensure profile screen doesn't inherit the feed heading */
 body.profile-active .section-head{display:none!important}
 body.profile-active .stories-section{display:none!important}
+
+/* Explore people directory */
+.explore-page{padding:18px 14px;max-width:680px}
+.explore-page h2{margin:4px 0;font-size:22px}
+.explore-page>p{margin:4px 0 14px}
+.explore-page input{width:100%;height:44px;padding:0 14px;border:1px solid #343741;border-radius:12px;background:#181a20;color:#fff;font:14px Arial}
+.people-results{display:grid;gap:4px;margin-top:12px}
+.person-result{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line)}
+.person-info b,.person-info small{display:block}
+.person-info b{font-size:14px}.person-info small{font-size:12px;color:var(--muted);margin-top:2px}
