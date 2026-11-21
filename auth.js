@@ -36,15 +36,28 @@ function rememberAccount(user, appName){
 }
 function activateAccount(instance){
   if(activeAuthUnsubscribe) activeAuthUnsubscribe();
+  if(activeFeedUnsubscribe){activeFeedUnsubscribe();activeFeedUnsubscribe=null;}
   activeApp=instance.app; auth=instance.auth; db=instance.db;
-  activeAuthUnsubscribe=onAuthStateChanged(auth,async user=>{
+  const selectedApp=instance.app;
+  const selectedAuth=instance.auth;
+  const selectedDb=instance.db;
+  activeAuthUnsubscribe=onAuthStateChanged(selectedAuth,async user=>{
+    if(auth!==selectedAuth || db!==selectedDb)return;
     gate.hidden=!!user;
     if(accountBar) accountBar.hidden=!user;
     if(user){
-      rememberAccount(user,activeApp===app?"[DEFAULT]":activeApp.name);
+      rememberAccount(user,selectedApp===app?"[DEFAULT]":selectedApp.name);
       if(accountLabel) accountLabel.textContent=user.displayName||user.email||"Account";
-      try{await ensureProfile(user);renderProfile(user);startPostsFeed(user);}
-      catch(error){console.error(error);showMessage("Could not load your profile. Check Firestore Security Rules.",true);}
+      try{
+        await ensureProfile(user);
+        if(auth!==selectedAuth || auth.currentUser?.uid!==user.uid)return;
+        startPostsFeed(user);
+        // Keep the current screen open, but reload it using the newly active account.
+        if(activeView==="profile") await loadProfilePage(user);
+        else if(activeView==="explore") await loadExplorePage(user);
+        else if(activeView==="home") await getDocsForFeed();
+        else if(activeView==="saved") showFeedMessage("Saved posts for this account will appear here.");
+      }catch(error){console.error(error);showMessage("Could not load your profile. Check Firestore Security Rules.",true);}
     }
     renderAccountSwitcher();
   });
