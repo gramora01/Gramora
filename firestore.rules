@@ -205,7 +205,11 @@ service cloud.firestore {
 
     // STORY LIKES
     match /storyLikes/{likeId} {
-      allow read: if signedIn();
+      // A viewer can read their own like; only the story owner can list likes.
+      allow get: if signedIn()
+        && (resource.data.uid == request.auth.uid || resource.data.storyUid == request.auth.uid);
+      allow list: if signedIn()
+        && resource.data.storyUid == request.auth.uid;
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.storyId is string
@@ -218,7 +222,9 @@ service cloud.firestore {
 
     // STORY REPLIES
     match /storyReplies/{replyId} {
-      allow read: if signedIn();
+      // Replies are private to the owner of the story they belong to.
+      allow read: if signedIn()
+        && resource.data.storyOwnerUid == request.auth.uid;
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.storyId is string
