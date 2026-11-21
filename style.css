@@ -410,3 +410,8 @@ body.light button:focus-visible{outline:3px solid rgba(101,88,232,.35);outline-o
 body.light .settings-head{background:#fff!important}
 body.light .settings-head h2{color:#202127!important}
 body.light .settings-head .eyebrow{color:#e1306c!important}
+
+/* Capitalize the first letter of profile stat labels. */
+.ig-profile-stats small,
+.ig-profile-stats span,
+.ig-profile-stats button{ text-transform:capitalize!important }
