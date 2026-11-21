@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs, where, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, Timestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs, where, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
@@ -71,6 +71,7 @@ function activateAccount(instance){
         const navProfileSnap=await getDoc(doc(selectedDb,"userProfiles",user.uid));
         updateMobileProfileAvatar(navProfileSnap.exists()?navProfileSnap.data():{},user);
         startPostsFeed(user);
+        startStoriesFeed(user);
         // Keep the current screen open, but reload it using the newly active account.
         if(activeView==="profile") await loadProfilePage(user);
         else if(activeView==="explore") await loadExplorePage(user);
@@ -202,6 +203,94 @@ document.getElementById("forgotPassword").addEventListener("click",async()=>{
 
 if(auth) activateAccount({app,auth,db});
 else { document.body.classList.remove("auth-pending"); gate.hidden=false; document.body.classList.add("auth-required"); }
+
+
+let activeStoriesUnsubscribe=null;
+function startStoriesFeed(user){
+  if(activeStoriesUnsubscribe)activeStoriesUnsubscribe();
+  const storiesQuery=query(collection(db,"stories"),orderBy("createdAt","desc"),limit(100));
+  activeStoriesUnsubscribe=onSnapshot(storiesQuery,snapshot=>{
+    renderStories(snapshot.docs.filter(item=>{
+      const expiry=item.data().expiresAt;
+      return expiry?.toMillis ? expiry.toMillis()>Date.now() : false;
+    }));
+  },error=>{
+    console.error("Stories feed error:",error);
+    const hint=document.getElementById("storyStatus");
+    if(hint)hint.textContent="Stories load nahi hui. Firestore Rules publish karein.";
+  });
+}
+function renderStories(docs){
+  const strip=document.querySelector(".stories");
+  if(!strip)return;
+  strip.replaceChildren();
+  const create=document.createElement("button");
+  create.className="story your-story";create.type="button";
+  create.innerHTML='<span class="story-ring"><span>＋</span></span><small>Your story</small>';
+  create.addEventListener("click",()=>document.getElementById("storyCreateDialog")?.showModal());
+  strip.append(create);
+  const seen=new Set();
+  docs.forEach(storyDoc=>{
+    const data=storyDoc.data();
+    if(seen.has(data.uid))return;
+    seen.add(data.uid);
+    const item=document.createElement("button");item.type="button";item.className="story";
+    const ring=document.createElement("span");ring.className="story-ring ring-lilac";
+    const initials=document.createElement("span");initials.textContent=(data.displayName||"G").trim().charAt(0).toUpperCase();ring.append(initials);
+    const label=document.createElement("small");label.textContent=data.uid===auth?.currentUser?.uid?"Your story":(data.displayName||"GRAMORA member");
+    item.append(ring,label);item.addEventListener("click",()=>openStoryViewer(docs,storyDoc.id));
+    strip.append(item);
+  });
+}
+function openStoryViewer(docs,id){
+  const storyDoc=docs.find(item=>item.id===id);if(!storyDoc)return;
+  const data=storyDoc.data(),dialog=document.getElementById("storyViewerDialog");
+  const content=document.getElementById("storyViewerText");
+  const byline=document.getElementById("storyViewerByline");
+  const song=document.getElementById("storyViewerSong");
+  content.textContent=data.text||"";
+  byline.textContent=(data.displayName||"GRAMORA member")+" · "+formatPostDate(data.createdAt);
+  song.replaceChildren();
+  if(data.songTitle){
+    const link=document.createElement("a");link.className="story-song-link";
+    link.textContent="♫ "+data.songTitle+(data.songArtist?" — "+data.songArtist:"")+" · Play song ↗";
+    link.href=data.songUrl;link.target="_blank";link.rel="noopener noreferrer";song.append(link);
+  }
+  dialog.showModal();
+}
+const storyForm=document.getElementById("storyForm");
+storyForm?.addEventListener("submit",async event=>{
+  event.preventDefault();
+  const status=document.getElementById("storyCreateStatus");
+  const button=storyForm.querySelector('button[type="submit"]');
+  const text=document.getElementById("storyText").value.trim();
+  const songTitle=document.getElementById("storySongTitle").value.trim();
+  const songArtist=document.getElementById("storySongArtist").value.trim();
+  const songUrl=document.getElementById("storySongUrl").value.trim();
+  if(!auth?.currentUser){status.textContent="Story share karne ke liye login karein.";return;}
+  if(!text){status.textContent="Pehle apni text story likhein.";return;}
+  if(songUrl&&!/^https:\/\/(open\.spotify\.com|music\.youtube\.com|www\.youtube\.com|youtu\.be)\//i.test(songUrl)){
+    status.textContent="Spotify ya YouTube Music ka valid link add karein.";return;
+  }
+  button.disabled=true;button.textContent="Sharing…";status.textContent="Story publish ho rahi hai…";
+  try{
+    const user=auth.currentUser;
+    const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
+    const profile=profileSnap.exists()?profileSnap.data():{};
+    await addDoc(collection(db,"stories"),{
+      uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",
+      text,songTitle,songArtist,songUrl,
+      createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)
+    });
+    storyForm.reset();status.textContent="Story share ho gayi!";
+    document.getElementById("storyCreateDialog").close();
+  }catch(error){
+    console.error("Story publish failed:",error);
+    status.textContent=error.code==="permission-denied"?"Firestore Rules publish karne ke baad dobara try karein.":"Story publish nahi hui: "+(error.message||"Try again.");
+  }finally{button.disabled=false;button.textContent="Share story";}
+});
+document.getElementById("closeStoryCreate")?.addEventListener("click",()=>document.getElementById("storyCreateDialog").close());
+document.getElementById("closeStoryViewer")?.addEventListener("click",()=>document.getElementById("storyViewerDialog").close());
 
 function startPostsFeed(user){
   if(activeFeedUnsubscribe) activeFeedUnsubscribe();
