@@ -372,6 +372,7 @@ async function loadProfilePage(user){
   try{
     const snap=await getDoc(doc(db,"userProfiles",user.uid));
     const data=snap.exists()?snap.data():{};
+    data.username=await getUsernameForUid(user.uid,data);
     let posts=[],postsLoadError="";
     try{
       const postsSnap=await getDocs(query(collection(db,"posts"),where("uid","==",user.uid)));
