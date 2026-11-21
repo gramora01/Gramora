@@ -219,6 +219,30 @@ async function loadPublicProfile(viewer,targetUid){
     const avatar=p.photoURL?'<img alt="" src="'+escapeHtml(p.photoURL)+'">':escapeHtml((p.displayName||"G").charAt(0).toUpperCase());
     panel.innerHTML='<div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>@'+escapeHtml(p.username||"member")+'</strong></div><div class="ig-profile-stats"><span><b>'+posts.size+'</b> posts</span><button class="stat-open" data-list="followers" type="button"><b>'+followers.size+'</b> followers</button><button class="stat-open" data-list="following" type="button"><b>'+following.size+'</b> following</button></div></div></div><div class="ig-profile-bio"><b>'+escapeHtml(p.displayName||"GRAMORA member")+'</b><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already.exists()?"Following":"Follow")+'</button></div><div class="ig-profile-grid"></div>';
     feed.replaceChildren(panel);
+    const avatarWrap=panel.querySelector(".ig-avatar-wrap");
+    const photoButton=document.createElement("label");
+    photoButton.className="dp-add";
+    photoButton.textContent="＋";
+    const photoInput=document.createElement("input");
+    photoInput.type="file";photoInput.accept="image/*";photoInput.className="dp-file";
+    photoButton.append(photoInput);avatarWrap.append(photoButton);
+    photoInput.addEventListener("change",async event=>{
+      const file=event.target.files && event.target.files[0];if(!file)return;
+      if(!file.type.startsWith("image/")){alert("Please choose an image.");return;}
+      if(file.size>5*1024*1024){alert("Image must be smaller than 5 MB.");return;}
+      try{
+        const image=await new Promise((resolve,reject)=>{
+          const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=reader.result;};reader.onerror=reject;reader.readAsDataURL(file);
+        });
+        const canvas=document.createElement("canvas");canvas.width=400;canvas.height=400;
+        const side=Math.min(image.width,image.height);
+        canvas.getContext("2d").drawImage(image,(image.width-side)/2,(image.height-side)/2,side,side,0,0,400,400);
+        const photoURL=canvas.toDataURL("image/jpeg",0.75);
+        await setDoc(doc(db,"userProfiles",user.uid),{photoURL,updatedAt:serverTimestamp()},{merge:true});
+        panel.querySelector(".ig-profile-avatar").innerHTML='<img alt="Profile photo" src="'+photoURL+'">';
+      }catch(error){console.error(error);alert("Photo update failed. Please try again.");}
+      finally{event.target.value="";}
+    });
     panel.querySelector(".public-follow").addEventListener("click",async e=>{
       const btn=e.currentTarget;
       try{
