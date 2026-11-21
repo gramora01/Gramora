@@ -207,7 +207,8 @@ service cloud.firestore {
     match /storyLikes/{likeId} {
       // A viewer can read their own like; only the story owner can list likes.
       allow get: if signedIn()
-        && (resource.data.uid == request.auth.uid || resource.data.storyUid == request.auth.uid);
+        && (likeId.matches('.*_' + request.auth.uid)
+          || resource.data.storyUid == request.auth.uid);
       allow list: if signedIn()
         && resource.data.storyUid == request.auth.uid;
       allow create: if signedIn()
