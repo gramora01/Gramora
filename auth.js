@@ -120,6 +120,81 @@ const accountBar = document.getElementById("accountBar");
 const accountLabel = document.getElementById("accountLabel");
 
 function showMessage(text, isError=false){ message.textContent=text; message.classList.toggle("error",isError); }
+
+// IN-APP NOTIFICATIONS
+async function createGramoraNotification(toUid,type,message,extra={}){
+  const user=auth?.currentUser;
+  if(!user||!toUid||toUid===user.uid)return;
+  try{
+    const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
+    const profile=profileSnap.exists()?profileSnap.data():{};
+    await addDoc(collection(db,"notifications"),{
+      toUid,fromUid:user.uid,
+      fromName:profile.displayName||user.displayName||"GRAMORA member",
+      type,message,
+      postId:extra.postId||"",
+      storyId:extra.storyId||"",
+      createdAt:serverTimestamp(),
+      read:false
+    });
+    refreshNotificationBadge();
+  }catch(error){console.warn("Notification could not be saved:",error);}
+}
+async function refreshNotificationBadge(){
+  const button=document.getElementById("notificationBtn"),user=auth?.currentUser;
+  if(!button||!user)return;
+  try{
+    const snap=await getDocs(query(collection(db,"notifications"),where("toUid","==",user.uid),limit(100)));
+    const unread=snap.docs.filter(item=>item.data().read!==true).length;
+    button.innerHTML='♧'+(unread?'<span class="notification-badge">'+(unread>99?"99+":unread)+'</span>':'');
+    button.setAttribute("aria-label",unread?unread+" unread notifications":"Notifications");
+  }catch(error){console.warn("Notification count unavailable:",error);}
+}
+async function openGramoraNotifications(){
+  const user=auth?.currentUser;if(!user)return;
+  const dialog=document.createElement("dialog");dialog.className="gramora-notifications-dialog";
+  const header=document.createElement("div");header.className="gramora-notifications-head";
+  const title=document.createElement("h2");title.textContent="Notifications";
+  const close=document.createElement("button");close.type="button";close.textContent="×";close.setAttribute("aria-label","Close");close.addEventListener("click",()=>dialog.close());
+  header.append(title,close);
+  const list=document.createElement("div");list.className="gramora-notifications-list";list.textContent="Loading notifications…";
+  dialog.append(header,list);document.body.append(dialog);dialog.addEventListener("close",()=>dialog.remove(),{once:true});dialog.showModal();
+  try{
+    const snap=await getDocs(query(collection(db,"notifications"),where("toUid","==",user.uid),limit(100)));
+    const items=snap.docs.map(item=>({id:item.id,...item.data()})).sort((x,y)=>(y.createdAt?.toMillis?.()||0)-(x.createdAt?.toMillis?.()||0));
+    list.replaceChildren();
+    if(!items.length){list.textContent="You’re all caught up. No notifications yet.";return;}
+    for(const item of items){
+      const row=document.createElement("button");row.type="button";row.className="gramora-notification"+(item.read?"":" unread");
+      const avatar=document.createElement("span");avatar.className="gramora-notification-avatar";avatar.textContent=(item.fromName||"G").trim().charAt(0).toUpperCase();
+      const body=document.createElement("span");body.className="gramora-notification-copy";
+      const message=document.createElement("span");message.textContent=(item.fromName||"Someone")+" "+(item.message||"interacted with you.");
+      const time=document.createElement("small");const stamp=item.createdAt?.toDate?.();time.textContent=stamp?stamp.toLocaleString():"";
+      body.append(message,time);row.append(avatar,body);
+      if(!item.read){const dot=document.createElement("i");dot.className="notification-unread-dot";row.append(dot);}
+      row.addEventListener("click",async()=>{
+        try{if(!item.read)await updateDoc(doc(db,"notifications",item.id),{read:true});}catch(error){console.warn("Notification read status failed:",error);}
+        dialog.close();refreshNotificationBadge();
+        if(item.postId){
+          const postSnap=await getDoc(doc(db,"posts",item.postId));
+          if(postSnap.exists())openPostDetail({id:postSnap.id,...postSnap.data()},false);
+          else showMessage("This post is no longer available.");
+        }else if(item.storyId){
+          const story=activeStoryDocs.find(x=>x.id===item.storyId);
+          if(story)openStoryViewer(activeStoryDocs,story.id);
+          else showMessage("This story has expired.");
+        }else if(item.fromUid)await openPersonProfile(item.fromUid);
+      });
+      list.append(row);
+    }
+    refreshNotificationBadge();
+  }catch(error){
+    console.error("Notifications load failed:",error);
+    list.textContent=error.code==="permission-denied"?"Notifications ke liye latest Firestore Rules publish karein.":"Notifications load nahi hui. Dobara try karein.";
+  }
+}
+document.getElementById("notificationBtn")?.addEventListener("click",openGramoraNotifications);
+
 if (!configured) {
   showMessage("Firebase setup required: add your Firebase Web app config before creating accounts.", true);
   document.querySelectorAll(".auth-form button, #forgotPassword").forEach(button => button.disabled = true);
