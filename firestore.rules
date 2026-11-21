@@ -158,6 +158,35 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // STORY LIKES
+    match /storyLikes/{likeId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.storyId is string
+        && request.resource.data.storyUid is string
+        && likeId == request.resource.data.storyId + '_' + request.auth.uid
+        && request.resource.data.keys().hasOnly(['storyId','storyUid','uid','createdAt']);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
+    // STORY REPLIES
+    match /storyReplies/{replyId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.storyId is string
+        && request.resource.data.storyOwnerUid is string
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 300
+        && request.resource.data.keys().hasOnly(['storyId','storyOwnerUid','uid','displayName','text','createdAt']);
+      allow delete: if signedIn()
+        && (resource.data.uid == request.auth.uid || resource.data.storyOwnerUid == request.auth.uid);
+      allow update: if false;
+    }
+
     // DENY ALL OTHER COLLECTIONS
     match /{document=**} {
       allow read, write: if false;
