@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs, where } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs, where, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
@@ -183,9 +183,9 @@ async function loadExplorePage(user){
         const empty=document.createElement("p");empty.className="muted";empty.textContent=q?"No matching people found.":"No other profiles to show yet.";results.append(empty);return;
       }
       matches.slice(0,40).forEach(person=>{
-        const card=document.createElement("article");card.className="person-result";
+        const card=document.createElement("button");card.type="button";card.className="person-result";card.addEventListener("click",()=>loadPublicProfile(user,person.uid));
         const avatar=document.createElement("div");avatar.className="avatar";
-        avatar.textContent=(person.displayName||"G").trim().charAt(0).toUpperCase();
+        if(person.photoURL){const img=document.createElement("img");img.src=person.photoURL;img.alt="";avatar.append(img);}else avatar.textContent=(person.displayName||"G").trim().charAt(0).toUpperCase();
         const info=document.createElement("div");info.className="person-info";
         const name=document.createElement("b");name.textContent=person.displayName||"GRAMORA member";
         const handle=document.createElement("small");handle.textContent=person.username?"@"+person.username:"GRAMORA member";
@@ -201,6 +201,53 @@ async function loadExplorePage(user){
     status.textContent=error.code==="permission-denied"?"Explore needs signed-in profile read permission in Firestore Rules.":"Could not load people. Check your connection.";
   }
 }
+
+async function loadPublicProfile(viewer,targetUid){
+  const feed=document.getElementById("feed");
+  if(targetUid===viewer.uid){loadProfilePage(viewer);return;}
+  feed.innerHTML='<div class="profile-loading">Loading profile…</div>';
+  try{
+    const snap=await getDoc(doc(db,"userProfiles",targetUid));
+    if(!snap.exists()){feed.textContent="Profile unavailable.";return;}
+    const p=snap.data();
+    const posts=await getDocs(query(collection(db,"posts"),where("uid","==",targetUid)));
+    const followers=await getDocs(query(collection(db,"follows"),where("followingUid","==",targetUid)));
+    const following=await getDocs(query(collection(db,"follows"),where("followerUid","==",targetUid)));
+    const followId=viewer.uid+"_"+targetUid;
+    const already=await getDoc(doc(db,"follows",followId));
+    const panel=document.createElement("section");panel.className="ig-profile";
+    const avatar=p.photoURL?'<img alt="" src="'+escapeHtml(p.photoURL)+'">':escapeHtml((p.displayName||"G").charAt(0).toUpperCase());
+    panel.innerHTML='<div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>@'+escapeHtml(p.username||"member")+'</strong></div><div class="ig-profile-stats"><span><b>'+posts.size+'</b> posts</span><button class="stat-open" data-list="followers" type="button"><b>'+followers.size+'</b> followers</button><button class="stat-open" data-list="following" type="button"><b>'+following.size+'</b> following</button></div></div></div><div class="ig-profile-bio"><b>'+escapeHtml(p.displayName||"GRAMORA member")+'</b><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already.exists()?"Following":"Follow")+'</button></div><div class="ig-profile-grid"></div>';
+    feed.replaceChildren(panel);
+    panel.querySelector(".public-follow").addEventListener("click",async e=>{
+      const btn=e.currentTarget;
+      try{
+        if((await getDoc(doc(db,"follows",followId))).exists()){await deleteDoc(doc(db,"follows",followId));btn.textContent="Follow";}
+        else{await setDoc(doc(db,"follows",followId),{followerUid:viewer.uid,followingUid:targetUid,createdAt:serverTimestamp()});btn.textContent="Following";}
+      }catch(err){alert("Follow action failed. Publish the updated Firestore Rules.");}
+    });
+    const grid=panel.querySelector(".ig-profile-grid");
+    posts.docs.forEach(d=>{const tile=document.createElement("div");tile.className="ig-post-tile";tile.textContent=d.data().text||"";grid.append(tile);});
+    panel.querySelectorAll(".stat-open").forEach(btn=>btn.addEventListener("click",()=>showFollowList(targetUid,btn.dataset.list)));
+  }catch(err){console.error(err);feed.textContent="Could not load this profile. Check Firestore Rules.";}
+}
+async function showFollowList(uid,type){
+  try{
+    const field=type==="followers"?"followingUid":"followerUid";
+    const snap=await getDocs(query(collection(db,"follows"),where(field,"==",uid),limit(100)));
+    const dlg=document.createElement("dialog");dlg.className="follow-list-dialog";
+    const h=document.createElement("h3");h.textContent=type==="followers"?"Followers":"Following";dlg.append(h);
+    const close=document.createElement("button");close.type="button";close.textContent="Close";close.addEventListener("click",()=>dlg.close());dlg.append(close);
+    for(const rel of snap.docs){
+      const personUid=type==="followers"?rel.data().followerUid:rel.data().followingUid;
+      const p=await getDoc(doc(db,"userProfiles",personUid));if(!p.exists())continue;
+      const row=document.createElement("button");row.type="button";row.className="person-result";row.textContent=(p.data().displayName||"Member")+" · @"+(p.data().username||"");row.addEventListener("click",()=>{dlg.close();loadPublicProfile(auth.currentUser,personUid);});dlg.append(row);
+    }
+    if(!snap.size){const empty=document.createElement("p");empty.textContent="No "+type+" yet.";dlg.append(empty);}
+    document.body.append(dlg);dlg.addEventListener("close",()=>dlg.remove(),{once:true});dlg.showModal();
+  }catch(err){console.error(err);alert("Could not load list. Publish updated Firestore Rules.");}
+}
+
 async function getDocsForFeed(){
   try{
     const snapshot=await getDocs(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)));
