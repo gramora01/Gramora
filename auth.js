@@ -565,7 +565,8 @@ async function loadProfilePage(user){
         data.displayName=newName;data.username=newUsername;data.bio=bio;
         panel.querySelector(".ig-profile-username strong").textContent="@"+newUsername;
         panel.querySelector(".ig-profile-bio").innerHTML="<b>"+escapeHtml(newName)+"</b><p>"+escapeHtml(bio)+"</p>";
-        status.textContent="Profile updated successfully.";\n        await loadProfilePage(user);
+        status.textContent="Profile updated successfully.";
+        await loadProfilePage(user);
       }catch(error){
         console.error("Profile update failed:",error);
         status.textContent=error.message==="GRAMORA_USERNAME_TAKEN"?"This username is already taken. Choose another.":error.code==="permission-denied"?"Firebase Rules need updating before usernames can be edited.":"Could not update profile: "+(error.message||"Try again.");
