@@ -599,7 +599,7 @@ async function loadPostEngagement(post,root){
   try{
     const [likesSnap,commentsSnap,ownLike]=await Promise.all([
       getDocs(query(collection(db,"postLikes"),where("postId","==",post.id),limit(500))),
-      getDocs(query(collection(db,"postComments"),where("postId","==",post.id),orderBy("createdAt","asc"),limit(100))),
+      getDocs(query(collection(db,"postComments"),where("postId","==",post.id),limit(100))),
       getDoc(doc(db,"postLikes",post.id+"_"+auth.currentUser.uid))
     ]);
     likeCount.textContent=likesSnap.size+" likes";
@@ -607,7 +607,7 @@ async function loadPostEngagement(post,root){
     likeButton.innerHTML=(ownLike.exists()?"♥":"♡")+" <span>"+(ownLike.exists()?"Liked":"Like")+"</span>";
     list.replaceChildren();
     if(commentsSnap.empty){const empty=document.createElement("p");empty.className="muted tiny";empty.textContent="Abhi koi comment nahi hai. Pehla comment karein!";list.append(empty);}
-    commentsSnap.docs.forEach(item=>{
+    commentsSnap.docs.sort((x,y)=>(x.data().createdAt?.toMillis?.()||0)-(y.data().createdAt?.toMillis?.()||0)).forEach(item=>{
       const d=item.data(),row=document.createElement("div");row.className="post-comment-item";
       const author=document.createElement("b");author.textContent=d.displayName||"GRAMORA member";
       const message=document.createElement("span");message.textContent=d.text||"";row.append(author,message);
@@ -639,15 +639,15 @@ function renderPosts(docs){
     const actions=document.createElement("div");actions.className="post-actions";
     const like=document.createElement("button");like.className="like";like.type="button";like.innerHTML="♡ <span>Like</span>";
     const save=document.createElement("button");save.className="save";save.type="button";save.innerHTML="▣ <span>Save</span>";
+    const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.innerHTML="⟳ <span>Repost</span>";
+    const originalId=isRepost?data.originalPostId:postDoc.id;
+    const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,background:data.originalBackground,createdAt:data.originalCreatedAt}:data;
     const likeCount=document.createElement("small");likeCount.className="post-like-count";likeCount.textContent="Loading likes…";
     const comment=document.createElement("button");comment.className="post-comment-open";comment.type="button";comment.innerHTML="▢ <span>Comment</span>";
     const postForDetail={id:originalId,...originalData};
     like.addEventListener("click",()=>togglePostLike(originalId,authorUid,like,likeCount));
     comment.addEventListener("click",()=>openPostDetail(postForDetail,false));
     refreshPostLikeButton(originalId,authorUid,like,likeCount);
-    const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.innerHTML="⟳ <span>Repost</span>";
-    const originalId=isRepost?data.originalPostId:postDoc.id;
-    const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,background:data.originalBackground,createdAt:data.originalCreatedAt}:data;
     if(!isRepost&&auth?.currentUser?.uid!==data.uid)repost.addEventListener("click",()=>createPostRepost(originalId,originalData,repost));
     else if(isRepost){repost.disabled=true;repost.textContent="⟳ Reposted";}
     else repost.hidden=true;
@@ -657,7 +657,7 @@ function renderPosts(docs){
       const edit=document.createElement("button");edit.className="edit-post";edit.type="button";edit.textContent="Edit";edit.addEventListener("click",()=>openPostEditor({id:postDoc.id,...data}));actions.append(edit);
       const del=document.createElement("button");del.className="delete-post";del.type="button";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(postDoc.id,del,()=>getDocsForFeed()));actions.append(del);
     }
-    article.append(head,content,actions);feed.append(article);
+    feed.append(article);
   });
 }
 async function createPostRepost(postId,original,button){
