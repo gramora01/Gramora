@@ -525,3 +525,26 @@ body.light .story-reply-form input{background:#f7f5f2;color:#202127;border-color
 .story-viewer-person{margin:6px 0;font-size:13px}
 body.light .ig-highlight>span{background:#f6f3fb;border-color:#e3e0e8}
 body.light .highlight-choice{background:#f7f5f2;border-color:#e5e1dc}
+
+
+/* Instagram-style Explore search and removable recent searches */
+.explore-page{max-width:680px}
+.people-search-wrap{display:flex;align-items:center;gap:10px;height:46px;padding:0 13px;border:1px solid var(--line);border-radius:12px;background:var(--surface, #191c24)}
+.people-search-wrap>span{font-size:24px;line-height:1;color:var(--muted)}
+.explore-page .people-search-wrap input{height:42px;padding:0;border:0!important;outline:0!important;background:transparent!important;box-shadow:none!important;min-width:0}
+.explore-recent{margin-top:18px}
+.explore-recent-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.explore-recent-head b{font-size:15px}
+.explore-recent-head button{border:0;background:transparent;color:var(--accent,#6c8cff);font-weight:650;cursor:pointer}
+.explore-history-row{display:flex;align-items:center;gap:8px;padding:7px 0}
+.explore-history-person{display:flex;align-items:center;gap:12px;flex:1;min-width:0;padding:3px 0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.explore-history-person .avatar{width:42px;height:42px;flex:0 0 42px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#343945}
+.explore-history-person .avatar img{width:100%;height:100%;object-fit:cover}
+.explore-history-person .person-info{display:grid;gap:3px;min-width:0}
+.explore-history-person .person-info b{font-size:14px}
+.explore-history-person .person-info small{font-size:12px;color:var(--muted)}
+.explore-history-remove{width:34px;height:34px;flex:0 0 34px;border:0;border-radius:50%;background:transparent;color:var(--muted);font-size:25px;line-height:1;cursor:pointer}
+.explore-history-remove:active{background:var(--line)}
+.explore-page .person-result{width:100%;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.explore-page .person-result .avatar{width:42px;height:42px;flex:0 0 42px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#343945}
+.explore-page .person-result .avatar img{width:100%;height:100%;object-fit:cover}
