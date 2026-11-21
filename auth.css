@@ -1,12 +1,295 @@
-.auth-gate{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:20px;background:radial-gradient(ellipse at 15% 0%,#eee6f8 0%,#f7f5f2 55%)}.auth-gate[hidden]{display:none}.auth-card{width:min(100%,440px);max-height:94vh;overflow:auto;background:#fff;border:1px solid #e9e3de;border-radius:25px;padding:31px;box-shadow:0 25px 90px #39264b20}.auth-brand{display:flex;align-items:center;gap:11px;font:800 22px "Manrope";letter-spacing:-1px;margin-bottom:27px}.auth-card h1{font:800 31px/1.2 "Manrope";letter-spacing:-1px;margin:8px 0 5px;color:#24202b}.auth-subtitle{color:#89818b;margin:0 0 20px;font-size:13px}.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;background:#f3f0f5;border-radius:13px;margin-bottom:19px}.auth-tab{border:0;border-radius:10px;background:transparent;color:#89818b;padding:11px;font-weight:700}.auth-tab.active{background:#fff;color:#6652a3;box-shadow:0 3px 10px #33204412}.auth-form label{display:block;color:#625b66;font-size:12px;font-weight:700;margin:13px 0 6px}.auth-form input{width:100%;padding:13px 14px;border-radius:11px;border:1px solid #e7e1e8;background:#fbfafb;color:#24202b;font:14px "DM Sans";outline:none}.auth-form input:focus{border-color:#9a88c3;box-shadow:0 0 0 3px #eee9f6}.auth-submit{width:100%;margin-top:20px;display:flex;justify-content:center;gap:8px}.text-action{display:block;margin:13px auto 0;border:0;background:none;color:#6652a3;font-size:12px;font-weight:700}.auth-message{min-height:20px;margin:12px 0 0;color:#6652a3;font-size:12px}.auth-message.error{color:#c35d58}.auth-legal{border-top:1px solid #eee8ee;padding-top:15px;margin:15px 0 0;color:#a39ba5;font-size:10px;text-align:center}.profile-panel{background:var(--surface);border:1px solid var(--line);border-radius:19px;padding:23px;box-shadow:var(--shadow)}.profile-avatar{width:76px;height:76px;border-radius:23px;background:#eee7fa;color:#6652a3;display:grid;place-items:center;font-size:30px;font-weight:900;margin-bottom:14px}.profile-panel h2{font:800 25px "Manrope"}.profile-panel label{display:block;font-size:12px;font-weight:700;margin-top:14px}.profile-panel input{display:block;width:100%;max-width:420px;padding:12px;margin:7px 0 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}.profile-panel button{border:0;border-radius:11px;padding:11px 16px;background:var(--purple);color:white;font-weight:700}.profile-panel .muted{font-size:12px}@media(max-width:520px){.auth-card{padding:24px 19px;border-radius:21px}.auth-card h1{font-size:27px}}
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { firebaseConfig } from "./firebase-config.js";
 
-/* Dark Instagram-inspired authentication */
-.auth-gate{background:#090a0e;color:#fff}
-.auth-card{background:#111217;border:1px solid #2a2c34;border-radius:18px;box-shadow:none;color:#fff}
-.auth-brand{color:#fff}.auth-card h1{color:#fff}.auth-subtitle{color:#a5a6ae}
-.auth-tabs{background:#202127}.auth-tab{color:#b2b3bb}.auth-tab.active{background:#343640;color:#fff;box-shadow:none}
-.auth-form label{color:#e0e0e4}.auth-form input{background:#090a0e;border-color:#383a44;color:#fff}
-.auth-form input:focus{border-color:#d62976;box-shadow:0 0 0 3px #d6297628}
-.auth-submit,.create-btn{background:#d62976;color:#fff}.auth-submit:hover,.create-btn:hover{background:#b51d62}
-.text-action{color:#ff8fb2}.auth-legal{border-color:#30323a;color:#92939c}
-.profile-panel{background:#111217;border-color:#2a2c34}.profile-panel input{background:#090a0e;color:#fff}
+const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
+  firebaseConfig.projectId !== "PASTE_YOUR_PROJECT_ID" &&
+  firebaseConfig.appId !== "PASTE_YOUR_APP_ID";
+const app = configured ? initializeApp(firebaseConfig) : null;
+const auth = app ? getAuth(app) : null;
+const db = app ? getFirestore(app) : null;
+const gate = document.getElementById("authGate");
+const loginForm = document.getElementById("loginForm");
+const signupForm = document.getElementById("signupForm");
+const message = document.getElementById("authMessage");
+const title = document.getElementById("authTitle");
+const subtitle = document.getElementById("authSubtitle");
+const accountBar = document.getElementById("accountBar");
+const accountLabel = document.getElementById("accountLabel");
+
+function showMessage(text, isError=false){ message.textContent=text; message.classList.toggle("error",isError); }
+if (!configured) {
+  showMessage("Firebase setup required: add your Firebase Web app config before creating accounts.", true);
+  document.querySelectorAll(".auth-form button, #forgotPassword").forEach(button => button.disabled = true);
+  subtitle.textContent = "One-time Firebase setup is needed before account creation.";
+}
+function switchMode(mode){
+  const signup=mode==="signup";
+  loginForm.hidden=signup; signupForm.hidden=!signup;
+  document.getElementById("showLogin").classList.toggle("active",!signup);
+  document.getElementById("showSignup").classList.toggle("active",signup);
+  title.textContent=signup?"Join the community":"Welcome back";
+  subtitle.textContent=signup?"Create your GRAMORA account.":"Sign in to continue to your community.";
+  showMessage("");
+}
+document.getElementById("showLogin").addEventListener("click",()=>switchMode("login"));
+document.getElementById("showSignup").addEventListener("click",()=>switchMode("signup"));
+
+async function saveNewUserProfile(user, name, username) {
+  const profileRef=doc(db,"userProfiles",user.uid);
+  const usernameRef=doc(db,"usernames",username);
+  await runTransaction(db,async transaction=>{
+    const existing=await transaction.get(usernameRef);
+    if(existing.exists()) throw new Error("GRAMORA_USERNAME_TAKEN");
+    transaction.set(usernameRef,{uid:user.uid,createdAt:serverTimestamp()});
+    transaction.set(profileRef,{
+      uid:user.uid,displayName:name,username,email:user.email||"",
+      bio:"",photoURL:"",followersCount:0,followingCount:0,
+      createdAt:serverTimestamp(),updatedAt:serverTimestamp()
+    });
+  });
+}
+async function ensureProfile(user) {
+  const profileRef=doc(db,"userProfiles",user.uid);
+  const snap=await getDoc(profileRef);
+  if(!snap.exists()){
+    await setDoc(profileRef,{
+      uid:user.uid,displayName:user.displayName||"GRAMORA member",
+      username:"",email:user.email||"",bio:"",photoURL:"",
+      followersCount:0,followingCount:0,
+      createdAt:serverTimestamp(),updatedAt:serverTimestamp()
+    });
+  }
+}
+
+signupForm.addEventListener("submit",async event=>{
+  event.preventDefault();
+  const name=document.getElementById("signupName").value.trim();
+  const username=document.getElementById("signupUsername").value.trim().toLowerCase();
+  const email=document.getElementById("signupEmail").value.trim();
+  const password=document.getElementById("signupPassword").value;
+  if(!/^[a-z0-9_.]{3,20}$/.test(username)){showMessage("Username must be 3–20 characters (letters, numbers, _ or .).",true);return;}
+  const button=signupForm.querySelector("button[type=submit]");button.disabled=true;button.textContent="Creating account…";
+  try{
+    const credential=await createUserWithEmailAndPassword(auth,email,password);
+    await updateProfile(credential.user,{displayName:name});
+    await saveNewUserProfile(credential.user,name,username);
+    showMessage("Account created and profile saved. Welcome to GRAMORA!");
+  }catch(error){
+    if(error.message==="GRAMORA_USERNAME_TAKEN") showMessage("This username is already taken. Please choose another.",true);
+    else showMessage(authError(error.code),true);
+  }finally{button.disabled=false;button.textContent="Create my account";}
+});
+
+loginForm.addEventListener("submit",async event=>{
+  event.preventDefault();
+  const email=document.getElementById("loginEmail").value.trim();
+  const password=document.getElementById("loginPassword").value;
+  const button=loginForm.querySelector("button[type=submit]");button.disabled=true;button.textContent="Signing in…";
+  try{await signInWithEmailAndPassword(auth,email,password);}
+  catch(error){showMessage(authError(error.code),true);}
+  finally{button.disabled=false;button.textContent="Log in";}
+});
+
+document.getElementById("forgotPassword").addEventListener("click",async()=>{
+  const email=document.getElementById("loginEmail").value.trim();
+  if(!email){showMessage("Enter your email address first.",true);return;}
+  try{await sendPasswordResetEmail(auth,email);showMessage("Password reset email sent. Check your inbox.");}
+  catch(error){showMessage(authError(error.code),true);}
+});
+
+
+if(auth) onAuthStateChanged(auth,async user=>{
+  gate.hidden=!!user;
+  accountBar.hidden=!user;
+  if(user){
+    accountLabel.textContent=user.displayName||user.email;
+    try{await ensureProfile(user);renderProfile(user);startPostsFeed(user);}
+    catch(error){console.error(error);showMessage("Could not load your profile. Check Firestore Security Rules.",true);}
+  }
+});
+
+let activeFeedUnsubscribe=null;
+let activeView="home";
+function startPostsFeed(user){
+  if(activeFeedUnsubscribe) activeFeedUnsubscribe();
+  const postsQuery=query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40));
+  activeFeedUnsubscribe=onSnapshot(postsQuery,snapshot=>{
+    if(activeView==="home") renderPosts(snapshot.docs);
+  },error=>{
+    console.error("Posts feed error:",error);
+    if(activeView==="home") showFeedMessage("Could not load posts ("+(error.code||"unknown")+"): "+(error.message||"Check Firestore Rules."));
+  });
+}
+function showFeedMessage(text){
+  const feed=document.getElementById("feed");
+  feed.replaceChildren();
+  const p=document.createElement("p");p.className="muted";p.textContent=text;feed.append(p);
+}
+function renderPosts(docs){
+  const feed=document.getElementById("feed");
+  feed.replaceChildren();
+  if(!docs.length){
+    const empty=document.createElement("div");empty.className="empty-welcome";
+    const heading=document.createElement("h2");heading.textContent="Your feed is ready.";
+    const note=document.createElement("p");note.textContent="Be the first to share a moment with the GRAMORA community.";
+    empty.append(heading,note);feed.append(empty);return;
+  }
+  docs.forEach(postDoc=>{
+    const data=postDoc.data();
+    const article=document.createElement("article");article.className="post";
+    const head=document.createElement("div");head.className="post-head";
+    const avatar=document.createElement("div");avatar.className="avatar";
+    avatar.textContent=(data.displayName||"G").trim().charAt(0).toUpperCase();
+    const identity=document.createElement("div");
+    const name=document.createElement("b");name.textContent=data.displayName||"GRAMORA member";
+    const meta=document.createElement("small");
+    meta.textContent=(data.username?"@"+data.username+" · ":"")+formatPostDate(data.createdAt);
+    identity.append(name,meta);head.append(avatar,identity);
+    const content=document.createElement("p");content.className="post-text";content.textContent=data.text||"";
+    const actions=document.createElement("div");actions.className="post-actions";
+    const like=document.createElement("button");like.className="like";like.type="button";like.innerHTML="♡ <span>Like</span>";
+    const save=document.createElement("button");save.className="save";save.type="button";save.innerHTML="▣ <span>Save</span>";
+    actions.append(like,save);article.append(head,content,actions);feed.append(article);
+  });
+}
+function formatPostDate(timestamp){
+  if(!timestamp||!timestamp.toDate)return "Just now";
+  return timestamp.toDate().toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"});
+}
+document.addEventListener("gramora:view",event=>{
+  activeView=event.detail;
+  if(activeView==="home"&&auth?.currentUser){
+    getDocsForFeed();
+  }
+});
+async function getDocsForFeed(){
+  try{
+    const snapshot=await getDocs(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)));
+    if(activeView==="home")renderPosts(snapshot.docs);
+  }catch(error){console.error(error);showFeedMessage("Could not load posts ("+(error.code||"unknown")+"): "+(error.message||"Check Firestore Rules."));}
+}
+const postForm=document.getElementById("postForm");
+postForm.addEventListener("submit",async event=>{
+  event.preventDefault();
+  const dialog=document.getElementById("createDialog");
+  const status=document.getElementById("postStatus");
+  
+  if(!auth?.currentUser){status.textContent="Please log in to publish a post.";return;}
+  const text=document.getElementById("caption").value.trim();
+  if(!text){status.textContent="Write something before sharing.";return;}
+  const button=postForm.querySelector(".publish");
+  button.disabled=true;button.textContent="Sharing…";status.textContent="Publishing your post…";
+  try{
+    const user=auth.currentUser;
+    const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
+    const profile=profileSnap.exists()?profileSnap.data():{};
+    await addDoc(collection(db,"posts"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",text,createdAt:serverTimestamp()});
+    document.getElementById("caption").value="";
+    status.textContent="Posted successfully!";
+    dialog.close();
+    activeView="home";
+    document.querySelector('.mobile-nav [data-view="home"], .sidebar [data-view="home"]')?.click();
+  }catch(error){
+    console.error("Post publish failed:",error);
+    status.textContent=error.code==="permission-denied"?"Firestore denied this post. Open Firebase Console → Firestore → Rules and publish the latest firestore.rules from GitHub.":"Post failed: "+(error.message||"Check your internet and try again.");
+  }finally{button.disabled=false;button.innerHTML='Share with the community <span>↗</span>';}
+});
+function renderProfile(user){
+  const profileButton=document.querySelector('[data-view="profile"]');
+  if(!profileButton||profileButton.dataset.profileBound)return;
+  profileButton.dataset.profileBound="yes";
+  profileButton.addEventListener("click",async()=>{
+    const feed=document.getElementById("feed");
+    feed.innerHTML="";
+    const panel=document.createElement("section");panel.className="profile-panel";
+    const avatar=document.createElement("div");avatar.className="profile-avatar";
+    const heading=document.createElement("h2");heading.textContent="Your profile";
+    const email=document.createElement("p");email.className="muted";email.textContent=user.email||"";
+    const nameLabel=document.createElement("label");nameLabel.textContent="Display name";
+    const nameInput=document.createElement("input");nameInput.maxLength=60;
+    const bioLabel=document.createElement("label");bioLabel.textContent="Bio";
+    const bioInput=document.createElement("input");bioInput.maxLength=160;bioInput.placeholder="Tell the community about yourself";
+    const usernameText=document.createElement("p");usernameText.className="muted";
+    const save=document.createElement("button");save.type="button";save.textContent="Save profile";
+    const status=document.createElement("p");status.className="muted";
+    panel.append(avatar,heading,email,usernameText,nameLabel,nameInput,bioLabel,bioInput,save,status);feed.append(panel);
+    document.getElementById("viewTitle").textContent="Your profile";
+    try{
+      const snap=await getDoc(doc(db,"userProfiles",user.uid));
+      const data=snap.exists()?snap.data():{};
+      nameInput.value=data.displayName||user.displayName||"";
+      bioInput.value=data.bio||"";
+      usernameText.textContent=data.username?"@"+data.username:"Username not set";
+      avatar.textContent=(nameInput.value||"G").charAt(0).toUpperCase();
+    }catch(error){status.textContent="Could not load profile. Check Firestore Rules.";return;}
+    save.addEventListener("click",async()=>{
+      const newName=nameInput.value.trim(),bio=bioInput.value.trim();
+      if(!newName){status.textContent="Please enter your name.";return;}
+      save.disabled=true;
+      try{
+        await updateProfile(auth.currentUser,{displayName:newName});
+        await setDoc(doc(db,"userProfiles",user.uid),{displayName:newName,bio,updatedAt:serverTimestamp()},{merge:true});
+        accountLabel.textContent=newName;avatar.textContent=newName.charAt(0).toUpperCase();
+        status.textContent="Profile updated successfully.";
+      }catch(error){status.textContent=error.code==="permission-denied"?"Firestore rules blocked this update. Publish the supplied rules.":authError(error.code);}
+      finally{save.disabled=false;}
+    });
+  });
+}
+
+// Settings center
+const settingsDialog=document.getElementById("settingsDialog");
+document.getElementById("closeCreate")?.addEventListener("click",()=>document.getElementById("createDialog").close());
+document.getElementById("settingsBtn")?.addEventListener("click",()=>settingsDialog.showModal());
+document.getElementById("closeSettings")?.addEventListener("click",()=>settingsDialog.close());
+document.querySelectorAll(".settings-tab").forEach(tab=>tab.addEventListener("click",()=>{
+  document.querySelectorAll(".settings-tab").forEach(x=>x.classList.toggle("active",x===tab));
+  document.querySelectorAll(".settings-panel").forEach(panel=>panel.hidden=panel.dataset.panel!==tab.dataset.settings);
+}));
+document.getElementById("settingsLogout")?.addEventListener("click",async()=>{
+  try{await signOut(auth);settingsDialog.close();}catch(error){document.getElementById("settingsStatus").textContent=authError(error.code);}
+});
+document.getElementById("settingsPassword")?.addEventListener("click",async()=>{
+  const email=auth?.currentUser?.email;
+  if(!email){document.getElementById("settingsStatus").textContent="No account email found.";return;}
+  try{await sendPasswordResetEmail(auth,email);document.getElementById("settingsStatus").textContent="Password reset link sent to "+email;}
+  catch(error){document.getElementById("settingsStatus").textContent=authError(error.code);}
+});
+document.getElementById("settingsProfile")?.addEventListener("click",()=>{
+  settingsDialog.close();document.querySelector('.mobile-nav [data-view="profile"], .sidebar [data-view="profile"]')?.click();
+});
+document.getElementById("settingsTheme")?.addEventListener("click",()=>document.getElementById("themeBtn")?.click());
+
+function authError(code){
+  const messages={
+    "auth/email-already-in-use":"This email already has an account. Please log in.",
+    "auth/invalid-email":"Please enter a valid email address.",
+    "auth/weak-password":"Choose a stronger password (at least 6 characters).",
+    "auth/invalid-credential":"Email or password is incorrect.",
+    "auth/user-not-found":"No account found with this email.",
+    "auth/network-request-failed":"Network error. Check your internet connection.",
+    "auth/too-many-requests":"Too many attempts. Please wait and try again.",
+    "auth/operation-not-allowed":"Email/password sign-in is not enabled in Firebase yet.",
+    "permission-denied":"Firestore denied access. Publish the GRAMORA Firestore rules."
+  };
+  return messages[code]||"Something went wrong. Please try again.";
+}
+
+
+/* Instagram-style profile layout */
+.ig-profile{width:100%;color:#f5f5f7;padding:12px 0 30px}
+.profile-loading{padding:30px;text-align:center;color:#a5a6ae}
+.ig-profile-top{display:grid;grid-template-columns:150px 1fr;gap:24px;align-items:center;padding:12px 22px 18px}
+.ig-avatar-wrap{display:flex;justify-content:center}.ig-profile-avatar{width:118px;height:118px;border-radius:50%;display:grid;place-items:center;background:#242630;border:4px solid #343640;color:#fff;font-size:42px;font-weight:600;overflow:hidden}.ig-profile-avatar img{width:100%;height:100%;object-fit:cover}
+.ig-profile-username{display:flex;align-items:center;justify-content:space-between;font-size:20px;margin-bottom:18px}.ig-profile-username strong{font-weight:400}.profile-more{border:0;background:transparent;color:#fff;font-size:20px}
+.ig-profile-stats{display:flex;justify-content:space-between;gap:12px}.ig-profile-stats span{font-size:14px;color:#f5f5f7;white-space:nowrap}.ig-profile-stats b{font-weight:700}
+.ig-profile-bio{padding:0 22px 12px;font-size:14px}.ig-profile-bio p{white-space:pre-wrap;margin:4px 0 0;color:#eee}
+.ig-profile-actions{display:grid;grid-template-columns:1fr 1fr 44px;gap:8px;padding:8px 18px 15px}.ig-profile-actions button{height:38px;border:0;border-radius:8px;background:#292c34;color:#fff;font-weight:700;font-size:13px}.ig-profile-actions .profile-add{font-size:19px}
+.ig-highlights{display:flex;gap:20px;padding:8px 20px 18px;overflow-x:auto}.ig-highlight{display:grid;justify-items:center;gap:5px;min-width:68px;color:#eee}.ig-highlight>span{width:66px;height:66px;border-radius:50%;display:grid;place-items:center;background:#111318;border:3px solid #30333b;font-size:23px}.ig-highlight.add-highlight>span{border:1px solid #777;background:transparent;font-size:30px}.ig-highlight small{font-size:11px}
+.ig-profile-tabs{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid #292c34}.ig-profile-tabs button{height:54px;border:0;border-bottom:2px solid transparent;background:transparent;color:#a8aab3;font-size:25px}.ig-profile-tabs button.active{border-bottom-color:#fff;color:#fff}
+.ig-profile-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px}.ig-post-tile{aspect-ratio:1/1;overflow:hidden;border:0;background:#20232b;color:#fff;padding:12px;font-size:12px;line-height:1.4;text-align:left;display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical}.ig-post-tile:nth-child(3n+2){background:#29232b}.ig-post-tile:nth-child(3n){background:#202833}.ig-post-tile.expanded{display:block;overflow:auto}
+.ig-no-posts{grid-column:1/-1;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;color:#eee;padding:30px}.ig-no-posts>strong{font-size:42px}.ig-no-posts span{font-size:12px;color:#a5a6ae;max-width:250px}
+.ig-edit-form{margin:16px 18px;padding:16px;border:1px solid #30333b;border-radius:12px;background:#15171d}.ig-edit-form h3{margin:0 0 12px}.ig-edit-form label{display:block;margin:10px 0;font-size:12px}.ig-edit-form input,.ig-edit-form textarea{display:block;width:100%;margin-top:5px;padding:11px;border:1px solid #383b45;border-radius:8px;background:#090a0e;color:#fff}.ig-save-profile{border:0;border-radius:8px;background:#d62976;color:white;padding:11px 18px;font-weight:700}.ig-edit-status{font-size:12px;color:#ff9fbd}
+@media(max-width:680px){.ig-profile{padding-top:8px}.ig-profile-top{grid-template-columns:112px 1fr;gap:12px;padding:10px 14px 16px}.ig-profile-avatar{width:92px;height:92px;font-size:34px}.ig-profile-username{font-size:18px;margin-bottom:16px}.ig-profile-stats span{font-size:12px}.ig-profile-bio{padding:0 18px 10px}.ig-profile-actions{padding:7px 12px 13px;grid-template-columns:1fr 1fr 42px}.ig-highlights{padding-left:14px}.ig-highlight>span{width:62px;height:62px}}
