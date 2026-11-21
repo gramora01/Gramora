@@ -620,3 +620,22 @@ body.light .post-actions .save.saved{color:#e1306c!important}
 .dp-viewer-image{width:100%;height:100%;display:grid;place-items:center;overflow:hidden;border-radius:20px;background:#17191f;color:#fff;font-size:100px;font-weight:700}
 .dp-viewer-image img{width:100%;height:100%;object-fit:contain}
 .post-head .avatar,.ig-profile-avatar{-webkit-user-select:none;user-select:none;touch-action:pan-y}
+
+
+/* GRAMORA in-app notifications */
+#notificationBtn{position:relative;display:grid;place-items:center}
+.notification-badge{position:absolute;top:-5px;right:-7px;min-width:17px;height:17px;padding:0 4px;border:2px solid var(--surface,#fff);border-radius:99px;background:#e1306c;color:#fff;font-size:9px;font-weight:900;line-height:13px;text-align:center}
+.gramora-notifications-dialog{width:min(94vw,470px);max-width:470px;max-height:min(82vh,680px);padding:0;border:1px solid var(--line);border-radius:20px;background:var(--surface);color:var(--text);overflow:hidden}
+.gramora-notifications-dialog::backdrop{background:#080910b8;backdrop-filter:blur(5px)}
+.gramora-notifications-head{display:flex;align-items:center;justify-content:space-between;padding:17px 18px;border-bottom:1px solid var(--line)}
+.gramora-notifications-head h2{margin:0;font-size:19px}
+.gramora-notifications-head button{width:34px;height:34px;border:0;border-radius:50%;background:var(--input-bg);color:inherit;font-size:24px;cursor:pointer}
+.gramora-notifications-list{max-height:calc(min(82vh,680px) - 70px);overflow:auto;padding:7px}
+.gramora-notification{width:100%;display:flex;align-items:center;gap:12px;padding:13px 10px;border:0;border-radius:12px;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.gramora-notification:hover{background:var(--input-bg)}
+.gramora-notification.unread{background:color-mix(in srgb,var(--accent,#7c6cff) 9%,transparent)}
+.gramora-notification-avatar{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:50%;background:linear-gradient(135deg,#e1306c,#833ab4);color:#fff;font-weight:900}
+.gramora-notification-copy{display:grid;gap:4px;min-width:0;flex:1;font-size:13px;line-height:1.4}
+.gramora-notification-copy small{color:var(--muted);font-size:11px}
+.notification-unread-dot{width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#e1306c}
+@media(max-width:680px){.gramora-notifications-dialog{width:calc(100vw - 20px);max-height:82vh;border-radius:17px}.gramora-notifications-list{max-height:calc(82vh - 70px)}}
