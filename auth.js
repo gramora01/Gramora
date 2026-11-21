@@ -296,9 +296,9 @@ async function loadStoryViewers(storyId,storyData){
   list.hidden=true;list.replaceChildren();
   if(!isOwner)return;
   try{
-    const snap=await getDocs(query(collection(db,"storyViews"),where("storyId","==",storyId),where("storyUid","==",auth.currentUser.uid)));
+    const snap=await getDocs(query(collection(db,"storyViews"),where("storyUid","==",auth.currentUser.uid)));
     button.textContent="Viewers · "+snap.size;
-    snap.docs.sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(item=>{
+    snap.docs.filter(item=>item.data().storyId===storyId).sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(item=>{
       const row=document.createElement("p");row.className="story-viewer-person";
       row.textContent=item.data().displayName||"GRAMORA member";list.append(row);
     });
