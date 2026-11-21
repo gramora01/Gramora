@@ -293,3 +293,10 @@ function authError(code){
 .ig-no-posts{grid-column:1/-1;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;color:#eee;padding:30px}.ig-no-posts>strong{font-size:42px}.ig-no-posts span{font-size:12px;color:#a5a6ae;max-width:250px}
 .ig-edit-form{margin:16px 18px;padding:16px;border:1px solid #30333b;border-radius:12px;background:#15171d}.ig-edit-form h3{margin:0 0 12px}.ig-edit-form label{display:block;margin:10px 0;font-size:12px}.ig-edit-form input,.ig-edit-form textarea{display:block;width:100%;margin-top:5px;padding:11px;border:1px solid #383b45;border-radius:8px;background:#090a0e;color:#fff}.ig-save-profile{border:0;border-radius:8px;background:#d62976;color:white;padding:11px 18px;font-weight:700}.ig-edit-status{font-size:12px;color:#ff9fbd}
 @media(max-width:680px){.ig-profile{padding-top:8px}.ig-profile-top{grid-template-columns:112px 1fr;gap:12px;padding:10px 14px 16px}.ig-profile-avatar{width:92px;height:92px;font-size:34px}.ig-profile-username{font-size:18px;margin-bottom:16px}.ig-profile-stats span{font-size:12px}.ig-profile-bio{padding:0 18px 10px}.ig-profile-actions{padding:7px 12px 13px;grid-template-columns:1fr 1fr 42px}.ig-highlights{padding-left:14px}.ig-highlight>span{width:62px;height:62px}}
+
+.ig-avatar-wrap{position:relative;width:max-content;margin:auto}
+.dp-add{position:absolute;right:2px;bottom:2px;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:#0095f6;color:#fff;border:3px solid #101116;font-size:22px;font-weight:700;cursor:pointer;line-height:1}
+.dp-file{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.ig-profile-stats button.stat-open{border:0;background:transparent;color:#f5f5f7;font-size:14px;white-space:nowrap;padding:0;cursor:pointer}
+.ig-profile-stats button.stat-open b{font-weight:700}
+@media(max-width:680px){.ig-profile-stats button.stat-open{font-size:12px}}
