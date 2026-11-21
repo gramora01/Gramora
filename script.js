@@ -1,7 +1,7 @@
 const dialog=document.getElementById("createDialog");
 const form=document.getElementById("postForm");
 function openComposer(){if(dialog&&!dialog.open)dialog.showModal();}
-["openCreate","rightCreate","rightCreateDesktop","mobileCreate"].forEach(id=>document.getElementById(id)?.addEventListener("click",openComposer));
+["openCreate","rightCreate","rightCreateDesktop","mobileCreate","topCreate"].forEach(id=>document.getElementById(id)?.addEventListener("click",openComposer));
 document.getElementById("themeBtn")?.addEventListener("click",()=>{
   document.body.classList.toggle("light");
   const dark=document.body.classList.contains("light");
