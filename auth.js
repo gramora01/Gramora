@@ -13,6 +13,8 @@ let activeApp = app;
 let activeAuthUnsubscribe = null;
 const accountInstances = new Map();
 let savedAccounts = [];
+let activeFeedUnsubscribe=null;
+let activeView="home";
 try { savedAccounts = JSON.parse(localStorage.getItem("gramoraAccounts") || "[]"); } catch { savedAccounts = []; }
 function saveAccountList(){ localStorage.setItem("gramoraAccounts", JSON.stringify(savedAccounts)); }
 function accountAppName(uid){ return "gramora-account-" + uid; }
@@ -183,8 +185,6 @@ document.getElementById("forgotPassword").addEventListener("click",async()=>{
 
 if(auth) activateAccount({app,auth,db});
 
-let activeFeedUnsubscribe=null;
-let activeView="home";
 function startPostsFeed(user){
   if(activeFeedUnsubscribe) activeFeedUnsubscribe();
   const postsQuery=query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40));
