@@ -515,13 +515,15 @@ document.getElementById("closeStoryViewer")?.addEventListener("click",()=>{const
 document.getElementById("storyViewerDialog")?.addEventListener("close",()=>{const audio=document.getElementById("storyViewerAudio");audio?.pause();});
 function startPostsFeed(user){
   if(activeFeedUnsubscribe) activeFeedUnsubscribe();
-  const postsQuery=query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40));
-  activeFeedUnsubscribe=onSnapshot(postsQuery,snapshot=>{
-    if(activeView==="home") renderPosts(snapshot.docs);
-  },error=>{
-    console.error("Posts feed error:",error);
-    if(activeView==="home") showFeedMessage("Could not load posts ("+(error.code||"unknown")+"): "+(error.message||"Check Firestore Rules."));
-  });
+  let posts=[],reposts=[],postsReady=false,repostsReady=false;
+  const renderCombined=()=>{
+    if(!postsReady||!repostsReady||activeView!=="home")return;
+    const repostDocs=reposts.map(item=>({id:"repost_"+item.id,data:()=>({...item.data(),_isRepost:true,_repostId:item.id})}));
+    renderPosts([...posts,...repostDocs].sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)));
+  };
+  const offPosts=onSnapshot(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)),snap=>{posts=snap.docs;postsReady=true;renderCombined();},error=>{console.error("Posts feed error:",error);if(activeView==="home")showFeedMessage("Could not load posts ("+(error.code||"unknown")+"): "+(error.message||"Check Firestore Rules."));});
+  const offReposts=onSnapshot(query(collection(db,"reposts"),orderBy("createdAt","desc"),limit(40)),snap=>{reposts=snap.docs;repostsReady=true;renderCombined();},error=>{console.error("Reposts feed error:",error);if(activeView==="home")showFeedMessage("Could not load reposts. Publish the latest Firestore Rules.");});
+  activeFeedUnsubscribe=()=>{offPosts();offReposts();};
 }
 function showFeedMessage(text){
   const feed=document.getElementById("feed");
@@ -529,35 +531,44 @@ function showFeedMessage(text){
   const p=document.createElement("p");p.className="muted";p.textContent=text;feed.append(p);
 }
 function renderPosts(docs){
-  const feed=document.getElementById("feed");
-  feed.replaceChildren();
-  if(!docs.length){
-    const empty=document.createElement("div");empty.className="empty-welcome";
-    const heading=document.createElement("h2");heading.textContent="Your feed is ready.";
-    const note=document.createElement("p");note.textContent="Be the first to share a moment with the GRAMORA community.";
-    empty.append(heading,note);feed.append(empty);return;
-  }
+  const feed=document.getElementById("feed");feed.replaceChildren();
+  if(!docs.length){const empty=document.createElement("div");empty.className="empty-welcome";const heading=document.createElement("h2");heading.textContent="Your feed is ready.";const note=document.createElement("p");note.textContent="Be the first to share a moment with the GRAMORA community.";empty.append(heading,note);feed.append(empty);return;}
   docs.forEach(postDoc=>{
-    const data=postDoc.data();
+    const data=postDoc.data(),isRepost=!!data._isRepost;
+    const authorUid=isRepost?data.originalUid:data.uid,authorName=isRepost?data.originalDisplayName:data.displayName;
+    const authorUsername=isRepost?data.originalUsername:data.username,authorPhoto=isRepost?data.originalPhotoURL:data.photoURL;
     const article=document.createElement("article");article.className="post";
-    const head=document.createElement("div");head.className="post-head";
-    const avatar=document.createElement("div");avatar.className="avatar";
-    avatar.textContent=(data.displayName||"G").trim().charAt(0).toUpperCase();
-    if(data.photoURL){const img=document.createElement("img");img.src=data.photoURL;img.alt=(data.displayName||"User")+" profile photo";avatar.textContent="";avatar.append(img);}
-    else if(data.uid){getDoc(doc(db,"userProfiles",data.uid)).then(profileSnap=>{if(profileSnap.exists()){const photo=profileSnap.data().photoURL;if(photo&&avatar.isConnected){const img=document.createElement("img");img.src=photo;img.alt=(data.displayName||"User")+" profile photo";avatar.textContent="";avatar.append(img);}}}).catch(error=>console.warn("Post author photo unavailable:",error));}
-    const identity=document.createElement("div");
-    const name=document.createElement("b");name.textContent=data.displayName||"GRAMORA member";
-    const meta=document.createElement("small");
-    meta.textContent=(data.username?"@"+data.username+" · ":"")+formatPostDate(data.createdAt);
-    identity.append(name,meta);head.append(avatar,identity);
-    const content=document.createElement("p");content.className="post-text";content.textContent=data.text||"";
+    if(isRepost){const by=document.createElement("div");by.className="post-reposted-by";by.textContent="↻ "+(data.displayName||"GRAMORA member")+" reposted";article.append(by);}
+    const head=document.createElement("button");head.className="post-head post-author-link";head.type="button";
+    const avatar=document.createElement("div");avatar.className="avatar";avatar.textContent=(authorName||"G").trim().charAt(0).toUpperCase();
+    if(authorPhoto){const img=document.createElement("img");img.src=authorPhoto;img.alt="";avatar.textContent="";avatar.append(img);}
+    else if(authorUid){getDoc(doc(db,"userProfiles",authorUid)).then(profileSnap=>{if(profileSnap.exists()){const photo=profileSnap.data().photoURL;if(photo&&avatar.isConnected){const img=document.createElement("img");img.src=photo;img.alt="";avatar.textContent="";avatar.append(img);}}}).catch(error=>console.warn("Post author photo unavailable:",error));}
+    const identity=document.createElement("span");identity.className="post-author-identity";
+    const name=document.createElement("b");name.textContent=authorName||"GRAMORA member";
+    const meta=document.createElement("small");meta.textContent=(authorUsername?"@"+authorUsername+" · ":"")+formatPostDate(isRepost?data.originalCreatedAt:data.createdAt);
+    identity.append(name,meta);head.append(avatar,identity);head.addEventListener("click",()=>{const viewer=auth?.currentUser;if(viewer&&authorUid)loadPublicProfile(viewer,authorUid);});
+    const content=document.createElement("p");content.className="post-text";content.textContent=isRepost?(data.originalText||""):(data.text||"");
     const actions=document.createElement("div");actions.className="post-actions";
     const like=document.createElement("button");like.className="like";like.type="button";like.innerHTML="♡ <span>Like</span>";
     const save=document.createElement("button");save.className="save";save.type="button";save.innerHTML="▣ <span>Save</span>";
-    actions.append(like,save);
-    if(auth?.currentUser?.uid===data.uid){const del=document.createElement("button");del.className="delete-post";del.type="button";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(postDoc.id,del,()=>getDocsForFeed()));actions.append(del);}
+    const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.innerHTML="⟳ <span>Repost</span>";
+    const originalId=isRepost?data.originalPostId:postDoc.id;
+    const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,createdAt:data.originalCreatedAt}:data;
+    if(!isRepost)repost.addEventListener("click",()=>createPostRepost(originalId,originalData,repost));else{repost.disabled=true;repost.textContent="⟳ Reposted";}
+    actions.append(like,save,repost);
+    if(!isRepost&&auth?.currentUser?.uid===data.uid){const del=document.createElement("button");del.className="delete-post";del.type="button";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(postDoc.id,del,()=>getDocsForFeed()));actions.append(del);}
     article.append(head,content,actions);feed.append(article);
   });
+}
+async function createPostRepost(postId,original,button){
+  const user=auth?.currentUser;if(!user)return;
+  const repostId=postId+"_"+user.uid,ref=doc(db,"reposts",repostId);button.disabled=true;
+  try{
+    if((await getDoc(ref)).exists()){button.textContent="⟳ Reposted";return;}
+    const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};
+    await setDoc(ref,{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",originalPostId:postId,originalUid:original.uid,originalDisplayName:original.displayName||"GRAMORA member",originalUsername:original.username||"",originalPhotoURL:original.photoURL||"",originalText:original.text||"",originalCreatedAt:original.createdAt||null,createdAt:serverTimestamp()});
+    button.textContent="⟳ Reposted";
+  }catch(error){console.error("Repost failed:",error);alert(error.code==="permission-denied"?"Publish the latest Firestore Rules to enable reposts.":"Could not repost this post. Please try again.");button.disabled=false;}
 }
 async function deleteOwnPost(postId,button,afterDelete){
   if(!auth?.currentUser)return;
@@ -760,8 +771,10 @@ async function showFollowList(uid,type){
 
 async function getDocsForFeed(){
   try{
-    const snapshot=await getDocs(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)));
-    if(activeView==="home")renderPosts(snapshot.docs);
+    const [postsSnap,repostsSnap]=await Promise.all([getDocs(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40))),getDocs(query(collection(db,"reposts"),orderBy("createdAt","desc"),limit(40)))]);
+    const repostDocs=repostsSnap.docs.map(item=>({id:"repost_"+item.id,data:()=>({...item.data(),_isRepost:true,_repostId:item.id})}));
+    const combined=[...postsSnap.docs,...repostDocs].sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0));
+    if(activeView==="home")renderPosts(combined);
   }catch(error){console.error(error);showFeedMessage("Could not load posts ("+(error.code||"unknown")+"): "+(error.message||"Check Firestore Rules."));}
 }
 const postForm=document.getElementById("postForm");
@@ -922,8 +935,15 @@ async function loadProfilePage(user){
           const del=document.createElement("button");del.type="button";del.className="delete-post profile-delete-post";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(post.id,del,async()=>{const i=posts.findIndex(x=>x.id===post.id);if(i>=0)posts.splice(i,1);showTab("posts");}));
           wrap.append(tile,del);grid.append(wrap);
         });
+      }else if(tab==="reposts"){
+        grid.innerHTML='<div class="ig-no-posts"><strong>⟳</strong><b>Loading reposts…</b></div>';
+        getDocs(query(collection(db,"reposts"),where("uid","==",user.uid),limit(60))).then(snap=>{
+          if(!grid.isConnected)return;grid.replaceChildren();
+          if(snap.empty){grid.innerHTML='<div class="ig-no-posts"><strong>⟳</strong><b>No reposts yet</b><span>Posts you repost will appear here.</span></div>';return;}
+          snap.docs.sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(d=>{const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.textContent=d.data().originalText||"Reposted post";tile.addEventListener("click",()=>tile.classList.toggle("expanded"));grid.append(tile);});
+        }).catch(err=>{console.error("Profile reposts:",err);grid.textContent="Reposts could not be loaded. Check Firestore Rules.";});
       }else{
-        const empty=document.createElement("div");empty.className="ig-no-posts";empty.innerHTML='<strong>▧</strong><b>'+({reels:"No Reels yet",reposts:"No reposts yet",tagged:"No tagged posts yet"}[tab])+'</b><span>This section will show your '+tab+' here.</span>';grid.append(empty);
+        const empty=document.createElement("div");empty.className="ig-no-posts";empty.innerHTML='<strong>▧</strong><b>'+({reels:"No Reels yet",tagged:"No tagged posts yet"}[tab])+'</b><span>This section will show your '+tab+' here.</span>';grid.append(empty);
       }
     }
     showTab("posts");
