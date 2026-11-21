@@ -183,7 +183,7 @@ async function loadExplorePage(user){
   const results=feed.querySelector("#peopleResults");
   try{
     const snap=await getDocs(query(collection(db,"userProfiles"),limit(100)));
-    const people=snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.uid!==user.uid);
+    const people=snap.docs.map(d=>({id:d.id,...d.data(),uid:d.data().uid||d.id})).filter(p=>p.uid!==user.uid);
     function render(term=""){
       const q=term.trim().toLowerCase().replace(/^@/,"");
       const matches=people.filter(p=>(p.displayName||"").toLowerCase().includes(q)||(p.username||"").toLowerCase().includes(q));
@@ -197,7 +197,7 @@ async function loadExplorePage(user){
         if(person.photoURL){const img=document.createElement("img");img.src=person.photoURL;img.alt="";avatar.append(img);}else avatar.textContent=(person.displayName||"G").trim().charAt(0).toUpperCase();
         const info=document.createElement("div");info.className="person-info";
         const name=document.createElement("b");name.textContent=person.displayName||"GRAMORA member";
-        const handle=document.createElement("small");handle.textContent=person.username?"@"+person.username:"GRAMORA member";
+        const handle=document.createElement("small");handle.textContent=person.username?"@"+person.username:"Username not set";
         info.append(name,handle);card.append(avatar,info);results.append(card);
       });
       status.textContent=matches.length+" people found";
@@ -385,7 +385,7 @@ async function loadProfilePage(user){
       try{await navigator.clipboard.writeText(url);panel.querySelector(".profile-share").textContent="Link copied";}
       catch{panel.querySelector(".profile-share").textContent=url;}
     });
-    panel.querySelector(".profile-add").addEventListener("click",()=>{showTab("tagged");});
+    panel.querySelector(".profile-add").addEventListener("click",()=>{document.querySelector('.mobile-nav [data-view="explore"], .sidebar [data-view="explore"]')?.click();});
     panel.querySelector(".add-highlight").addEventListener("click",()=>alert("Story Highlights will be available when Stories launch."));
     panel.querySelector(".profile-more").addEventListener("click",()=>alert("More profile options will be added in Settings."));
     editForm.addEventListener("submit",async event=>{
