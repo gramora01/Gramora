@@ -554,7 +554,9 @@ function renderPosts(docs){
     const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.innerHTML="⟳ <span>Repost</span>";
     const originalId=isRepost?data.originalPostId:postDoc.id;
     const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,createdAt:data.originalCreatedAt}:data;
-    if(!isRepost)repost.addEventListener("click",()=>createPostRepost(originalId,originalData,repost));else{repost.disabled=true;repost.textContent="⟳ Reposted";}
+    if(!isRepost&&auth?.currentUser?.uid!==data.uid)repost.addEventListener("click",()=>createPostRepost(originalId,originalData,repost));
+    else if(isRepost){repost.disabled=true;repost.textContent="⟳ Reposted";}
+    else repost.hidden=true;
     actions.append(like,save,repost);
     if(!isRepost&&auth?.currentUser?.uid===data.uid){const del=document.createElement("button");del.className="delete-post";del.type="button";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(postDoc.id,del,()=>getDocsForFeed()));actions.append(del);}
     article.append(head,content,actions);feed.append(article);
