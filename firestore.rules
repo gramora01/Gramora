@@ -134,6 +134,28 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid;
     }
 
+    // TEXT STORIES (expire in 24 hours; clients hide expired stories)
+    match /stories/{storyId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'uid','displayName','text','songTitle','songArtist','songUrl','createdAt','expiresAt'
+        ])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 500
+        && request.resource.data.songTitle is string
+        && request.resource.data.songArtist is string
+        && request.resource.data.songUrl is string
+        && request.resource.data.songUrl.size() <= 500
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt <= request.time + duration.value(25, 'h');
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
     // DENY ALL OTHER COLLECTIONS
     match /{document=**} {
       allow read, write: if false;
