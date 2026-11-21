@@ -254,7 +254,12 @@ function renderStories(docs){
   const plus=document.createElement("i");plus.textContent="＋";createRing.append(plus);
   const createLabel=document.createElement("small");createLabel.textContent="Your story";
   create.append(createRing,createLabel);
-  create.addEventListener("click",()=>document.getElementById("storyCreateDialog")?.showModal());
+  create.addEventListener("click",()=>{
+    storyEditingId=null;storyForm?.reset();
+    document.getElementById("storyCreateDialog").querySelector("h2").textContent="Create a text story";
+    document.querySelector("#storyForm button[type=submit]").textContent="Share story";
+    document.getElementById("storyCreateDialog")?.showModal();
+  });
   strip.append(create);
   const latestByUser=new Map();
   docs.forEach(storyDoc=>{const uid=storyDoc.data().uid;if(uid&&!latestByUser.has(uid))latestByUser.set(uid,storyDoc);});
@@ -526,6 +531,17 @@ storyForm?.addEventListener("submit",async event=>{
   }finally{button.disabled=false;button.textContent=storyEditingId?"Save story":"Share story";}
 });
 document.getElementById("closeStoryCreate")?.addEventListener("click",()=>document.getElementById("storyCreateDialog").close());
+document.getElementById("storyCreateDialog")?.addEventListener("close",()=>{
+  if(storyEditingId){storyEditingId=null;storyForm?.reset();}
+  const heading=document.getElementById("storyCreateDialog").querySelector("h2");
+  if(heading)heading.textContent="Create a text story";
+  const submit=storyForm?.querySelector('button[type="submit"]');if(submit)submit.textContent="Share story";
+});
+document.getElementById("createDialog")?.addEventListener("close",()=>{
+  if(editingPostId){editingPostId=null;document.getElementById("caption").value="";}
+  const heading=document.querySelector("#createDialog h2");if(heading)heading.textContent="Create a post";
+  const submit=postForm?.querySelector(".publish");if(submit)submit.textContent="Share with the community ↗";
+});
 document.getElementById("closeStoryViewer")?.addEventListener("click",()=>{const audio=document.getElementById("storyViewerAudio");audio?.pause();document.getElementById("storyViewerDialog").close();});
 document.getElementById("storyViewerDialog")?.addEventListener("close",()=>{const audio=document.getElementById("storyViewerAudio");audio?.pause();});
 function startPostsFeed(user){
@@ -907,7 +923,7 @@ highlightForm?.addEventListener("submit",async event=>{
   if(!selected.length){status.textContent="Kam se kam ek story select karein.";return;}
   if(selected.length>20){status.textContent="Ek highlight mein maximum 20 stories select kar sakte hain.";return;}
   const stories=selected.map(id=>activeStoryDocs.find(item=>item.id===id)).filter(Boolean).map(item=>{
-    const d=item.data();return {storyId:item.id,uid:d.uid,displayName:d.displayName||"GRAMORA member",text:d.text||"",songTitle:d.songTitle||"",songArtist:d.songArtist||"",songUrl:d.songUrl||"",previewUrl:d.previewUrl||"",createdAt:d.createdAt||null};
+    const d=item.data();return {storyId:item.id,uid:d.uid,displayName:d.displayName||"GRAMORA member",text:d.text||"",background:d.background||POST_BACKGROUNDS[4],songTitle:d.songTitle||"",songArtist:d.songArtist||"",songUrl:d.songUrl||"",previewUrl:d.previewUrl||"",createdAt:d.createdAt||null};
   });
   if(!stories.length){status.textContent="Selected stories ab available nahi hain.";return;}
   button.disabled=true;status.textContent="Highlight save ho raha hai…";
