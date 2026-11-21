@@ -131,7 +131,7 @@ function renderPosts(docs){
   const feed=document.getElementById("feed");
   feed.replaceChildren();
   if(!docs.length){
-    const empty=document.createElement("div");empty.className="welcome-card";
+    const empty=document.createElement("div");empty.className="empty-welcome";
     const heading=document.createElement("h2");heading.textContent="Your feed is ready.";
     const note=document.createElement("p");note.textContent="Be the first to share a moment with the GRAMORA community.";
     empty.append(heading,note);feed.append(empty);return;
@@ -216,8 +216,10 @@ function renderProfile(user){
     const bioInput=document.createElement("input");bioInput.maxLength=160;bioInput.placeholder="Tell the community about yourself";
     const usernameText=document.createElement("p");usernameText.className="muted";
     const save=document.createElement("button");save.type="button";save.textContent="Save profile";
+    const logout=document.createElement("button");logout.type="button";logout.textContent="Log out";logout.style.marginLeft="10px";logout.style.background="#343741";
+    logout.addEventListener("click",()=>signOut(auth));
     const status=document.createElement("p");status.className="muted";
-    panel.append(avatar,heading,email,usernameText,nameLabel,nameInput,bioLabel,bioInput,save,status);feed.append(panel);
+    panel.append(avatar,heading,email,usernameText,nameLabel,nameInput,bioLabel,bioInput,save,logout,status);feed.append(panel);
     document.getElementById("viewTitle").textContent="Your profile";
     try{
       const snap=await getDoc(doc(db,"userProfiles",user.uid));
