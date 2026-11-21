@@ -159,6 +159,7 @@ function formatPostDate(timestamp){
 }
 document.addEventListener("gramora:view",event=>{
   activeView=event.detail;
+  if(activeView==="profile" && auth?.currentUser) loadProfilePage(auth.currentUser);
   if(activeView==="home"&&auth?.currentUser){
     getDocsForFeed();
   }
