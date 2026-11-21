@@ -160,10 +160,47 @@ function formatPostDate(timestamp){
 document.addEventListener("gramora:view",event=>{
   activeView=event.detail;
   if(activeView==="profile" && auth?.currentUser) loadProfilePage(auth.currentUser);
+  if(activeView==="explore" && auth?.currentUser) loadExplorePage(auth.currentUser);
   if(activeView==="home"&&auth?.currentUser){
     getDocsForFeed();
   }
 });
+
+async function loadExplorePage(user){
+  const feed=document.getElementById("feed");
+  feed.innerHTML='<section class="explore-page"><h2>Explore people</h2><p class="muted">Find people in the GRAMORA community.</p><input id="peopleSearch" type="search" placeholder="Search name or @username" autocomplete="off"><p id="exploreStatus" class="muted tiny">Loading community…</p><div id="peopleResults" class="people-results"></div></section>';
+  const input=feed.querySelector("#peopleSearch");
+  const status=feed.querySelector("#exploreStatus");
+  const results=feed.querySelector("#peopleResults");
+  try{
+    const snap=await getDocs(query(collection(db,"userProfiles"),limit(100)));
+    const people=snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>p.uid!==user.uid);
+    function render(term=""){
+      const q=term.trim().toLowerCase().replace(/^@/,"");
+      const matches=people.filter(p=>(p.displayName||"").toLowerCase().includes(q)||(p.username||"").toLowerCase().includes(q));
+      results.replaceChildren();
+      if(!matches.length){
+        const empty=document.createElement("p");empty.className="muted";empty.textContent=q?"No matching people found.":"No other profiles to show yet.";results.append(empty);return;
+      }
+      matches.slice(0,40).forEach(person=>{
+        const card=document.createElement("article");card.className="person-result";
+        const avatar=document.createElement("div");avatar.className="avatar";
+        avatar.textContent=(person.displayName||"G").trim().charAt(0).toUpperCase();
+        const info=document.createElement("div");info.className="person-info";
+        const name=document.createElement("b");name.textContent=person.displayName||"GRAMORA member";
+        const handle=document.createElement("small");handle.textContent=person.username?"@"+person.username:"GRAMORA member";
+        info.append(name,handle);card.append(avatar,info);results.append(card);
+      });
+      status.textContent=matches.length+" people found";
+    }
+    input.addEventListener("input",()=>render(input.value));
+    render();
+    if(!people.length)status.textContent="No other profiles yet. Invite friends to join GRAMORA.";
+  }catch(error){
+    console.error("Explore profiles error:",error);
+    status.textContent=error.code==="permission-denied"?"Explore needs signed-in profile read permission in Firestore Rules.":"Could not load people. Check your connection.";
+  }
+}
 async function getDocsForFeed(){
   try{
     const snapshot=await getDocs(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)));
