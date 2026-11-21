@@ -344,7 +344,7 @@ function openStoryViewer(docs,id){
     }
   }
   if(deleteButton){
-    deleteButton.hidden=data.uid!==auth?.currentUser?.uid;
+    deleteButton.hidden=!!dialog._highlightStories?.length||data.uid!==auth?.currentUser?.uid;
     deleteButton.onclick=async()=>{
       if(!confirm("Delete this story?"))return;
       deleteButton.disabled=true;deleteButton.textContent="Deleting…";
@@ -356,7 +356,7 @@ function openStoryViewer(docs,id){
   }
   renderStories(activeStoryDocs);
   loadStoryEngagement(id,data);
-  dialog.showModal();
+  if(!dialog.open)dialog.showModal();
   if(audio&&!audio.hidden){
     const playAttempt=audio.play();
     if(playAttempt&&typeof playAttempt.catch==="function")playAttempt.catch(()=>{});
