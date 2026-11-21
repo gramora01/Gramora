@@ -340,3 +340,57 @@ body.auth-required .mobile-nav{display:none!important}
 body.auth-pending .topbar,
 body.auth-pending .app-shell,
 body.auth-pending .mobile-nav{visibility:visible!important}
+
+
+/* LIGHT THEME: clear, visible and colorful interactive controls */
+body.light .top-action,
+body.light .top-heart,
+body.light .icon-btn,
+body.light .settings-btn{color:#292b35}
+body.light .icon-btn,
+body.light .settings-btn{background:#fff;border-color:#d9dce5;box-shadow:0 2px 8px rgba(25,35,60,.08)}
+body.light .nav:hover,
+body.light .nav.active{background:#e9eaff;color:#5146d8}
+body.light .nav.active .nav-icon{color:#5146d8}
+body.light .create-btn,
+body.light .publish,
+body.light .ig-save-profile{background:linear-gradient(135deg,#6558e8,#8b5cf6);color:#fff;box-shadow:0 5px 14px rgba(101,88,232,.22)}
+body.light .create-btn:hover,
+body.light .publish:hover,
+body.light .ig-save-profile:hover{filter:brightness(1.06);box-shadow:0 7px 18px rgba(101,88,232,.28)}
+body.light .outline-btn{background:#fff;color:#5146d8;border:1px solid #c9c5ff}
+body.light .post-actions button{color:#454957}
+body.light .post-actions button.liked{color:#e1306c}
+body.light .post-actions button.saved{color:#b7791f}
+body.light .ig-profile-actions button,
+body.light .follow-person-action{background:#e9eaff;color:#5146d8;border:1px solid #d5d2ff}
+body.light .ig-profile-actions button:first-child,
+body.light .follow-person-action:not(.is-following){background:#5146d8;color:#fff;border-color:#5146d8}
+body.light .follow-person-action.is-following{background:#f0f1f5;color:#363946;border-color:#dfe1e8}
+body.light .ig-profile-tabs button{color:#777b87}
+body.light .ig-profile-tabs button.active{color:#5146d8;border-bottom-color:#5146d8}
+body.light .ig-highlight>span{background:#fff;border-color:#d9dce5}
+body.light .ig-edit-form{background:#fff;border-color:#e1e3ea}
+body.light .ig-edit-form input,
+body.light .ig-edit-form textarea,
+body.light #postForm textarea{background:#fff;color:#242631;border-color:#d8dbe4}
+body.light .ig-edit-form label{color:#343744}
+body.light .follow-list-dialog,
+body.light dialog,
+body.light .settings-dialog{background:#fff;color:#242631;border-color:#dfe1e8;box-shadow:0 18px 55px rgba(30,35,60,.16)}
+body.light .follow-list-head{background:#fff;border-color:#e5e6ec}
+body.light .follow-list-close{color:#333746}
+body.light .follow-list-search{background:#f1f2f6;color:#252733}
+body.light .follow-person-action.is-following{background:#f0f1f5;color:#363946}
+body.light .settings-menu{border-color:#e3e5eb}
+body.light .settings-tab{color:#5b5f6b}
+body.light .settings-tab.active{background:#eeedff;color:#5146d8}
+body.light .settings-row{background:#f8f8fb;color:#292b35;border-color:#e2e4eb}
+body.light .settings-row small{color:#747987}
+body.light .settings-danger{background:#fff1f3;color:#c52d52;border-color:#f3c5d0}
+body.light .close-btn{background:#f0f1f5;color:#353846}
+body.light .mobile-nav{background:rgba(255,255,255,.97)!important;border-color:#e1e3ea!important;box-shadow:0 -5px 20px rgba(30,35,60,.06)}
+body.light .mobile-nav .nav{color:#515563!important}
+body.light .mobile-nav .nav.active{background:#eeedff!important;color:#5146d8!important}
+body.light .mobile-create{background:linear-gradient(135deg,#6558e8,#8b5cf6)!important;border-color:#6558e8!important;color:#fff!important;box-shadow:0 4px 12px rgba(101,88,232,.22)}
+body.light button:focus-visible{outline:3px solid rgba(101,88,232,.35);outline-offset:2px}
