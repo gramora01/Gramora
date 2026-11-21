@@ -189,16 +189,23 @@ async function loadExplorePage(user){
   const status=feed.querySelector("#exploreStatus");
   const results=feed.querySelector("#peopleResults");
   try{
-    const [profilesSnap,usernamesSnap]=await Promise.all([
+    const [profilesSnap,usernamesSnap,ownProfileSnap]=await Promise.all([
       getDocs(query(collection(db,"userProfiles"),limit(100))),
-      getDocs(query(collection(db,"usernames"),limit(500)))
+      getDocs(query(collection(db,"usernames"),limit(500))),
+      getDoc(doc(db,"userProfiles",user.uid))
     ]);
     const usernameByUid=new Map();
     usernamesSnap.docs.forEach(d=>{const data=d.data();if(data.uid)usernameByUid.set(data.uid,d.id);});
-    const people=profilesSnap.docs.map(d=>{
+    const profileMap=new Map();
+    profilesSnap.docs.forEach(d=>{
       const data=d.data(),uid=data.uid||d.id;
-      return {...data,id:d.id,uid,username:data.username||usernameByUid.get(uid)||""};
-    }).filter(p=>p.uid!==user.uid);
+      profileMap.set(uid,{...data,id:d.id,uid,username:data.username||usernameByUid.get(uid)||""});
+    });
+    if(ownProfileSnap.exists()){
+      const data=ownProfileSnap.data();
+      profileMap.set(user.uid,{...data,id:user.uid,uid:user.uid,username:data.username||usernameByUid.get(user.uid)||""});
+    }
+    const people=[...profileMap.values()];
     function render(term=""){
       const q=term.trim().toLowerCase().replace(/^@/,"");
       const matches=people.filter(p=>(p.displayName||"").toLowerCase().includes(q)||(p.username||"").toLowerCase().includes(q));
@@ -208,7 +215,7 @@ async function loadExplorePage(user){
         status.textContent="";return;
       }
       matches.slice(0,40).forEach(person=>{
-        const card=document.createElement("button");card.type="button";card.className="person-result";card.addEventListener("click",()=>loadPublicProfile(user,person.uid));
+        const card=document.createElement("button");card.type="button";card.className="person-result";card.addEventListener("click",()=>person.uid===user.uid?loadProfilePage(user):loadPublicProfile(user,person.uid));
         const avatar=document.createElement("div");avatar.className="avatar";
         if(person.photoURL){const img=document.createElement("img");img.src=person.photoURL;img.alt="";avatar.append(img);}else avatar.textContent=(person.displayName||"G").trim().charAt(0).toUpperCase();
         const info=document.createElement("div");info.className="person-info";
