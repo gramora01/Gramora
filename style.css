@@ -467,3 +467,25 @@ body.light .mobile-nav .nav[data-view="profile"] .mobile-profile-avatar{
 .story-dialog .dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 body.light .story-dialog{background:#fff;color:#202127;border-color:#e8e5e1}
 body.light .story-dialog textarea,body.light .story-dialog input{background:#f7f5f2;color:#202127;border-color:#e5e1dc}
+
+
+/* Instagram-like story rings, searchable music picker and in-story audio preview */
+.story-user-ring{padding:3px!important;border:2px solid transparent!important;background:linear-gradient(var(--surface,#171920),var(--surface,#171920)) padding-box,linear-gradient(135deg,#f58529,#dd2a7b 55%,#8134af) border-box!important}
+.story-user-ring.story-seen{background:linear-gradient(var(--surface,#171920),var(--surface,#171920)) padding-box,linear-gradient(#858995,#858995) border-box!important}
+.story-user-ring img,.story-add-ring img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+.story-add-ring{position:relative;overflow:visible!important}
+.story-add-ring i{position:absolute;right:-2px;bottom:-2px;width:19px;height:19px;border:2px solid var(--surface,#171920);border-radius:50%;display:grid;place-items:center;background:#2878ff;color:#fff;font-style:normal;font-size:15px;font-weight:800}
+.story-song-search-row{display:flex;gap:8px;align-items:center}
+.story-song-search-row input{min-width:0;flex:1}
+.story-song-search-row button{white-space:nowrap;padding:10px 14px}
+.story-song-results{display:flex;flex-direction:column;gap:6px;max-height:190px;overflow:auto}
+.story-song-result{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;border:1px solid var(--line,#393d48);border-radius:10px;background:var(--input-bg,#20232b);color:inherit;text-align:left;cursor:pointer}
+.story-song-result small{opacity:.7}
+.story-song-title{font-weight:800;text-align:center;margin:8px 0}
+.story-viewer-audio{display:block;width:100%;margin:8px 0 14px}
+.story-viewer-audio[hidden]{display:none}
+.story-viewer-actions{display:flex;justify-content:flex-end;margin-top:8px}
+.story-viewer-actions [hidden]{display:none}
+body.light .story-user-ring{background:linear-gradient(#fff,#fff) padding-box,linear-gradient(135deg,#f58529,#dd2a7b 55%,#8134af) border-box!important}
+body.light .story-user-ring.story-seen{background:linear-gradient(#fff,#fff) padding-box,linear-gradient(#858995,#858995) border-box!important}
+body.light .story-add-ring i{border-color:#fff}
