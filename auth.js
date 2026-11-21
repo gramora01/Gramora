@@ -72,6 +72,7 @@ function activateAccount(instance){
         updateMobileProfileAvatar(navProfileSnap.exists()?navProfileSnap.data():{},user);
         startPostsFeed(user);
         startStoriesFeed(user);
+        refreshNotificationBadge();
         // Keep the current screen open, but reload it using the newly active account.
         if(activeView==="profile") await loadProfilePage(user);
         else if(activeView==="explore") await loadExplorePage(user);
@@ -526,7 +527,7 @@ async function loadStoryEngagement(storyId,storyData){
           const ref=doc(db,"storyLikes",ownLikeId);
           const snap=await getDoc(ref);
           if(snap.exists())await deleteDoc(ref);
-          else await setDoc(ref,{storyId,storyUid:storyData.uid,uid:currentUid,createdAt:serverTimestamp()});
+          else {await setDoc(ref,{storyId,storyUid:storyData.uid,uid:currentUid,createdAt:serverTimestamp()});await createGramoraNotification(storyData.uid,"story_like","liked your story.",{storyId});}
           await loadStoryEngagement(storyId,storyData);
         }catch(error){console.error("Story like failed:",error);if(replyStatus)replyStatus.textContent="Like save nahi hua. Firestore Rules check karein.";}
         finally{likeButton.disabled=false;}
@@ -570,6 +571,7 @@ storyReplyForm?.addEventListener("submit",async event=>{
       displayName:profile.displayName||user.displayName||"GRAMORA member",
       text,createdAt:serverTimestamp()
     });
+    await createGramoraNotification(story.data().uid,"story_reply","replied to your story: "+text.slice(0,90),{storyId});
     input.value="";status.textContent="Reply bhej diya!";
     await loadStoryEngagement(storyId,story.data());
   }catch(error){console.error("Story reply failed:",error);status.textContent="Reply nahi bhej paye. Firestore Rules check karein.";}
@@ -785,6 +787,7 @@ async function togglePostLike(postId,postUid,button,countNode){
     else{
       const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};
       await setDoc(ref,{postId,postUid,uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",createdAt:serverTimestamp()});
+      await createGramoraNotification(postUid,"post_like","liked your post.",{postId});
     }
     await refreshPostLikeButton(postId,postUid,button,countNode);
   }catch(error){console.error("Post like failed:",error);alert(error.code==="permission-denied"?"Publish the latest Firestore Rules to enable post likes.":"Could not update like. Please try again.");}
@@ -1002,7 +1005,7 @@ async function loadPublicProfile(viewer,targetUid){
         if((await getDoc(doc(db,"follows",viewer.uid+"_"+targetUid))).exists()){
           await deleteDoc(doc(db,"follows",viewer.uid+"_"+targetUid));btn.textContent="Follow";
         }else{
-          await setDoc(doc(db,"follows",viewer.uid+"_"+targetUid),{followerUid:viewer.uid,followingUid:targetUid,createdAt:serverTimestamp()});btn.textContent="Following";
+          await setDoc(doc(db,"follows",viewer.uid+"_"+targetUid),{followerUid:viewer.uid,followingUid:targetUid,createdAt:serverTimestamp()});btn.textContent="Following";await createGramoraNotification(targetUid,"follow","started following you.");
         }
       }catch(err){console.error("Follow action:",err);alert("Follow action failed. Check that the latest Firestore Rules are published.");}
     });
@@ -1119,7 +1122,7 @@ document.getElementById("postDetailLike")?.addEventListener("click",()=>{if(curr
 document.getElementById("postCommentForm")?.addEventListener("submit",async event=>{
   event.preventDefault();const post=currentViewedPost,user=auth?.currentUser,input=document.getElementById("postCommentInput"),status=document.getElementById("postCommentStatus"),button=event.currentTarget.querySelector("button[type=submit]"),text=input.value.trim();
   if(!post||!user||!text)return;button.disabled=true;status.textContent="Comment post ho raha hai…";
-  try{const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};await addDoc(collection(db,"postComments"),{postId:post.id,postUid:post.uid,uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",text,createdAt:serverTimestamp()});input.value="";await loadPostEngagement(post,document.getElementById("postDetailDialog"));}
+  try{const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};await addDoc(collection(db,"postComments"),{postId:post.id,postUid:post.uid,uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",text,createdAt:serverTimestamp()});await createGramoraNotification(post.uid,"post_comment","commented on your post: "+text.slice(0,90),{postId:post.id});input.value="";await loadPostEngagement(post,document.getElementById("postDetailDialog"));}
   catch(error){console.error("Post comment failed:",error);status.textContent=error.code==="permission-denied"?"Latest Firestore Rules publish karein.":"Comment post nahi hua. Dobara try karein.";}finally{button.disabled=false;}
 });
 document.getElementById("closePostDetail")?.addEventListener("click",()=>document.getElementById("postDetailDialog").close());
