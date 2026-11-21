@@ -54,6 +54,4 @@ document.querySelectorAll(".nav").forEach(button=>button.addEventListener("click
 document.addEventListener("click",event=>{
   const like=event.target.closest(".like");
   if(like){like.classList.toggle("liked");like.innerHTML=like.classList.contains("liked")?"♥ <span>Liked</span>":"♡ <span>Like</span>";}
-  const save=event.target.closest(".save");
-  if(save){save.classList.toggle("saved");save.innerHTML=save.classList.contains("saved")?"✓ <span>Saved</span>":"▣ <span>Save</span>";}
 });
