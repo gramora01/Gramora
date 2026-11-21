@@ -298,6 +298,18 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // SAVED POSTS: each user manages only their own saved-post references.
+    match /savedPosts/{savedId} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.postId is string
+        && savedId == request.resource.data.postId + '_' + request.auth.uid
+        && request.resource.data.keys().hasOnly(['postId','uid','createdAt']);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
     // DENY ALL OTHER COLLECTIONS
     match /{document=**} {
       allow read, write: if false;
