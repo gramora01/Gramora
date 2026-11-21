@@ -326,6 +326,14 @@ async function loadProfilePage(user){
       console.error("Profile posts query failed:",postsError);
       postsLoadError=postsError.code==="permission-denied"?"Posts are blocked by Firestore Rules. Your profile is available, but posts cannot be shown until the posts read rule is published.":(postsError.message||"Posts could not be loaded.");
     }
+    let followersCount=0,followingCount=0;
+    try{
+      const [followersSnap,followingSnap]=await Promise.all([
+        getDocs(query(collection(db,"follows"),where("followingUid","==",user.uid),limit(100))),
+        getDocs(query(collection(db,"follows"),where("followerUid","==",user.uid),limit(100)))
+      ]);
+      followersCount=followersSnap.size; followingCount=followingSnap.size;
+    }catch(countError){console.error("Follow counts could not load:",countError);}
     const username=data.username||"gramora_user";
     const name=data.displayName||user.displayName||"GRAMORA member";
     const panel=document.createElement("section");panel.className="ig-profile";
@@ -334,7 +342,7 @@ async function loadProfilePage(user){
         <div class="ig-avatar-wrap"><div class="ig-profile-avatar">${data.photoURL?'<img alt="Profile photo" src="'+escapeHtml(data.photoURL)+'">':escapeHtml(name.charAt(0).toUpperCase())}</div></div>
         <div class="ig-profile-summary">
           <div class="ig-profile-username"><strong>${escapeHtml(username)}</strong><button class="profile-more" type="button" aria-label="More profile options">•••</button></div>
-          <div class="ig-profile-stats"><span><b>${posts.length}</b> posts</span><button class="stat-open" data-list="followers" type="button"><b>${Number(data.followersCount)||0}</b> followers</button><button class="stat-open" data-list="following" type="button"><b>${Number(data.followingCount)||0}</b> following</button></div>
+          <div class="ig-profile-stats"><span><b>${posts.length}</b> posts</span><button class="stat-open" data-list="followers" type="button"><b>${followersCount}</b> followers</button><button class="stat-open" data-list="following" type="button"><b>${followingCount}</b> following</button></div>
         </div>
       </div>
       <div class="ig-profile-bio"><b>${escapeHtml(name)}</b><p>${escapeHtml(data.bio||"")}</p></div>
@@ -349,6 +357,7 @@ async function loadProfilePage(user){
     const photoButton=document.createElement("label");photoButton.className="dp-add";photoButton.textContent="＋";photoButton.title="Add profile photo";
     const photoInput=document.createElement("input");photoInput.type="file";photoInput.accept="image/*";photoInput.className="dp-file";photoButton.append(photoInput);avatarWrap.append(photoButton);
     photoInput.addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith("image/")){alert("Choose an image file.");return;}if(file.size>4*1024*1024){alert("Image must be under 4 MB.");e.target.value="";return;}try{const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file);});const img=await new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=reject;image.src=dataUrl;});const canvas=document.createElement("canvas");canvas.width=320;canvas.height=320;const side=Math.min(img.width,img.height);canvas.getContext("2d").drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,320,320);const photoURL=canvas.toDataURL("image/jpeg",0.68);await setDoc(doc(db,"userProfiles",user.uid),{photoURL,updatedAt:serverTimestamp()},{merge:true});panel.querySelector(".ig-profile-avatar").innerHTML='<img alt="Profile photo" src="'+photoURL+'">';}catch(err){console.error(err);alert("Profile photo could not be saved. Check Firestore Rules and image size.");}finally{e.target.value="";}});
+    panel.querySelectorAll(".stat-open").forEach(btn=>btn.addEventListener("click",()=>showFollowList(user.uid,btn.dataset.list)));
     const grid=panel.querySelector(".ig-profile-grid");
     function showTab(tab){
       panel.querySelectorAll("[data-profile-tab]").forEach(b=>b.classList.toggle("active",b.dataset.profileTab===tab));
