@@ -197,10 +197,7 @@ postForm.addEventListener("submit",async event=>{
   }finally{button.disabled=false;button.innerHTML='Share with the community <span>↗</span>';}
 });
 function renderProfile(user){
-  const profileButton=document.querySelector('[data-view="profile"]');
-  if(!profileButton||profileButton.dataset.profileBound)return;
-  profileButton.dataset.profileBound="yes";
-  profileButton.addEventListener("click",()=>loadProfilePage(auth.currentUser||user));
+  // Navigation is handled once by script.js; do not attach a second profile click handler.
 }
 async function loadProfilePage(user){
   const feed=document.getElementById("feed");
