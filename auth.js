@@ -46,6 +46,7 @@ function activateAccount(instance){
   activeAuthUnsubscribe=onAuthStateChanged(selectedAuth,async user=>{
     if(auth!==selectedAuth || db!==selectedDb)return;
     gate.hidden=!!user;
+    document.body.classList.remove("auth-pending");
     document.body.classList.toggle("auth-required",!user);
     if(accountBar) accountBar.hidden=!user;
     if(user){
@@ -185,6 +186,7 @@ document.getElementById("forgotPassword").addEventListener("click",async()=>{
 
 
 if(auth) activateAccount({app,auth,db});
+else { document.body.classList.remove("auth-pending"); gate.hidden=false; document.body.classList.add("auth-required"); }
 
 function startPostsFeed(user){
   if(activeFeedUnsubscribe) activeFeedUnsubscribe();
@@ -518,7 +520,19 @@ async function loadProfilePage(user){
     showTab("posts");
     panel.querySelectorAll("[data-profile-tab]").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.profileTab)));
     const editForm=panel.querySelector(".ig-edit-form");
-    panel.querySelector(".profile-edit").addEventListener("click",()=>{editForm.hidden=!editForm.hidden;editForm.elements.displayName.value=name;editForm.elements.username.value=(data.username||username||"").replace(/^@/,"");editForm.elements.bio.value=data.bio||"";});
+    panel.querySelector(".profile-edit").addEventListener("click",()=>{
+      editForm.hidden=false;
+      editForm.elements.displayName.value=name;
+      editForm.elements.username.value=(data.username||username||"").replace(/^@/,"");
+      editForm.elements.bio.value=data.bio||"";
+      const editPage=document.createElement("section");
+      editPage.className="profile-edit-page";
+      editPage.innerHTML='<div class="profile-edit-page-head"><button type="button" class="profile-edit-back" aria-label="Back">←</button><h2>Edit profile</h2><span></span></div>';
+      editPage.append(editForm);
+      feed.replaceChildren(editPage);
+      editPage.querySelector(".profile-edit-back").addEventListener("click",()=>loadProfilePage(user));
+      editForm.scrollIntoView({block:"start"});
+    });
     panel.querySelector(".profile-share").addEventListener("click",async()=>{
       const url=location.href.split("#")[0]+"#profile";
       try{await navigator.clipboard.writeText(url);panel.querySelector(".profile-share").textContent="Link copied";}
@@ -551,7 +565,7 @@ async function loadProfilePage(user){
         data.displayName=newName;data.username=newUsername;data.bio=bio;
         panel.querySelector(".ig-profile-username strong").textContent="@"+newUsername;
         panel.querySelector(".ig-profile-bio").innerHTML="<b>"+escapeHtml(newName)+"</b><p>"+escapeHtml(bio)+"</p>";
-        status.textContent="Profile updated successfully.";
+        status.textContent="Profile updated successfully.";\n        await loadProfilePage(user);
       }catch(error){
         console.error("Profile update failed:",error);
         status.textContent=error.message==="GRAMORA_USERNAME_TAKEN"?"This username is already taken. Choose another.":error.code==="permission-denied"?"Firebase Rules need updating before usernames can be edited.":"Could not update profile: "+(error.message||"Try again.");
