@@ -192,8 +192,13 @@ service cloud.firestore {
         && request.resource.data.storyId is string
         && viewId == request.resource.data.storyId + '_' + request.auth.uid
         && request.resource.data.keys().hasOnly(['storyId','storyUid','uid','displayName','createdAt']);
-      allow read: if signedIn()
-        && (resource.data.storyUid == request.auth.uid || resource.data.uid == request.auth.uid);
+      // A viewer can check their deterministic document ID even before it exists.
+      // The story owner can read/list only views belonging to their own stories.
+      allow get: if signedIn()
+        && (viewId.matches('.*_' + request.auth.uid)
+          || resource.data.storyUid == request.auth.uid);
+      allow list: if signedIn()
+        && resource.data.storyUid == request.auth.uid;
       allow update: if false;
       allow delete: if false;
     }
