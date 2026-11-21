@@ -340,7 +340,8 @@ service cloud.firestore {
         && resource.data.toUid == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
         && request.resource.data.read is bool;
-      allow delete: if false;
+      allow delete: if signedIn()
+        && resource.data.toUid == request.auth.uid;
     }
 
     // DENY ALL OTHER COLLECTIONS
