@@ -158,6 +158,46 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // STORY HIGHLIGHTS: owner creates and manages saved story collections.
+    match /storyHighlights/{highlightId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 24
+        && request.resource.data.stories is list
+        && request.resource.data.stories.size() > 0
+        && request.resource.data.stories.size() <= 20
+        && request.resource.data.keys().hasOnly(['uid','title','coverText','stories','createdAt']);
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title','coverText','stories'])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 24
+        && request.resource.data.stories is list
+        && request.resource.data.stories.size() > 0
+        && request.resource.data.stories.size() <= 20;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // STORY VIEWS: viewers can create their own view; only story owner can list viewers.
+    match /storyViews/{viewId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.storyUid is string
+        && request.resource.data.storyUid != request.auth.uid
+        && request.resource.data.storyId is string
+        && viewId == request.resource.data.storyId + '_' + request.auth.uid
+        && request.resource.data.keys().hasOnly(['storyId','storyUid','uid','displayName','createdAt']);
+      allow read: if signedIn()
+        && (resource.data.storyUid == request.auth.uid || resource.data.uid == request.auth.uid);
+      allow update: if false;
+      allow delete: if false;
+    }
+
     // STORY LIKES
     match /storyLikes/{likeId} {
       allow read: if signedIn();
