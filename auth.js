@@ -1364,6 +1364,9 @@ document.getElementById("settingsPassword")?.addEventListener("click",async()=>{
   try{await sendPasswordResetEmail(auth,email);document.getElementById("settingsStatus").textContent="Password reset link sent to "+email;}
   catch(error){document.getElementById("settingsStatus").textContent=authError(error.code);}
 });
+document.getElementById("settingsSaved")?.addEventListener("click",()=>{
+  settingsDialog.close();document.querySelector('.mobile-nav [data-view="saved"], .sidebar [data-view="saved"]')?.click();
+});
 document.getElementById("settingsProfile")?.addEventListener("click",()=>{
   settingsDialog.close();document.querySelector('.mobile-nav [data-view="profile"], .sidebar [data-view="profile"]')?.click();
 });
