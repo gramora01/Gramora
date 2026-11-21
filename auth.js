@@ -175,6 +175,13 @@ document.addEventListener("gramora:view",event=>{
   }
 });
 
+async function getUsernameForUid(uid,profileData={}){
+  if(profileData.username)return profileData.username;
+  try{
+    const snap=await getDocs(query(collection(db,"usernames"),where("uid","==",uid),limit(1)));
+    return snap.empty?"":snap.docs[0].id;
+  }catch(error){console.warn("Username lookup failed:",error);return "";}
+}
 async function loadExplorePage(user){
   const feed=document.getElementById("feed");
   feed.innerHTML='<section class="explore-page"><h2>Explore people</h2><p class="muted">Find people in the GRAMORA community.</p><input id="peopleSearch" type="search" placeholder="Search name or @username" autocomplete="off"><p id="exploreStatus" class="muted tiny">Loading community…</p><div id="peopleResults" class="people-results"></div></section>';
@@ -182,14 +189,23 @@ async function loadExplorePage(user){
   const status=feed.querySelector("#exploreStatus");
   const results=feed.querySelector("#peopleResults");
   try{
-    const snap=await getDocs(query(collection(db,"userProfiles"),limit(100)));
-    const people=snap.docs.map(d=>({id:d.id,...d.data(),uid:d.data().uid||d.id})).filter(p=>p.uid!==user.uid);
+    const [profilesSnap,usernamesSnap]=await Promise.all([
+      getDocs(query(collection(db,"userProfiles"),limit(100))),
+      getDocs(query(collection(db,"usernames"),limit(500)))
+    ]);
+    const usernameByUid=new Map();
+    usernamesSnap.docs.forEach(d=>{const data=d.data();if(data.uid)usernameByUid.set(data.uid,d.id);});
+    const people=profilesSnap.docs.map(d=>{
+      const data=d.data(),uid=data.uid||d.id;
+      return {...data,id:d.id,uid,username:data.username||usernameByUid.get(uid)||""};
+    }).filter(p=>p.uid!==user.uid);
     function render(term=""){
       const q=term.trim().toLowerCase().replace(/^@/,"");
       const matches=people.filter(p=>(p.displayName||"").toLowerCase().includes(q)||(p.username||"").toLowerCase().includes(q));
       results.replaceChildren();
       if(!matches.length){
-        const empty=document.createElement("p");empty.className="muted";empty.textContent=q?"No matching people found.":"No other profiles to show yet.";results.append(empty);return;
+        const empty=document.createElement("p");empty.className="muted";empty.textContent=q?"No matching people found.":"No other profiles to show yet.";results.append(empty);
+        status.textContent="";return;
       }
       matches.slice(0,40).forEach(person=>{
         const card=document.createElement("button");card.type="button";card.className="person-result";card.addEventListener("click",()=>loadPublicProfile(user,person.uid));
@@ -210,7 +226,6 @@ async function loadExplorePage(user){
     status.textContent=error.code==="permission-denied"?"Explore needs signed-in profile read permission in Firestore Rules.":"Could not load people. Check your connection.";
   }
 }
-
 async function loadPublicProfile(viewer,targetUid){
   const feed=document.getElementById("feed");
   if(targetUid===viewer.uid){loadProfilePage(viewer);return;}
@@ -219,6 +234,7 @@ async function loadPublicProfile(viewer,targetUid){
     const snap=await getDoc(doc(db,"userProfiles",targetUid));
     if(!snap.exists()){feed.textContent="Profile unavailable.";return;}
     const p=snap.data();
+    p.username=await getUsernameForUid(targetUid,p);
     let posts=[],followersCount=0,followingCount=0,already=false;
     const results=await Promise.allSettled([
       getDocs(query(collection(db,"posts"),where("uid","==",targetUid),limit(60))),
@@ -277,6 +293,7 @@ async function showFollowList(uid,type){
       if(!personUid)continue;
       const p=await getDoc(doc(db,"userProfiles",personUid));if(!p.exists())continue;
       const data=p.data();
+      data.username=await getUsernameForUid(personUid,data);
       const isFollowing= (await getDoc(doc(db,"follows",viewer.uid+"_"+personUid))).exists();
       const row=document.createElement("div");row.className="follow-person-row";
       const profile=document.createElement("button");profile.type="button";profile.className="follow-person-profile";
