@@ -28,6 +28,7 @@ function showPlaceholder(view,title){
 }
 document.querySelectorAll(".nav").forEach(button=>button.addEventListener("click",()=>{
   const view=button.dataset.view;
+  if(!view)return;
   document.body.classList.toggle("profile-active",view==="profile");
   document.querySelectorAll(".nav").forEach(item=>item.classList.toggle("active",item.dataset.view===view));
   const titles={home:"Your feed",explore:"Explore",messages:"Messages",saved:"Saved posts",profile:"My profile"};
