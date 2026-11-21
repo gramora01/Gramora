@@ -76,7 +76,7 @@ function activateAccount(instance){
         if(activeView==="profile") await loadProfilePage(user);
         else if(activeView==="explore") await loadExplorePage(user);
         else if(activeView==="home") await getDocsForFeed();
-        else if(activeView==="saved") showFeedMessage("Saved posts for this account will appear here.");
+        else if(activeView==="saved") await loadSavedPosts();
       }catch(error){console.error(error);showMessage("Could not load your profile. Check Firestore Security Rules.",true);}
     }
     renderAccountSwitcher();
@@ -561,6 +561,57 @@ function showFeedMessage(text){
   feed.replaceChildren();
   const p=document.createElement("p");p.className="muted";p.textContent=text;feed.append(p);
 }
+async function refreshPostSaveButton(postId,button){
+  const user=auth?.currentUser;if(!user||!button)return;
+  try{
+    const snap=await getDoc(doc(db,"savedPosts",postId+"_"+user.uid));
+    if(!button.isConnected)return;
+    button.classList.toggle("saved",snap.exists());
+    button.innerHTML=snap.exists()?"✓ <span>Saved</span>":"▣ <span>Save</span>";
+    button.setAttribute("aria-pressed",String(snap.exists()));
+  }catch(error){console.warn("Saved post state unavailable:",error);}
+}
+async function togglePostSave(postId,button){
+  const user=auth?.currentUser;if(!user)return;
+  button.disabled=true;
+  try{
+    const ref=doc(db,"savedPosts",postId+"_"+user.uid),snap=await getDoc(ref);
+    if(snap.exists())await deleteDoc(ref);
+    else await setDoc(ref,{postId,uid:user.uid,createdAt:serverTimestamp()});
+    await refreshPostSaveButton(postId,button);
+    if(activeView==="saved"&&snap.exists())await loadSavedPosts();
+  }catch(error){
+    console.error("Save post failed:",error);
+    alert(error.code==="permission-denied"?"Saved Posts ke liye latest Firestore Rules publish karein.":"Post save nahi hui. Dobara try karein.");
+  }finally{button.disabled=false;}
+}
+async function loadSavedPosts(){
+  const user=auth?.currentUser;if(!user)return;
+  const feed=document.getElementById("feed");
+  showFeedMessage("Loading your saved posts…");
+  try{
+    const savedSnap=await getDocs(query(collection(db,"savedPosts"),where("uid","==",user.uid),limit(200)));
+    const savedItems=await Promise.all(savedSnap.docs.map(async savedDoc=>{
+      const postId=savedDoc.data().postId;
+      if(!postId)return null;
+      const postSnap=await getDoc(doc(db,"posts",postId));
+      return postSnap.exists()?{id:postSnap.id,data:()=>postSnap.data(),_savedAt:savedDoc.data().createdAt}:null;
+    }));
+    if(activeView!=="saved")return;
+    const posts=savedItems.filter(Boolean).sort((x,y)=>(y._savedAt?.toMillis?.()||0)-(x._savedAt?.toMillis?.()||0));
+    if(!posts.length){
+      feed.replaceChildren();
+      const empty=document.createElement("div");empty.className="empty-welcome";
+      const heading=document.createElement("h2");heading.textContent="Your saved posts will live here.";
+      const note=document.createElement("p");note.textContent="Feed mein kisi post par Save dabayein. Woh yahan mil jayegi.";
+      empty.append(heading,note);feed.append(empty);return;
+    }
+    renderPosts(posts);
+  }catch(error){
+    console.error("Saved posts load failed:",error);
+    showFeedMessage(error.code==="permission-denied"?"Saved Posts ke liye latest Firestore Rules publish karein.":"Saved posts load nahi ho payi. Dobara try karein.");
+  }
+}
 async function openPersonProfile(uid){
   const viewer=auth?.currentUser;if(!viewer||!uid)return;
   if(uid===viewer.uid)await loadProfilePage(viewer);else await loadPublicProfile(viewer,uid);
@@ -677,6 +728,8 @@ function renderPosts(docs){
     const save=document.createElement("button");save.className="save";save.type="button";save.innerHTML="▣ <span>Save</span>";
     const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.innerHTML="⟳ <span>Repost</span>";
     const originalId=isRepost?data.originalPostId:postDoc.id;
+    save.addEventListener("click",()=>togglePostSave(originalId,save));
+    refreshPostSaveButton(originalId,save);
     const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,background:data.originalBackground,createdAt:data.originalCreatedAt}:data;
     const likeCount=document.createElement("button");likeCount.type="button";likeCount.className="post-like-count";likeCount.textContent="Loading likes…";
     const comment=document.createElement("button");comment.className="post-comment-open";comment.type="button";comment.innerHTML="▢ <span>Comment</span>";
@@ -722,6 +775,7 @@ document.addEventListener("gramora:view",event=>{
   activeView=event.detail;
   if(activeView==="profile" && auth?.currentUser) loadProfilePage(auth.currentUser);
   if(activeView==="explore" && auth?.currentUser) loadExplorePage(auth.currentUser);
+  if(activeView==="saved" && auth?.currentUser) loadSavedPosts();
   if(activeView==="home"&&auth?.currentUser){
     getDocsForFeed();
   }
