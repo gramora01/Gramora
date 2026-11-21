@@ -429,3 +429,24 @@ body.light .settings-head .eyebrow{color:#e1306c!important}
 .mobile-nav .nav[data-view="messages"] small{display:block!important;white-space:nowrap!important;line-height:12px!important}
 .mobile-nav .nav[data-view="messages"].active .nav-icon{filter:drop-shadow(0 0 7px rgba(182,92,255,.75))}
 body.light .mobile-nav .nav[data-view="messages"] .nav-icon{filter:drop-shadow(0 2px 5px rgba(126,75,220,.22))}
+
+
+/* Instagram-style profile photo in the mobile bottom navigation */
+.mobile-nav .nav[data-view="profile"]{gap:2px!important}
+.mobile-nav .nav[data-view="profile"] .mobile-profile-avatar{
+  width:29px!important;height:29px!important;min-width:29px!important;flex:0 0 29px!important;
+  display:grid!important;place-items:center!important;overflow:hidden!important;border-radius:50%!important;
+  padding:2px!important;border:2px solid transparent!important;
+  background:linear-gradient(#171920,#171920) padding-box,linear-gradient(135deg,#f58529,#dd2a7b 55%,#8134af) border-box!important;
+  color:#fff!important;font-size:12px!important;font-weight:800!important;line-height:1!important;
+}
+.mobile-nav .nav[data-view="profile"] .mobile-profile-avatar img{
+  display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;border-radius:50%!important;
+}
+.mobile-nav .nav[data-view="profile"] small{display:block!important;white-space:nowrap!important;line-height:12px!important}
+.mobile-nav .nav[data-view="profile"].active .mobile-profile-avatar{
+  box-shadow:0 0 0 2px rgba(225,48,108,.2),0 0 10px rgba(221,42,123,.25)!important;
+}
+body.light .mobile-nav .nav[data-view="profile"] .mobile-profile-avatar{
+  background:linear-gradient(#fff,#fff) padding-box,linear-gradient(135deg,#f58529,#dd2a7b 55%,#8134af) border-box!important;
+}
