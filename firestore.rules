@@ -146,7 +146,6 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.postId is string
         && request.resource.data.postUid is string
-        && request.resource.data.postUid != request.auth.uid
         && likeId == request.resource.data.postId + '_' + request.auth.uid
         && request.resource.data.keys().hasOnly(['postId','postUid','uid','displayName','createdAt']);
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
