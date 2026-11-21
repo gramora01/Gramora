@@ -334,3 +334,9 @@ body.auth-required .mobile-nav{display:none!important}
  .profile-edit-page{min-height:calc(100dvh - 160px)}
  .profile-edit-page .ig-edit-form{margin:8px 12px;padding:14px 4px}
 }
+
+
+/* Emergency recovery: keep the app visible while Firebase restores auth. */
+body.auth-pending .topbar,
+body.auth-pending .app-shell,
+body.auth-pending .mobile-nav{visibility:visible!important}
