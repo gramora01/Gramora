@@ -274,6 +274,37 @@ function renderStories(docs){
     if(createRing.isConnected&&!createRing.querySelector("i")){const plusIcon=document.createElement("i");plusIcon.textContent="＋";createRing.append(plusIcon);}
   });
 }
+async function recordStoryView(storyId,storyData){
+  const user=auth?.currentUser;if(!user||user.uid===storyData.uid)return;
+  try{
+    const ref=doc(db,"storyViews",storyId+"_"+user.uid);
+    const existing=await getDoc(ref);
+    if(!existing.exists()){
+      const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
+      const profile=profileSnap.exists()?profileSnap.data():{};
+      await setDoc(ref,{storyId,storyUid:storyData.uid,uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",createdAt:serverTimestamp()});
+    }
+  }catch(error){console.error("Story view could not be recorded:",error);}
+}
+async function loadStoryViewers(storyId,storyData){
+  const section=document.getElementById("storyViewerViews");
+  const list=document.getElementById("storyViewerViewList");
+  const button=document.getElementById("storyViewerViewToggle");
+  if(!section||!list||!button)return;
+  const isOwner=storyData.uid===auth?.currentUser?.uid;
+  section.hidden=!isOwner;
+  list.hidden=true;list.replaceChildren();
+  if(!isOwner)return;
+  try{
+    const snap=await getDocs(query(collection(db,"storyViews"),where("storyId","==",storyId),where("storyUid","==",auth.currentUser.uid)));
+    button.textContent="Viewers · "+snap.size;
+    snap.docs.sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(item=>{
+      const row=document.createElement("p");row.className="story-viewer-person";
+      row.textContent=item.data().displayName||"GRAMORA member";list.append(row);
+    });
+    if(!snap.size)list.textContent="Abhi kisi ne story nahi dekhi.";
+  }catch(error){console.error("Story viewers load failed:",error);button.textContent="Viewers";list.textContent="Viewers load nahi ho paye. Firestore Rules check karein.";}
+}
 function openStoryViewer(docs,id){
   const storyDoc=docs.find(item=>item.id===id);if(!storyDoc)return;
   const data=storyDoc.data(),dialog=document.getElementById("storyViewerDialog");
@@ -285,6 +316,20 @@ function openStoryViewer(docs,id){
   content.textContent=data.text||"";
   byline.textContent=(data.displayName||"GRAMORA member")+" · "+formatPostDate(data.createdAt);
   markStorySeen(id);
+  recordStoryView(id,data);
+  loadStoryViewers(id,data);
+  const highlightNav=document.getElementById("highlightStoryNav");
+  if(highlightNav){
+    const index=Number(dialog.dataset.highlightIndex||0),items=dialog._highlightStories||[];
+    highlightNav.hidden=!items.length;
+    const prev=document.getElementById("highlightStoryPrev"),next=document.getElementById("highlightStoryNext");
+    if(prev)prev.disabled=index<=0;
+    if(next)next.disabled=index>=items.length-1;
+    if(items.length){
+      if(prev)prev.onclick=()=>{dialog.dataset.highlightIndex=String(index-1);openStoryViewer(items,items[index-1].id);};
+      if(next)next.onclick=()=>{dialog.dataset.highlightIndex=String(index+1);openStoryViewer(items,items[index+1].id);};
+    }
+  }
   song.replaceChildren();
   const audio=document.getElementById("storyViewerAudio");
   if(audio){audio.pause();audio.removeAttribute("src");audio.load();audio.hidden=true;}
@@ -717,6 +762,71 @@ postForm.addEventListener("submit",async event=>{
 function renderProfile(user){
   // Navigation is handled once by script.js; do not attach a second profile click handler.
 }
+async function loadProfileHighlights(user,panel){
+  const strip=panel.querySelector(".ig-highlights");if(!strip)return;
+  try{
+    const snap=await getDocs(query(collection(db,"storyHighlights"),where("uid","==",user.uid)));
+    snap.docs.sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(highlightDoc=>{
+      const data=highlightDoc.data(),button=document.createElement("button");button.type="button";button.className="ig-highlight saved-highlight";
+      const cover=document.createElement("span");cover.textContent=(data.coverText||data.title||"G").slice(0,2).toUpperCase();
+      const label=document.createElement("small");label.textContent=data.title||"Highlight";
+      button.append(cover,label);
+      button.addEventListener("click",()=>{
+        const stories=(data.stories||[]).map((item,index)=>({id:item.storyId||highlightDoc.id+"_"+index,data:()=>item}));
+        if(!stories.length)return;
+        const dialog=document.getElementById("storyViewerDialog");
+        dialog._highlightStories=stories;dialog.dataset.highlightIndex="0";
+        openStoryViewer(stories,stories[0].id);
+      });
+      strip.append(button);
+    });
+  }catch(error){console.error("Highlights load failed:",error);}
+}
+function openHighlightCreator(user){
+  const dialog=document.getElementById("highlightCreateDialog"),list=document.getElementById("highlightStoryChoices"),status=document.getElementById("highlightCreateStatus");
+  if(!dialog||!list)return;
+  list.replaceChildren();status.textContent="";
+  const own=activeStoryDocs.filter(item=>item.data().uid===user.uid);
+  if(!own.length){status.textContent="Abhi aapki koi active story nahi hai. Pehle ek story lagayein."; }
+  own.forEach(item=>{
+    const data=item.data(),label=document.createElement("label");label.className="highlight-choice";
+    const check=document.createElement("input");check.type="checkbox";check.value=item.id;
+    const preview=document.createElement("span");preview.textContent=(data.text||"Story").slice(0,90);
+    label.append(check,preview);list.append(label);
+  });
+  dialog.showModal();
+}
+const highlightForm=document.getElementById("highlightCreateForm");
+highlightForm?.addEventListener("submit",async event=>{
+  event.preventDefault();
+  const user=auth?.currentUser;if(!user)return;
+  const title=highlightForm.elements.title.value.trim();
+  const selected=[...document.querySelectorAll("#highlightStoryChoices input:checked")].map(input=>input.value);
+  const status=document.getElementById("highlightCreateStatus"),button=highlightForm.querySelector('button[type="submit"]');
+  if(!title||title.length>24){status.textContent="Highlight name 1–24 characters ka rakhein.";return;}
+  if(!selected.length){status.textContent="Kam se kam ek story select karein.";return;}
+  if(selected.length>20){status.textContent="Ek highlight mein maximum 20 stories select kar sakte hain.";return;}
+  const stories=selected.map(id=>activeStoryDocs.find(item=>item.id===id)).filter(Boolean).map(item=>{
+    const d=item.data();return {storyId:item.id,uid:d.uid,displayName:d.displayName||"GRAMORA member",text:d.text||"",songTitle:d.songTitle||"",songArtist:d.songArtist||"",songUrl:d.songUrl||"",previewUrl:d.previewUrl||"",createdAt:d.createdAt||null};
+  });
+  if(!stories.length){status.textContent="Selected stories ab available nahi hain.";return;}
+  button.disabled=true;status.textContent="Highlight save ho raha hai…";
+  try{
+    await addDoc(collection(db,"storyHighlights"),{uid:user.uid,title,coverText:stories[0].text.slice(0,2)||title.slice(0,2),stories,createdAt:serverTimestamp()});
+    highlightForm.reset();document.getElementById("highlightCreateDialog").close();
+    await loadProfilePage(user);
+  }catch(error){console.error("Highlight create failed:",error);status.textContent=error.code==="permission-denied"?"Firestore Rules publish karein.":"Highlight save nahi hua. Dobara try karein.";}
+  finally{button.disabled=false;}
+});
+document.getElementById("closeHighlightCreate")?.addEventListener("click",()=>document.getElementById("highlightCreateDialog").close());
+document.getElementById("storyViewerViewToggle")?.addEventListener("click",()=>{
+  const list=document.getElementById("storyViewerViewList");if(list)list.hidden=!list.hidden;
+});
+document.getElementById("storyViewerDialog")?.addEventListener("close",()=>{
+  const dialog=document.getElementById("storyViewerDialog");dialog._highlightStories=[];dialog.dataset.highlightIndex="";
+  const nav=document.getElementById("highlightStoryNav");if(nav)nav.hidden=true;
+});
+
 async function loadProfilePage(user){
   const feed=document.getElementById("feed");
   const title=document.getElementById("viewTitle");
@@ -807,7 +917,8 @@ async function loadProfilePage(user){
       catch{panel.querySelector(".profile-share").textContent=url;}
     });
     panel.querySelector(".profile-add").addEventListener("click",()=>{document.querySelector('.mobile-nav [data-view="explore"], .sidebar [data-view="explore"]')?.click();});
-    panel.querySelector(".add-highlight").addEventListener("click",()=>alert("Story Highlights will be available when Stories launch."));
+    panel.querySelector(".add-highlight").addEventListener("click",()=>openHighlightCreator(user));
+    loadProfileHighlights(user,panel);
     panel.querySelector(".profile-more").addEventListener("click",()=>alert("More profile options will be added in Settings."));
     editForm.addEventListener("submit",async event=>{
       event.preventDefault();
