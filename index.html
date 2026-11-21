@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=66">
-  <link rel="stylesheet" href="auth.css?v=59">
+  <link rel="stylesheet" href="style.css?v=67">
+  <link rel="stylesheet" href="auth.css?v=60">
 </head>
-<body>
+<body class="auth-pending">
   <header class="topbar">
     <button id="topCreate" class="top-action" type="button" aria-label="Create post">＋</button>
     <a class="brand" href="#" aria-label="GRAMORA home"><span class="brand-mark">g.</span><span>gramora</span></a>
@@ -89,7 +89,7 @@
     <p id="addAccountStatus" class="auth-message" role="status"></p>
   </dialog>
 
-  <div id="authGate" class="auth-gate">
+  <div id="authGate" class="auth-gate" hidden>
     <section class="auth-card">
       <div class="auth-brand"><span class="brand-mark">g.</span><span>gramora</span></div>
       <p class="eyebrow">YOUR WORLD. YOUR PEOPLE.</p>
