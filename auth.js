@@ -1264,7 +1264,7 @@ async function loadProfilePage(user){
       <div class="ig-profile-top">
         <div class="ig-avatar-wrap"><div class="ig-profile-avatar">${data.photoURL?'<img alt="Profile photo" src="'+escapeHtml(data.photoURL)+'">':escapeHtml(name.charAt(0).toUpperCase())}</div></div>
         <div class="ig-profile-summary">
-          <div class="ig-profile-username"><strong>${escapeHtml(username)}</strong><button class="profile-more" type="button" aria-label="More profile options">•••</button></div>
+          <div class="ig-profile-username"><strong>${escapeHtml(username)}</strong></div>
           <div class="ig-profile-stats"><span class="profile-stat"><b>${posts.length}</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>${followersCount}</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>${followingCount}</b><small>following</small></button></div>
         </div>
       </div>
