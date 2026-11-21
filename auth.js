@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, Timestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs, where, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, Timestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs, where, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
@@ -312,6 +312,7 @@ function openStoryViewer(docs,id){
   const song=document.getElementById("storyViewerSong");
   const deleteButton=document.getElementById("storyViewerDelete");
   content.textContent=data.text||"";
+  content.style.background=data.background||POST_BACKGROUNDS[4];
   byline.textContent=(data.displayName||"GRAMORA member")+" · "+formatPostDate(data.createdAt);
   markStorySeen(id);
   recordStoryView(id,data);
@@ -340,6 +341,19 @@ function openStoryViewer(docs,id){
       const link=document.createElement("a");link.className="story-song-link";link.textContent="Open song ↗";
       link.href=data.songUrl;link.target="_blank";link.rel="noopener noreferrer";song.append(link);
     }
+  }
+  const editStoryButton=document.getElementById("storyViewerEdit");
+  if(editStoryButton){
+    editStoryButton.hidden=!!dialog._highlightStories?.length||data.uid!==auth?.currentUser?.uid;
+    editStoryButton.onclick=()=>{
+      if(data.uid!==auth?.currentUser?.uid)return;
+      storyEditingId=id;document.getElementById("storyText").value=data.text||"";
+      const bg=data.background||POST_BACKGROUNDS[4];document.getElementById("storyBackground").value=bg;document.getElementById("storyText").style.background=bg;
+      document.querySelectorAll("#storyBackgroundPicker [data-bg]").forEach(button=>button.classList.toggle("selected",button.dataset.bg===bg));
+      document.getElementById("storySongTitle").value=data.songTitle||"";document.getElementById("storySongArtist").value=data.songArtist||"";document.getElementById("storySongUrl").value=data.songUrl||"";document.getElementById("storySongPreviewUrl").value=data.previewUrl||"";
+      document.getElementById("storyCreateDialog").querySelector("h2").textContent="Edit your story";document.querySelector("#storyForm button[type=submit]").textContent="Save story";
+      dialog.close();document.getElementById("storyCreateDialog").showModal();
+    };
   }
   if(deleteButton){
     deleteButton.hidden=!!dialog._highlightStories?.length||data.uid!==auth?.currentUser?.uid;
@@ -483,6 +497,7 @@ storyForm?.addEventListener("submit",async event=>{
   const status=document.getElementById("storyCreateStatus");
   const button=storyForm.querySelector('button[type="submit"]');
   const text=document.getElementById("storyText").value.trim();
+  const background=document.getElementById("storyBackground").value||POST_BACKGROUNDS[4];
   const songTitle=document.getElementById("storySongTitle").value.trim();
   const songArtist=document.getElementById("storySongArtist").value.trim();
   const songUrl=document.getElementById("storySongUrl").value.trim();
@@ -492,23 +507,23 @@ storyForm?.addEventListener("submit",async event=>{
   if(songUrl&&!/^https:\/\/(open\.spotify\.com|music\.apple\.com|music\.youtube\.com|www\.youtube\.com|youtu\.be)\//i.test(songUrl)){
     status.textContent="Valid Apple Music, Spotify ya YouTube song link add karein.";return;
   }
-  button.disabled=true;button.textContent="Sharing…";status.textContent="Story publish ho rahi hai…";
+  button.disabled=true;button.textContent=storyEditingId?"Saving…":"Sharing…";status.textContent=storyEditingId?"Story update ho rahi hai…":"Story publish ho rahi hai…";
   try{
     const user=auth.currentUser;
     const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
     const profile=profileSnap.exists()?profileSnap.data():{};
-    await addDoc(collection(db,"stories"),{
-      uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",
-      text,songTitle,songArtist,songUrl,previewUrl,
-      createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)
-    });
-    storyForm.reset();if(selectedPreview)selectedPreview.value="";
-    songSearchResults?.replaceChildren();status.textContent="Story share ho gayi!";
-    document.getElementById("storyCreateDialog").close();
+    if(storyEditingId){
+      await updateDoc(doc(db,"stories",storyEditingId),{text,background});storyEditingId=null;status.textContent="Story update ho gayi!";
+    }else{
+      await addDoc(collection(db,"stories"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",text,songTitle,songArtist,songUrl,previewUrl,background,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)});
+      status.textContent="Story share ho gayi!";
+    }
+    storyForm.reset();if(selectedPreview)selectedPreview.value="";songSearchResults?.replaceChildren();
+    document.getElementById("storyCreateDialog").close();document.getElementById("storyCreateDialog").querySelector("h2").textContent="Create a text story";
   }catch(error){
     console.error("Story publish failed:",error);
     status.textContent=error.code==="permission-denied"?"Firestore Rules publish karein.":"Story publish nahi hui: "+(error.message||"Try again.");
-  }finally{button.disabled=false;button.textContent="Share story";}
+  }finally{button.disabled=false;button.textContent=storyEditingId?"Save story":"Share story";}
 });
 document.getElementById("closeStoryCreate")?.addEventListener("click",()=>document.getElementById("storyCreateDialog").close());
 document.getElementById("closeStoryViewer")?.addEventListener("click",()=>{const audio=document.getElementById("storyViewerAudio");audio?.pause();document.getElementById("storyViewerDialog").close();});
@@ -547,18 +562,21 @@ function renderPosts(docs){
     const name=document.createElement("b");name.textContent=authorName||"GRAMORA member";
     const meta=document.createElement("small");meta.textContent=(authorUsername?"@"+authorUsername+" · ":"")+formatPostDate(isRepost?data.originalCreatedAt:data.createdAt);
     identity.append(name,meta);head.append(avatar,identity);head.addEventListener("click",()=>{const viewer=auth?.currentUser;if(viewer&&authorUid)loadPublicProfile(viewer,authorUid);});
-    const content=document.createElement("p");content.className="post-text";content.textContent=isRepost?(data.originalText||""):(data.text||"");
+    const content=document.createElement("p");content.className="post-text post-text-card";content.textContent=isRepost?(data.originalText||""):(data.text||"");content.style.background=isRepost?(data.originalBackground||POST_BACKGROUNDS[4]):(data.background||POST_BACKGROUNDS[4]);
     const actions=document.createElement("div");actions.className="post-actions";
     const like=document.createElement("button");like.className="like";like.type="button";like.innerHTML="♡ <span>Like</span>";
     const save=document.createElement("button");save.className="save";save.type="button";save.innerHTML="▣ <span>Save</span>";
     const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.innerHTML="⟳ <span>Repost</span>";
     const originalId=isRepost?data.originalPostId:postDoc.id;
-    const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,createdAt:data.originalCreatedAt}:data;
+    const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,background:data.originalBackground,createdAt:data.originalCreatedAt}:data;
     if(!isRepost&&auth?.currentUser?.uid!==data.uid)repost.addEventListener("click",()=>createPostRepost(originalId,originalData,repost));
     else if(isRepost){repost.disabled=true;repost.textContent="⟳ Reposted";}
     else repost.hidden=true;
     actions.append(like,save,repost);
-    if(!isRepost&&auth?.currentUser?.uid===data.uid){const del=document.createElement("button");del.className="delete-post";del.type="button";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(postDoc.id,del,()=>getDocsForFeed()));actions.append(del);}
+    if(!isRepost&&auth?.currentUser?.uid===data.uid){
+      const edit=document.createElement("button");edit.className="edit-post";edit.type="button";edit.textContent="Edit";edit.addEventListener("click",()=>openPostEditor({id:postDoc.id,...data}));actions.append(edit);
+      const del=document.createElement("button");del.className="delete-post";del.type="button";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(postDoc.id,del,()=>getDocsForFeed()));actions.append(del);
+    }
     article.append(head,content,actions);feed.append(article);
   });
 }
@@ -568,7 +586,7 @@ async function createPostRepost(postId,original,button){
   try{
     if((await getDoc(ref)).exists()){button.textContent="⟳ Reposted";return;}
     const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};
-    await setDoc(ref,{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",originalPostId:postId,originalUid:original.uid,originalDisplayName:original.displayName||"GRAMORA member",originalUsername:original.username||"",originalPhotoURL:original.photoURL||"",originalText:original.text||"",originalCreatedAt:original.createdAt||null,createdAt:serverTimestamp()});
+    await setDoc(ref,{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",originalPostId:postId,originalUid:original.uid,originalDisplayName:original.displayName||"GRAMORA member",originalUsername:original.username||"",originalPhotoURL:original.photoURL||"",originalText:original.text||"",originalBackground:original.background||POST_BACKGROUNDS[4],originalCreatedAt:original.createdAt||null,createdAt:serverTimestamp()});
     button.textContent="⟳ Reposted";
   }catch(error){console.error("Repost failed:",error);alert(error.code==="permission-denied"?"Publish the latest Firestore Rules to enable reposts.":"Could not repost this post. Please try again.");button.disabled=false;}
 }
@@ -704,7 +722,7 @@ async function loadPublicProfile(viewer,targetUid){
       }catch(err){console.error("Follow action:",err);alert("Follow action failed. Check that the latest Firestore Rules are published.");}
     });
     const grid=panel.querySelector(".ig-profile-grid");
-    posts.forEach(d=>{const tile=document.createElement("div");tile.className="ig-post-tile";tile.textContent=d.data().text||"";grid.append(tile);});
+    posts.forEach(d=>{const post={id:d.id,...d.data()};const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.textContent=post.text||"";tile.style.background=post.background||POST_BACKGROUNDS[4];tile.addEventListener("click",()=>openPostDetail(post,false));grid.append(tile);});
     if(results.slice(1).some(x=>x.status==="rejected")){
       const note=document.createElement("p");note.className="muted tiny";note.textContent="Some follower details could not be loaded. Check Firestore Rules.";panel.append(note);
     }
@@ -779,6 +797,39 @@ async function getDocsForFeed(){
     if(activeView==="home")renderPosts(combined);
   }catch(error){console.error(error);showFeedMessage("Could not load posts ("+(error.code||"unknown")+"): "+(error.message||"Check Firestore Rules."));}
 }
+const POST_BACKGROUNDS=["linear-gradient(135deg,#ff9966,#ff5e62)","linear-gradient(135deg,#7f7fd5,#86a8e7,#91eae4)","linear-gradient(135deg,#654ea3,#eaafc8)","linear-gradient(135deg,#11998e,#38ef7d)","linear-gradient(135deg,#232526,#414345)","linear-gradient(135deg,#f7971e,#ffd200)","linear-gradient(135deg,#fc466b,#3f5efb)","linear-gradient(135deg,#eeaeca,#94bbe9)"];
+let editingPostId=null,currentViewedPost=null,storyEditingId=null;
+function bindBackgroundPicker(selector,inputId,previewId){
+  const picker=document.querySelector(selector),input=document.getElementById(inputId),preview=document.getElementById(previewId);
+  if(!picker||!input)return;
+  picker.querySelectorAll("[data-bg]").forEach(button=>button.addEventListener("click",()=>{
+    input.value=button.dataset.bg;picker.querySelectorAll("[data-bg]").forEach(item=>item.classList.toggle("selected",item===button));
+    if(preview){preview.style.background=button.dataset.bg;preview.style.color="#fff";}
+  }));
+  const first=picker.querySelector("[data-bg]");if(first){input.value=first.dataset.bg;first.classList.add("selected");}
+}
+bindBackgroundPicker("#postBackgroundPicker","postBackground","caption");
+bindBackgroundPicker("#storyBackgroundPicker","storyBackground","storyText");
+function openPostEditor(post){
+  editingPostId=post?.id||null;const bg=post?.background||POST_BACKGROUNDS[4];
+  document.getElementById("caption").value=post?.text||"";document.getElementById("postBackground").value=bg;document.getElementById("caption").style.background=bg;
+  document.querySelectorAll("#postBackgroundPicker [data-bg]").forEach(b=>b.classList.toggle("selected",b.dataset.bg===bg));
+  document.querySelector("#createDialog h2").textContent=editingPostId?"Edit post":"Create a post";
+  document.querySelector("#postForm .publish").textContent=editingPostId?"Save changes":"Share with the community ↗";
+  document.getElementById("postStatus").textContent="";document.getElementById("createDialog").showModal();
+}
+function openPostDetail(post,canEdit=false){
+  currentViewedPost=post;const card=document.getElementById("postDetailCard");card.textContent=post.text||"";card.style.background=post.background||POST_BACKGROUNDS[4];
+  document.getElementById("postDetailByline").textContent=(post.displayName||"GRAMORA member")+(post.username?" · @"+post.username:"")+" · "+formatPostDate(post.createdAt);
+  document.getElementById("postDetailEdit").hidden=!canEdit;document.getElementById("postDetailDelete").hidden=!canEdit;document.getElementById("postDetailDialog").showModal();
+}
+document.getElementById("postDetailEdit")?.addEventListener("click",()=>{if(!currentViewedPost)return;document.getElementById("postDetailDialog").close();openPostEditor(currentViewedPost);});
+document.getElementById("postDetailDelete")?.addEventListener("click",async()=>{
+  if(!currentViewedPost)return;const post=currentViewedPost,button=document.getElementById("postDetailDelete");button.disabled=true;
+  try{await deleteDoc(doc(db,"posts",post.id));document.getElementById("postDetailDialog").close();if(activeView==="profile")await loadProfilePage(auth.currentUser);else await getDocsForFeed();}
+  catch(error){console.error(error);alert("Post delete nahi hui. Firestore Rules check karein.");}finally{button.disabled=false;}
+});
+document.getElementById("closePostDetail")?.addEventListener("click",()=>document.getElementById("postDetailDialog").close());
 const postForm=document.getElementById("postForm");
 postForm.addEventListener("submit",async event=>{
   event.preventDefault();
@@ -787,23 +838,26 @@ postForm.addEventListener("submit",async event=>{
   
   if(!auth?.currentUser){status.textContent="Please log in to publish a post.";return;}
   const text=document.getElementById("caption").value.trim();
+  const background=document.getElementById("postBackground").value||POST_BACKGROUNDS[4];
   if(!text){status.textContent="Write something before sharing.";return;}
   const button=postForm.querySelector(".publish");
-  button.disabled=true;button.textContent="Sharing…";status.textContent="Publishing your post…";
+  button.disabled=true;button.textContent=editingPostId?"Saving…":"Sharing…";status.textContent=editingPostId?"Post update ho rahi hai…":"Publishing your post…";
   try{
     const user=auth.currentUser;
     const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
     const profile=profileSnap.exists()?profileSnap.data():{};
-    await addDoc(collection(db,"posts"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",text,createdAt:serverTimestamp()});
-    document.getElementById("caption").value="";
-    status.textContent="Posted successfully!";
-    dialog.close();
-    activeView="home";
-    document.querySelector('.mobile-nav [data-view="home"], .sidebar [data-view="home"]')?.click();
+    if(editingPostId){
+      await updateDoc(doc(db,"posts",editingPostId),{text,background});editingPostId=null;status.textContent="Post updated successfully!";dialog.close();
+      if(activeView==="profile")await loadProfilePage(user);else await getDocsForFeed();
+    }else{
+      await addDoc(collection(db,"posts"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",text,background,createdAt:serverTimestamp()});
+      document.getElementById("caption").value="";status.textContent="Posted successfully!";dialog.close();activeView="home";
+      document.querySelector('.mobile-nav [data-view="home"], .sidebar [data-view="home"]')?.click();
+    }
   }catch(error){
     console.error("Post publish failed:",error);
     status.textContent=error.code==="permission-denied"?"Firestore denied this post. Open Firebase Console → Firestore → Rules and publish the latest firestore.rules from GitHub.":"Post failed: "+(error.message||"Check your internet and try again.");
-  }finally{button.disabled=false;button.innerHTML='Share with the community <span>↗</span>';}
+  }finally{button.disabled=false;button.textContent=editingPostId?"Save changes":"Share with the community ↗";}
 });
 function renderProfile(user){
   // Navigation is handled once by script.js; do not attach a second profile click handler.
@@ -932,10 +986,10 @@ async function loadProfilePage(user){
         if(!posts.length){grid.innerHTML='<div class="ig-no-posts"><strong>▧</strong><b>Share your first post</b><span>When you share posts, they will appear on your profile.</span></div>';return;}
         posts.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).forEach(post=>{
           const wrap=document.createElement("div");wrap.className="ig-post-wrap";
-          const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.textContent=post.text||"";
-          tile.addEventListener("click",()=>{tile.classList.toggle("expanded");});
+          const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.textContent=post.text||"";tile.style.background=post.background||POST_BACKGROUNDS[4];tile.addEventListener("click",()=>openPostDetail(post,true));
+          const edit=document.createElement("button");edit.type="button";edit.className="profile-edit-post";edit.textContent="Edit";edit.addEventListener("click",()=>openPostEditor(post));
           const del=document.createElement("button");del.type="button";del.className="delete-post profile-delete-post";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(post.id,del,async()=>{const i=posts.findIndex(x=>x.id===post.id);if(i>=0)posts.splice(i,1);showTab("posts");}));
-          wrap.append(tile,del);grid.append(wrap);
+          wrap.append(tile,edit,del);grid.append(wrap);
         });
       }else if(tab==="reposts"){
         grid.innerHTML='<div class="ig-no-posts"><strong>⟳</strong><b>Loading reposts…</b></div>';
