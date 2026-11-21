@@ -404,7 +404,7 @@ async function loadProfilePage(user){
       <div class="ig-highlights"><button class="ig-highlight add-highlight" type="button"><span>＋</span><small>New</small></button><div class="ig-highlight"><span>✦</span><small>Highlights</small></div><div class="ig-highlight"><span>♡</span><small>Moments</small></div></div>
       <div class="ig-profile-tabs" role="tablist"><button class="active" data-profile-tab="posts" type="button" aria-label="Posts">▦</button><button data-profile-tab="reels" type="button" aria-label="Reels">▣</button><button data-profile-tab="reposts" type="button" aria-label="Reposts">⟳</button><button data-profile-tab="tagged" type="button" aria-label="Tagged">♙</button></div>
       <div class="ig-profile-grid"></div>
-      <form class="ig-edit-form" hidden><h3>Edit profile</h3><label>Display name<input name="displayName" maxlength="60"></label><label>Username<input name="username" value="${escapeHtml(username)}" disabled></label><label>Bio<textarea name="bio" maxlength="160" rows="3"></textarea></label><button class="ig-save-profile" type="submit">Save changes</button><p class="ig-edit-status" role="status"></p></form>
+      <form class="ig-edit-form" hidden><h3>Edit profile</h3><label>Display name<input name="displayName" maxlength="60"></label><label>Username<input name="username" value="${escapeHtml(username)}" minlength="3" maxlength="20" pattern="[a-zA-Z0-9_.]{3,20}" autocomplete="username" required><small>3–20 characters: letters, numbers, dot or underscore.</small></label><label>Bio<textarea name="bio" maxlength="160" rows="3"></textarea></label><button class="ig-save-profile" type="submit">Save changes</button><p class="ig-edit-status" role="status"></p></form>
     `;
     feed.replaceChildren(panel);
     const avatarWrap=panel.querySelector(".ig-avatar-wrap");
@@ -433,7 +433,7 @@ async function loadProfilePage(user){
     showTab("posts");
     panel.querySelectorAll("[data-profile-tab]").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.profileTab)));
     const editForm=panel.querySelector(".ig-edit-form");
-    panel.querySelector(".profile-edit").addEventListener("click",()=>{editForm.hidden=!editForm.hidden;editForm.elements.displayName.value=name;editForm.elements.bio.value=data.bio||"";});
+    panel.querySelector(".profile-edit").addEventListener("click",()=>{editForm.hidden=!editForm.hidden;editForm.elements.displayName.value=name;editForm.elements.username.value=(data.username||username||"").replace(/^@/,"");editForm.elements.bio.value=data.bio||"";});
     panel.querySelector(".profile-share").addEventListener("click",async()=>{
       const url=location.href.split("#")[0]+"#profile";
       try{await navigator.clipboard.writeText(url);panel.querySelector(".profile-share").textContent="Link copied";}
@@ -444,16 +444,33 @@ async function loadProfilePage(user){
     panel.querySelector(".profile-more").addEventListener("click",()=>alert("More profile options will be added in Settings."));
     editForm.addEventListener("submit",async event=>{
       event.preventDefault();
-      const newName=editForm.elements.displayName.value.trim(),bio=editForm.elements.bio.value.trim(),status=editForm.querySelector(".ig-edit-status"),save=editForm.querySelector("button[type=submit]");
+      const newName=editForm.elements.displayName.value.trim(),newUsername=editForm.elements.username.value.trim().toLowerCase().replace(/^@/,""),bio=editForm.elements.bio.value.trim(),status=editForm.querySelector(".ig-edit-status"),save=editForm.querySelector("button[type=submit]");
       if(!newName){status.textContent="Please enter your name.";return;}
+      if(!/^[a-z0-9_.]{3,20}$/.test(newUsername)){status.textContent="Username must be 3–20 characters (letters, numbers, _ or .).";return;}
       save.disabled=true;status.textContent="Saving…";
       try{
+        const profileRef=doc(db,"userProfiles",user.uid);
+        const oldUsername=(data.username||"").toLowerCase();
+        await runTransaction(db,async tx=>{
+          const newRef=doc(db,"usernames",newUsername);
+          const newSnap=await tx.get(newRef);
+          if(newUsername!==oldUsername&&newSnap.exists()&&newSnap.data().uid!==user.uid)throw new Error("GRAMORA_USERNAME_TAKEN");
+          if(newUsername!==oldUsername){
+            const oldRef=oldUsername?doc(db,"usernames",oldUsername):null;
+            if(oldRef){const oldSnap=await tx.get(oldRef);if(oldSnap.exists()&&oldSnap.data().uid===user.uid)tx.delete(oldRef);}
+            tx.set(newRef,{uid:user.uid,createdAt:serverTimestamp()});
+          }
+          tx.set(profileRef,{uid:user.uid,displayName:newName,username:newUsername,bio,updatedAt:serverTimestamp()},{merge:true});
+        });
         await updateProfile(auth.currentUser,{displayName:newName});
-        await setDoc(doc(db,"userProfiles",user.uid),{displayName:newName,bio,updatedAt:serverTimestamp()},{merge:true});
+        data.displayName=newName;data.username=newUsername;data.bio=bio;
+        panel.querySelector(".ig-profile-username strong").textContent="@"+newUsername;
         panel.querySelector(".ig-profile-bio").innerHTML="<b>"+escapeHtml(newName)+"</b><p>"+escapeHtml(bio)+"</p>";
         status.textContent="Profile updated successfully.";
-      }catch(error){status.textContent=authError(error.code);}
-      finally{save.disabled=false;}
+      }catch(error){
+        console.error("Profile update failed:",error);
+        status.textContent=error.message==="GRAMORA_USERNAME_TAKEN"?"This username is already taken. Choose another.":error.code==="permission-denied"?"Firebase Rules need updating before usernames can be edited.":"Could not update profile: "+(error.message||"Try again.");
+      }finally{save.disabled=false;}
     });
   }catch(error){
     console.error("Profile load error:",error);
