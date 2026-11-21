@@ -260,19 +260,56 @@ async function loadPublicProfile(viewer,targetUid){
 }
 async function showFollowList(uid,type){
   try{
+    const viewer=auth.currentUser;
+    if(!viewer)return;
     const field=type==="followers"?"followingUid":"followerUid";
     const snap=await getDocs(query(collection(db,"follows"),where(field,"==",uid),limit(100)));
     const dlg=document.createElement("dialog");dlg.className="follow-list-dialog";
-    const h=document.createElement("h3");h.textContent=type==="followers"?"Followers":"Following";dlg.append(h);
-    const close=document.createElement("button");close.type="button";close.textContent="Close";close.addEventListener("click",()=>dlg.close());dlg.append(close);
+    const head=document.createElement("div");head.className="follow-list-head";
+    const title=document.createElement("h3");title.textContent=type==="followers"?"Followers":"Following";
+    const close=document.createElement("button");close.type="button";close.className="follow-list-close";close.setAttribute("aria-label","Close");close.textContent="×";close.addEventListener("click",()=>dlg.close());
+    head.append(title,close);dlg.append(head);
+    const search=document.createElement("input");search.type="search";search.className="follow-list-search";search.placeholder="Search";search.setAttribute("aria-label","Search "+type);dlg.append(search);
+    const body=document.createElement("div");body.className="follow-list-body";dlg.append(body);
+    const entries=[];
     for(const rel of snap.docs){
       const personUid=type==="followers"?rel.data().followerUid:rel.data().followingUid;
+      if(!personUid)continue;
       const p=await getDoc(doc(db,"userProfiles",personUid));if(!p.exists())continue;
-      const row=document.createElement("button");row.type="button";row.className="person-result";row.textContent=(p.data().displayName||"Member")+" · @"+(p.data().username||"");row.addEventListener("click",()=>{dlg.close();loadPublicProfile(auth.currentUser,personUid);});dlg.append(row);
+      const data=p.data();
+      const isFollowing= (await getDoc(doc(db,"follows",viewer.uid+"_"+personUid))).exists();
+      const row=document.createElement("div");row.className="follow-person-row";
+      const profile=document.createElement("button");profile.type="button";profile.className="follow-person-profile";
+      const avatar=document.createElement("span");avatar.className="follow-person-avatar";
+      if(data.photoURL){const img=document.createElement("img");img.alt="";img.src=data.photoURL;avatar.append(img);}
+      else avatar.textContent=(data.displayName||"G").charAt(0).toUpperCase();
+      const info=document.createElement("span");info.className="follow-person-info";
+      const name=document.createElement("strong");name.textContent=data.displayName||"GRAMORA member";
+      const username=document.createElement("small");username.textContent="@"+(data.username||"username-not-set");
+      info.append(name,username);profile.append(avatar,info);
+      profile.addEventListener("click",()=>{dlg.close();loadPublicProfile(viewer,personUid);});
+      row.append(profile);
+      if(personUid!==viewer.uid){
+        const action=document.createElement("button");action.type="button";action.className="follow-person-action"+(isFollowing?" is-following":"");
+        action.textContent=isFollowing?"Following":"Follow";
+        action.addEventListener("click",async()=>{
+          action.disabled=true;
+          try{
+            const ref=doc(db,"follows",viewer.uid+"_"+personUid);
+            if((await getDoc(ref)).exists()){await deleteDoc(ref);action.textContent="Follow";action.classList.remove("is-following");}
+            else{await setDoc(ref,{followerUid:viewer.uid,followingUid:personUid,createdAt:serverTimestamp()});action.textContent="Following";action.classList.add("is-following");}
+          }catch(error){console.error(error);alert("Could not update follow. Please try again.");}
+          finally{action.disabled=false;}
+        });
+        row.append(action);
+      }
+      const searchable=((data.displayName||"")+" "+(data.username||"")).toLowerCase();
+      entries.push({row,searchable});body.append(row);
     }
-    if(!snap.size){const empty=document.createElement("p");empty.textContent="No "+type+" yet.";dlg.append(empty);}
-    document.body.append(dlg);dlg.addEventListener("close",()=>dlg.remove(),{once:true});dlg.showModal();
-  }catch(err){console.error(err);alert("Could not load list. Publish updated Firestore Rules.");}
+    if(!entries.length){const empty=document.createElement("p");empty.className="follow-list-empty";empty.textContent="No "+type+" yet.";body.append(empty);}
+    search.addEventListener("input",()=>{const q=search.value.trim().toLowerCase();entries.forEach(e=>e.row.hidden=!e.searchable.includes(q));});
+    document.body.append(dlg);dlg.addEventListener("close",()=>dlg.remove(),{once:true});dlg.showModal();search.focus();
+  }catch(err){console.error(err);alert("Could not load list. Please check your internet connection and Firestore Rules.");}
 }
 
 async function getDocsForFeed(){
