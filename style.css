@@ -29,3 +29,34 @@ body.light{color-scheme:light;--bg:#f7f7f8;--panel:#fff;--line:#e4e5e9;--text:#2
 .settings-dialog[open]{display:block}.settings-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.settings-head h2{margin:0;font-size:22px}.settings-head .eyebrow{margin:0 0 4px;color:#e88bad;font-size:10px;letter-spacing:1.4px}
 .settings-layout{display:grid;grid-template-columns:190px 1fr;gap:20px;min-height:270px}.settings-menu{display:flex;flex-direction:column;gap:5px;border-right:1px solid #292c34;padding-right:12px}.settings-tab{border:0;border-radius:9px;padding:11px 10px;text-align:left;background:transparent;color:#b9bbc3;font-size:13px}.settings-tab.active{background:#272a33;color:#fff;font-weight:700}.settings-content{min-width:0}.settings-panel h3{margin:2px 0 5px;font-size:18px}.settings-panel>p{margin:0 0 14px;color:#a8aab3;font-size:12px}.settings-row{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;padding:13px 10px;margin:6px 0;border:1px solid #2d3039;border-radius:10px;background:#181a20;color:#f7f7f8;text-align:left}.settings-row b,.settings-row small{display:block}.settings-row b{font-size:13px}.settings-row small{margin-top:3px;color:#a5a7b0;font-size:11px}.settings-danger{width:100%;margin-top:16px;padding:12px;border:1px solid #713044;border-radius:10px;background:#351923;color:#ff9db7;font-weight:700;text-align:left}.post-status{min-height:18px;color:#ff9fbd;font-size:12px}.close-btn{cursor:pointer}
 @media(max-width:680px){.settings-dialog{width:calc(100vw - 20px);padding:16px;max-height:84vh}.settings-layout{grid-template-columns:118px 1fr;gap:10px}.settings-menu{padding-right:7px}.settings-tab{font-size:11px;padding:10px 7px}.settings-head h2{font-size:19px}.settings-btn{width:35px;height:35px;font-size:19px}.account-bar{padding:3px 6px}.account-bar #accountLabel{max-width:52px}}
+
+/* Profile view: mirror familiar Instagram mobile structure */
+body.profile-active .mobile-welcome,
+body.profile-active .stories-section,
+body.profile-active .section-head,
+body.profile-active .rightbar{display:none!important}
+body.profile-active .app-shell{grid-template-columns:minmax(0,1fr)}
+body.profile-active .main-content{max-width:760px;padding-top:10px}
+body.profile-active .feed{margin-top:0}
+body.profile-active .ig-profile{padding-top:2px}
+body.profile-active .topbar .brand{font-size:26px}
+body.profile-active .ig-profile-top{grid-template-columns:120px 1fr;gap:18px}
+body.profile-active .ig-profile-avatar{width:100px;height:100px}
+body.profile-active .ig-profile-stats{gap:8px}
+body.profile-active .ig-profile-stats span{display:flex;flex-direction:column;align-items:center;font-size:13px}
+body.profile-active .ig-profile-stats b{font-size:16px}
+body.profile-active .ig-profile-bio{font-size:14px}
+body.profile-active .ig-profile-actions button{background:#292c34;border-radius:7px}
+body.profile-active .ig-highlights{padding-top:12px;padding-bottom:18px}
+body.profile-active .ig-highlight>span{width:72px;height:72px}
+body.profile-active .ig-profile-tabs button{height:50px}
+body.profile-active .ig-post-tile{padding:0;border-radius:0;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden}
+@media(max-width:680px){
+ body.profile-active .main-content{padding:0 0 78px}
+ body.profile-active .ig-profile-top{grid-template-columns:112px 1fr;padding:10px 14px 16px;gap:12px}
+ body.profile-active .ig-profile-avatar{width:88px;height:88px}
+ body.profile-active .ig-profile-stats span{font-size:12px}
+ body.profile-active .ig-profile-stats b{font-size:15px}
+ body.profile-active .ig-profile-actions{padding-left:12px;padding-right:12px}
+ body.profile-active .ig-profile-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:2px}
+}
