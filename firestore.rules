@@ -134,6 +134,22 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid;
     }
 
+    // REPOSTS
+    match /reposts/{repostId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.originalPostId is string
+        && request.resource.data.originalUid is string
+        && request.resource.data.originalUid != request.auth.uid
+        && repostId == request.resource.data.originalPostId + '_' + request.auth.uid
+        && request.resource.data.originalText is string
+        && request.resource.data.originalText.size() <= 2000
+        && request.resource.data.keys().hasOnly(['uid','displayName','originalPostId','originalUid','originalDisplayName','originalUsername','originalPhotoURL','originalText','originalCreatedAt','createdAt']);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
     // TEXT STORIES (expire in 24 hours; clients hide expired stories)
     match /stories/{storyId} {
       allow read: if signedIn();
