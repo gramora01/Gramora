@@ -363,15 +363,28 @@ function openStoryViewer(docs,id){
 async function loadStoryEngagement(storyId,storyData){
   const likeButton=document.getElementById("storyViewerLike");
   const likeCount=document.getElementById("storyViewerLikeCount");
+  const likeCountWrap=document.querySelector(".story-like-count");
   const replyList=document.getElementById("storyReplyList");
+  const replyHeading=document.getElementById("storyRepliesHeading");
   const replyStatus=document.getElementById("storyReplyStatus");
   const currentUid=auth?.currentUser?.uid;
   if(!currentUid)return;
+  const isOwner=storyData.uid===currentUid;
+  if(likeCountWrap)likeCountWrap.hidden=!isOwner;
+  if(replyList)replyList.hidden=!isOwner;
+  if(replyHeading)replyHeading.hidden=!isOwner;
   try{
-    const likesSnap=await getDocs(query(collection(db,"storyLikes"),where("storyId","==",storyId)));
     const ownLikeId=storyId+"_"+currentUid;
-    const liked=likesSnap.docs.some(item=>item.id===ownLikeId);
-    if(likeCount)likeCount.textContent=String(likesSnap.size);
+    let liked=false;
+    if(isOwner){
+      const likesSnap=await getDocs(query(collection(db,"storyLikes"),where("storyUid","==",currentUid)));
+      const storyLikes=likesSnap.docs.filter(item=>item.data().storyId===storyId);
+      liked=storyLikes.some(item=>item.id===ownLikeId);
+      if(likeCount)likeCount.textContent=String(storyLikes.length);
+    }else{
+      const ownLikeSnap=await getDoc(doc(db,"storyLikes",ownLikeId));
+      liked=ownLikeSnap.exists();
+    }
     if(likeButton){
       likeButton.classList.toggle("liked",liked);
       likeButton.setAttribute("aria-pressed",String(liked));
@@ -389,20 +402,22 @@ async function loadStoryEngagement(storyId,storyData){
       };
     }
   }catch(error){console.error("Story likes load failed:",error);}
-  try{
-    const repliesSnap=await getDocs(query(collection(db,"storyReplies"),where("storyId","==",storyId)));
-    const replies=repliesSnap.docs.map(item=>({id:item.id,...item.data()})).sort((x,y)=>(y.createdAt?.toMillis?.()||0)-(x.createdAt?.toMillis?.()||0));
-    if(replyList){
-      replyList.replaceChildren();
-      replies.forEach(reply=>{
-        const row=document.createElement("p");row.className="story-reply-item";
-        const who=document.createElement("b");who.textContent=(reply.displayName||"Member")+": ";
-        const body=document.createElement("span");body.textContent=reply.text||"";
-        row.append(who,body);replyList.append(row);
-      });
-      if(!replies.length)replyList.textContent="Abhi koi reply nahi hai.";
-    }
-  }catch(error){console.error("Story replies load failed:",error);}
+  if(isOwner){
+    try{
+      const repliesSnap=await getDocs(query(collection(db,"storyReplies"),where("storyOwnerUid","==",currentUid)));
+      const replies=repliesSnap.docs.map(item=>({id:item.id,...item.data()})).filter(reply=>reply.storyId===storyId).sort((x,y)=>(y.createdAt?.toMillis?.()||0)-(x.createdAt?.toMillis?.()||0));
+      if(replyList){
+        replyList.replaceChildren();
+        replies.forEach(reply=>{
+          const row=document.createElement("p");row.className="story-reply-item";
+          const who=document.createElement("b");who.textContent=(reply.displayName||"Member")+": ";
+          const body=document.createElement("span");body.textContent=reply.text||"";
+          row.append(who,body);replyList.append(row);
+        });
+        if(!replies.length)replyList.textContent="Abhi koi reply nahi hai.";
+      }
+    }catch(error){console.error("Story replies load failed:",error);if(replyList)replyList.textContent="Replies load nahi ho paye. Firestore Rules check karein.";}
+  }else if(replyList){replyList.replaceChildren();}
 }
 const storyReplyForm=document.getElementById("storyReplyForm");
 storyReplyForm?.addEventListener("submit",async event=>{
