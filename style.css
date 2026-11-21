@@ -218,3 +218,35 @@ body.profile-active .stories-section{display:none!important}
 .account-login-form{padding:18px}
 .post-head .avatar{overflow:hidden;flex:0 0 42px}
 .post-head .avatar img{width:100%;height:100%;display:block;object-fit:cover;border-radius:50%}
+
+
+/* Page navigation: show only the selected screen on mobile and desktop */
+body.view-explore .mobile-welcome,
+body.view-explore .stories-section,
+body.view-explore .section-head,
+body.view-explore .rightbar,
+body.view-messages .mobile-welcome,
+body.view-messages .stories-section,
+body.view-messages .section-head,
+body.view-messages .rightbar,
+body.view-saved .mobile-welcome,
+body.view-saved .stories-section,
+body.view-saved .section-head,
+body.view-saved .rightbar,
+body.view-profile .mobile-welcome,
+body.view-profile .stories-section,
+body.view-profile .section-head,
+body.view-profile .rightbar{display:none!important}
+body.view-explore .app-shell,
+body.view-messages .app-shell,
+body.view-saved .app-shell,
+body.view-profile .app-shell{grid-template-columns:minmax(0,1fr)}
+body.view-explore .main-content,
+body.view-messages .main-content,
+body.view-saved .main-content,
+body.view-profile .main-content{max-width:760px;margin:0 auto;padding-top:10px}
+body.view-explore .feed,body.view-messages .feed,body.view-saved .feed{margin-top:0}
+@media(max-width:680px){
+ body.view-explore .main-content,body.view-messages .main-content,body.view-saved .main-content{padding:8px 0 88px!important}
+ body.view-explore .explore-page{padding:12px 14px}
+}
