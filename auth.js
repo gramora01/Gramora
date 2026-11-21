@@ -98,7 +98,7 @@ document.getElementById("forgotPassword").addEventListener("click",async()=>{
   try{await sendPasswordResetEmail(auth,email);showMessage("Password reset email sent. Check your inbox.");}
   catch(error){showMessage(authError(error.code),true);}
 });
-document.getElementById("logoutBtn").addEventListener("click",()=>signOut(auth));
+
 
 if(auth) onAuthStateChanged(auth,async user=>{
   gate.hidden=!!user;
@@ -173,31 +173,28 @@ async function getDocsForFeed(){
 const postForm=document.getElementById("postForm");
 postForm.addEventListener("submit",async event=>{
   event.preventDefault();
-  if(!auth?.currentUser){showMessage("Please log in to publish a post.",true);return;}
+  const dialog=document.getElementById("createDialog");
+  const status=document.getElementById("postStatus");
+  if(event.submitter?.value==="cancel"){dialog.close();return;}
+  if(!auth?.currentUser){status.textContent="Please log in to publish a post.";return;}
   const text=document.getElementById("caption").value.trim();
-  if(!text){showMessage("Write something before sharing.",true);return;}
+  if(!text){status.textContent="Write something before sharing.";return;}
   const button=postForm.querySelector(".publish");
-  button.disabled=true;button.textContent="Sharing…";
+  button.disabled=true;button.textContent="Sharing…";status.textContent="Publishing your post…";
   try{
     const user=auth.currentUser;
     const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
     const profile=profileSnap.exists()?profileSnap.data():{};
-    await addDoc(collection(db,"posts"),{
-      uid:user.uid,
-      displayName:profile.displayName||user.displayName||"GRAMORA member",
-      username:profile.username||"",
-      text:text,
-      createdAt:serverTimestamp()
-    });
+    await addDoc(collection(db,"posts"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",text,createdAt:serverTimestamp()});
     document.getElementById("caption").value="";
-    document.getElementById("createDialog").close();
+    status.textContent="Posted successfully!";
+    dialog.close();
     activeView="home";
-    document.querySelector('[data-view="home"]')?.click();
-    showMessage("Your post was shared successfully.");
+    document.querySelector('.mobile-nav [data-view="home"], .sidebar [data-view="home"]')?.click();
   }catch(error){
-    console.error(error);
-    showMessage(error.code==="permission-denied"?"Firestore Rules blocked this post. Publish the updated rules.":"Could not share post. Check your internet and try again.",true);
-  }finally{button.disabled=false;button.textContent="Share post";}
+    console.error("Post publish failed:",error);
+    status.textContent=error.code==="permission-denied"?"Firestore denied this post. Open Firebase Console → Firestore → Rules and publish the latest firestore.rules from GitHub.":"Post failed: "+(error.message||"Check your internet and try again.");
+  }finally{button.disabled=false;button.innerHTML='Share with the community <span>↗</span>';}
 });
 function renderProfile(user){
   const profileButton=document.querySelector('[data-view="profile"]');
@@ -243,6 +240,29 @@ function renderProfile(user){
     });
   });
 }
+
+// Settings center
+const settingsDialog=document.getElementById("settingsDialog");
+document.getElementById("settingsBtn")?.addEventListener("click",()=>settingsDialog.showModal());
+document.getElementById("closeSettings")?.addEventListener("click",()=>settingsDialog.close());
+document.querySelectorAll(".settings-tab").forEach(tab=>tab.addEventListener("click",()=>{
+  document.querySelectorAll(".settings-tab").forEach(x=>x.classList.toggle("active",x===tab));
+  document.querySelectorAll(".settings-panel").forEach(panel=>panel.hidden=panel.dataset.panel!==tab.dataset.settings);
+}));
+document.getElementById("settingsLogout")?.addEventListener("click",async()=>{
+  try{await signOut(auth);settingsDialog.close();}catch(error){document.getElementById("settingsStatus").textContent=authError(error.code);}
+});
+document.getElementById("settingsPassword")?.addEventListener("click",async()=>{
+  const email=auth?.currentUser?.email;
+  if(!email){document.getElementById("settingsStatus").textContent="No account email found.";return;}
+  try{await sendPasswordResetEmail(auth,email);document.getElementById("settingsStatus").textContent="Password reset link sent to "+email;}
+  catch(error){document.getElementById("settingsStatus").textContent=authError(error.code);}
+});
+document.getElementById("settingsProfile")?.addEventListener("click",()=>{
+  settingsDialog.close();document.querySelector('.mobile-nav [data-view="profile"], .sidebar [data-view="profile"]')?.click();
+});
+document.getElementById("settingsTheme")?.addEventListener("click",()=>document.getElementById("themeBtn")?.click());
+
 function authError(code){
   const messages={
     "auth/email-already-in-use":"This email already has an account. Please log in.",
