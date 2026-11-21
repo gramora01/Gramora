@@ -588,52 +588,70 @@ async function getUsernameForUid(uid,profileData={}){
 }
 async function loadExplorePage(user){
   const feed=document.getElementById("feed");
-  feed.innerHTML='<section class="explore-page"><h2>Explore people</h2><p class="muted">Find people in the GRAMORA community.</p><input id="peopleSearch" type="search" placeholder="Search name or @username" autocomplete="off"><p id="exploreStatus" class="muted tiny">Loading community…</p><div id="peopleResults" class="people-results"></div></section>';
-  const input=feed.querySelector("#peopleSearch");
-  const status=feed.querySelector("#exploreStatus");
-  const results=feed.querySelector("#peopleResults");
+  feed.innerHTML='<section class="explore-page"><h2>Search</h2><div class="people-search-wrap"><span aria-hidden="true">⌕</span><input id="peopleSearch" type="search" placeholder="Search name or @username" autocomplete="off"></div><div id="exploreRecent" class="explore-recent"></div><p id="exploreStatus" class="muted tiny" hidden></p><div id="peopleResults" class="people-results"></div></section>';
+  const input=feed.querySelector("#peopleSearch"),status=feed.querySelector("#exploreStatus"),results=feed.querySelector("#peopleResults"),recent=feed.querySelector("#exploreRecent");
+  const historyKey="gramora_explore_history_"+user.uid;
+  function readHistory(){try{return JSON.parse(localStorage.getItem(historyKey)||"[]").filter(item=>item&&item.uid&&item.uid!==user.uid);}catch(error){return [];}}
+  function saveHistory(items){localStorage.setItem(historyKey,JSON.stringify(items.slice(0,12)));}
+  function openPerson(person){
+    const history=readHistory().filter(item=>item.uid!==person.uid);
+    history.unshift({uid:person.uid,displayName:person.displayName||"GRAMORA member",username:person.username||"",photoURL:person.photoURL||""});
+    saveHistory(history);
+    person.uid===user.uid?loadProfilePage(user):loadPublicProfile(user,person.uid);
+  }
+  function avatarFor(person){
+    const avatar=document.createElement("div");avatar.className="avatar";
+    if(person.photoURL){const img=document.createElement("img");img.src=person.photoURL;img.alt="";avatar.append(img);}
+    else avatar.textContent=(person.displayName||"G").trim().charAt(0).toUpperCase();
+    return avatar;
+  }
+  function renderHistory(){
+    const history=readHistory();recent.replaceChildren();
+    if(input.value.trim()||!history.length)return;
+    const head=document.createElement("div");head.className="explore-recent-head";
+    const title=document.createElement("b");title.textContent="Recent";
+    const clear=document.createElement("button");clear.type="button";clear.textContent="Clear all";clear.addEventListener("click",()=>{saveHistory([]);renderHistory();});
+    head.append(title,clear);recent.append(head);
+    history.forEach(person=>{
+      const row=document.createElement("div");row.className="explore-history-row";
+      const open=document.createElement("button");open.type="button";open.className="explore-history-person";
+      const info=document.createElement("span");info.className="person-info";
+      const name=document.createElement("b");name.textContent=person.displayName||"GRAMORA member";
+      const handle=document.createElement("small");handle.textContent=person.username?"@"+person.username:"";
+      info.append(name,handle);open.append(avatarFor(person),info);open.addEventListener("click",()=>openPerson(person));
+      const remove=document.createElement("button");remove.type="button";remove.className="explore-history-remove";remove.textContent="×";remove.setAttribute("aria-label","Remove "+(person.displayName||"search history"));
+      remove.addEventListener("click",()=>{saveHistory(readHistory().filter(item=>item.uid!==person.uid));renderHistory();});
+      row.append(open,remove);recent.append(row);
+    });
+  }
+  let people=[];
+  function render(term=""){
+    const q=term.trim().toLowerCase().replace(/^@/,"");results.replaceChildren();
+    if(!q){status.hidden=true;renderHistory();return;}
+    recent.replaceChildren();status.hidden=false;
+    const matches=people.filter(p=>(p.displayName||"").toLowerCase().includes(q)||(p.username||"").toLowerCase().includes(q));
+    if(!matches.length){const empty=document.createElement("p");empty.className="muted";empty.textContent="No matching people found.";results.append(empty);status.textContent="";return;}
+    matches.slice(0,30).forEach(person=>{
+      const card=document.createElement("button");card.type="button";card.className="person-result";card.addEventListener("click",()=>openPerson(person));
+      const info=document.createElement("div");info.className="person-info";
+      const name=document.createElement("b");name.textContent=person.displayName||"GRAMORA member";
+      const handle=document.createElement("small");handle.textContent=person.username?"@"+person.username:"Username not set";
+      info.append(name,handle);card.append(avatarFor(person),info);results.append(card);
+    });
+    status.textContent=matches.length+" matching people";
+  }
+  input.addEventListener("input",()=>render(input.value));renderHistory();
   try{
     const [profilesSnap,usernamesSnap,ownProfileSnap]=await Promise.all([
-      getDocs(query(collection(db,"userProfiles"),limit(100))),
-      getDocs(query(collection(db,"usernames"),limit(500))),
-      getDoc(doc(db,"userProfiles",user.uid))
+      getDocs(query(collection(db,"userProfiles"),limit(100))),getDocs(query(collection(db,"usernames"),limit(500))),getDoc(doc(db,"userProfiles",user.uid))
     ]);
-    const usernameByUid=new Map();
-    usernamesSnap.docs.forEach(d=>{const data=d.data();if(data.uid)usernameByUid.set(data.uid,d.id);});
+    const usernameByUid=new Map();usernamesSnap.docs.forEach(d=>{const data=d.data();if(data.uid)usernameByUid.set(data.uid,d.id);});
     const profileMap=new Map();
-    profilesSnap.docs.forEach(d=>{
-      const data=d.data(),uid=data.uid||d.id;
-      profileMap.set(uid,{...data,id:d.id,uid,username:data.username||usernameByUid.get(uid)||""});
-    });
-    if(ownProfileSnap.exists()){
-      const data=ownProfileSnap.data();
-      profileMap.set(user.uid,{...data,id:user.uid,uid:user.uid,username:data.username||usernameByUid.get(user.uid)||""});
-    }
-    const people=[...profileMap.values()];
-    function render(term=""){
-      const q=term.trim().toLowerCase().replace(/^@/,"");
-      const matches=people.filter(p=>(p.displayName||"").toLowerCase().includes(q)||(p.username||"").toLowerCase().includes(q));
-      results.replaceChildren();
-      if(!matches.length){
-        const empty=document.createElement("p");empty.className="muted";empty.textContent=q?"No matching people found.":"No other profiles to show yet.";results.append(empty);
-        status.textContent="";return;
-      }
-      matches.slice(0,40).forEach(person=>{
-        const card=document.createElement("button");card.type="button";card.className="person-result";card.addEventListener("click",()=>person.uid===user.uid?loadProfilePage(user):loadPublicProfile(user,person.uid));
-        const avatar=document.createElement("div");avatar.className="avatar";
-        if(person.photoURL){const img=document.createElement("img");img.src=person.photoURL;img.alt="";avatar.append(img);}else avatar.textContent=(person.displayName||"G").trim().charAt(0).toUpperCase();
-        const info=document.createElement("div");info.className="person-info";
-        const name=document.createElement("b");name.textContent=person.displayName||"GRAMORA member";
-        const handle=document.createElement("small");handle.textContent=person.username?"@"+person.username:"Username not set";
-        info.append(name,handle);card.append(avatar,info);results.append(card);
-      });
-      status.textContent=matches.length+" people found";
-    }
-    input.addEventListener("input",()=>render(input.value));
-    render();
-    if(!people.length)status.textContent="No other profiles yet. Invite friends to join GRAMORA.";
+    profilesSnap.docs.forEach(d=>{const data=d.data(),uid=data.uid||d.id;profileMap.set(uid,{...data,id:d.id,uid,username:data.username||usernameByUid.get(uid)||""});});
+    if(ownProfileSnap.exists()){const data=ownProfileSnap.data();profileMap.set(user.uid,{...data,id:user.uid,uid:user.uid,username:data.username||usernameByUid.get(user.uid)||""});}
+    people=[...profileMap.values()];render(input.value);
   }catch(error){
-    console.error("Explore profiles error:",error);
+    console.error("Explore profiles error:",error);status.hidden=false;
     status.textContent=error.code==="permission-denied"?"Explore needs signed-in profile read permission in Firestore Rules.":"Could not load people. Check your connection.";
   }
 }
