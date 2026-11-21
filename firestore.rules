@@ -1,54 +1,95 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    function owns(uid) { return signedIn() && request.auth.uid == uid; }
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function owns(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
 
     match /userProfiles/{uid} {
+      // Profiles can be viewed by signed-in members, but only the owner can edit.
       allow read: if signedIn();
+
       allow create: if owns(uid)
         && request.resource.data.uid == uid
         && request.resource.data.keys().hasOnly([
-          'uid','displayName','username','email','bio','photoURL',
-          'followersCount','followingCount','createdAt','updatedAt'
+          'uid', 'displayName', 'username', 'email', 'bio', 'photoURL',
+          'followersCount', 'followingCount', 'createdAt', 'updatedAt'
         ]);
+
       allow update: if owns(uid)
+        && request.resource.data.uid == resource.data.uid
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['displayName','username','bio','photoURL','updatedAt']);
+          .hasOnly(['displayName', 'username', 'bio', 'photoURL', 'updatedAt']);
+
+      // Account profiles cannot be deleted by another member or through the client.
       allow delete: if false;
     }
 
     match /usernames/{username} {
       allow read: if signedIn();
+
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['uid','createdAt']);
-      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+        && request.resource.data.keys().hasOnly(['uid', 'createdAt']);
+
+      // Only the owner of this username reservation can release it.
+      allow delete: if signedIn()
+        && resource.data.uid == request.auth.uid;
+
       allow update: if false;
     }
 
     match /follows/{followId} {
       allow read: if signedIn();
+
       allow create: if signedIn()
         && request.resource.data.followerUid == request.auth.uid
         && request.resource.data.followingUid is string
         && request.resource.data.followingUid != request.auth.uid
-        && request.resource.data.keys().hasOnly(['followerUid','followingUid','createdAt']);
-      allow delete: if signedIn() && resource.data.followerUid == request.auth.uid;
+        && followId == request.auth.uid + '_' + request.resource.data.followingUid
+        && request.resource.data.keys().hasOnly([
+          'followerUid', 'followingUid', 'createdAt'
+        ]);
+
+      // A user can remove only the follow relationship they created.
+      allow delete: if signedIn()
+        && resource.data.followerUid == request.auth.uid;
+
       allow update: if false;
     }
 
     match /posts/{postId} {
       allow read: if signedIn();
+
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly([
-          'uid','displayName','username','text','createdAt'
+          'uid', 'displayName', 'username', 'text', 'createdAt'
         ])
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 2000;
-      allow update, delete: if signedIn() && resource.data.uid == request.auth.uid;
+
+      // The post owner may edit only its text; ownership cannot be transferred.
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 2000;
+
+      allow delete: if signedIn()
+        && resource.data.uid == request.auth.uid;
+    }
+
+    // All other collections are private from client writes unless explicitly allowed above.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
