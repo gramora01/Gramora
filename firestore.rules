@@ -139,6 +139,35 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid;
     }
 
+    // POST LIKES: one like per user per post.
+    match /postLikes/{likeId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.postId is string
+        && request.resource.data.postUid is string
+        && request.resource.data.postUid != request.auth.uid
+        && likeId == request.resource.data.postId + '_' + request.auth.uid
+        && request.resource.data.keys().hasOnly(['postId','postUid','uid','displayName','createdAt']);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
+    // POST COMMENTS: signed-in members can read; authors can remove their own comments.
+    match /postComments/{commentId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.postId is string
+        && request.resource.data.postUid is string
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 500
+        && request.resource.data.keys().hasOnly(['postId','postUid','uid','displayName','text','createdAt']);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
     // REPOSTS
     match /reposts/{repostId} {
       allow read: if signedIn();
