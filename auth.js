@@ -36,6 +36,19 @@ function rememberAccount(user, appName){
   saveAccountList();
   renderAccountSwitcher();
 }
+function updateMobileProfileAvatar(profile,user){
+  const avatar=document.getElementById("mobileProfileAvatar");
+  if(!avatar)return;
+  const name=profile?.displayName||user?.displayName||user?.email||"G";
+  avatar.replaceChildren();
+  if(profile?.photoURL){
+    const img=document.createElement("img");img.src=profile.photoURL;img.alt="";img.loading="eager";
+    img.onerror=()=>{avatar.textContent=name.trim().charAt(0).toUpperCase()||"G";};
+    avatar.append(img);
+  }else avatar.textContent=name.trim().charAt(0).toUpperCase()||"G";
+  avatar.setAttribute("aria-label",name+" profile");
+}
+
 function activateAccount(instance){
   if(activeAuthUnsubscribe) activeAuthUnsubscribe();
   if(activeFeedUnsubscribe){activeFeedUnsubscribe();activeFeedUnsubscribe=null;}
@@ -55,6 +68,8 @@ function activateAccount(instance){
       try{
         await ensureProfile(user);
         if(auth!==selectedAuth || auth.currentUser?.uid!==user.uid)return;
+        const navProfileSnap=await getDoc(doc(selectedDb,"userProfiles",user.uid));
+        updateMobileProfileAvatar(navProfileSnap.exists()?navProfileSnap.data():{},user);
         startPostsFeed(user);
         // Keep the current screen open, but reload it using the newly active account.
         if(activeView==="profile") await loadProfilePage(user);
@@ -458,6 +473,7 @@ async function loadProfilePage(user){
   try{
     const snap=await getDoc(doc(db,"userProfiles",user.uid));
     const data=snap.exists()?snap.data():{};
+    updateMobileProfileAvatar(data,user);
     data.username=await getUsernameForUid(user.uid,data);
     let posts=[],postsLoadError="";
     try{
