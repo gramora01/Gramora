@@ -1,12 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() {
-      return request.auth != null;
-    }
-    function owns(uid) {
-      return signedIn() && request.auth.uid == uid;
-    }
+    function signedIn() { return request.auth != null; }
+    function owns(uid) { return signedIn() && request.auth.uid == uid; }
 
     match /userProfiles/{uid} {
       allow read: if signedIn();
@@ -18,7 +14,7 @@ service cloud.firestore {
         ]);
       allow update: if owns(uid)
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['displayName','bio','photoURL','updatedAt']);
+          .hasOnly(['displayName','username','bio','photoURL','updatedAt']);
       allow delete: if false;
     }
 
@@ -27,12 +23,17 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid','createdAt']);
-      allow update, delete: if false;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
     }
 
     match /follows/{followId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.followerUid == request.auth.uid && request.resource.data.followingUid is string && request.resource.data.followingUid != request.auth.uid && request.resource.data.keys().hasOnly(['followerUid','followingUid','createdAt']);
+      allow create: if signedIn()
+        && request.resource.data.followerUid == request.auth.uid
+        && request.resource.data.followingUid is string
+        && request.resource.data.followingUid != request.auth.uid
+        && request.resource.data.keys().hasOnly(['followerUid','followingUid','createdAt']);
       allow delete: if signedIn() && resource.data.followerUid == request.auth.uid;
       allow update: if false;
     }
