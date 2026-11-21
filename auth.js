@@ -102,7 +102,7 @@ document.getElementById("forgotPassword").addEventListener("click",async()=>{
 
 if(auth) onAuthStateChanged(auth,async user=>{
   gate.hidden=!!user;
-  accountBar.hidden=!user;
+  if(accountBar) accountBar.hidden=!user;
   if(user){
     accountLabel.textContent=user.displayName||user.email;
     try{await ensureProfile(user);renderProfile(user);startPostsFeed(user);}
