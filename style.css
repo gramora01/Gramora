@@ -593,3 +593,10 @@ body.light .highlight-choice{background:#f7f5f2;border-color:#e5e1dc}
 .post-comment-form{display:flex;gap:8px;margin-top:10px}
 .post-comment-form input{flex:1;min-width:0;border:1px solid var(--line);border-radius:999px;padding:10px 13px;background:var(--input-bg);color:inherit;font:inherit}
 .post-comment-form button{border:0;border-radius:999px;padding:9px 16px;background:linear-gradient(135deg,#e1306c,#833ab4);color:#fff;font-weight:800;cursor:pointer}
+
+/* Clickable likers and comment authors */
+.post-like-count{display:inline-block;border:0;background:transparent;padding:4px 6px;text-align:left;font:inherit;font-weight:750;cursor:pointer}
+.post-like-count:hover,.post-comment-author:hover{ text-decoration:underline }
+.post-detail-like-count{color:inherit}
+.post-comment-author{border:0;background:transparent;color:inherit;font:inherit;font-weight:800;padding:0;cursor:pointer;text-align:left}
+.post-likes-dialog{max-width:min(92vw,420px)}
