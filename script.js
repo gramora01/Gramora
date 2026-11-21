@@ -9,10 +9,24 @@ document.getElementById("notificationBtn")?.addEventListener("click",()=>{
   notice.hidden=false;clearTimeout(window.gramoraNoticeTimer);window.gramoraNoticeTimer=setTimeout(()=>notice.hidden=true,2600);
 });
 ["openCreate","rightCreate","rightCreateDesktop","mobileCreate","topCreate"].forEach(id=>document.getElementById(id)?.addEventListener("click",openComposer));
-document.getElementById("themeBtn")?.addEventListener("click",()=>{
-  document.body.classList.toggle("light");
-  const dark=document.body.classList.contains("light");
-  document.getElementById("themeBtn").textContent=dark?"☾":"☼";
+// Restore the user's saved theme before wiring the theme toggle.
+const themeButton=document.getElementById("themeBtn");
+function applyTheme(theme){
+  const useLight=theme==="light";
+  document.body.classList.toggle("light",useLight);
+  if(themeButton){
+    themeButton.textContent=useLight?"☾":"☼";
+    themeButton.setAttribute("aria-label",useLight?"Switch to dark theme":"Switch to light theme");
+    themeButton.setAttribute("title",useLight?"Switch to dark theme":"Switch to light theme");
+  }
+}
+let savedTheme="dark";
+try{savedTheme=localStorage.getItem("gramora-theme")||"dark";}catch(error){}
+applyTheme(savedTheme);
+themeButton?.addEventListener("click",()=>{
+  const nextTheme=document.body.classList.contains("light")?"dark":"light";
+  applyTheme(nextTheme);
+  try{localStorage.setItem("gramora-theme",nextTheme);}catch(error){}
 });
 function showPlaceholder(view,title){
   const feed=document.getElementById("feed");
