@@ -561,6 +561,41 @@ function showFeedMessage(text){
   feed.replaceChildren();
   const p=document.createElement("p");p.className="muted";p.textContent=text;feed.append(p);
 }
+async function openPersonProfile(uid){
+  const viewer=auth?.currentUser;if(!viewer||!uid)return;
+  if(uid===viewer.uid)await loadProfilePage(viewer);else await loadPublicProfile(viewer,uid);
+}
+async function showPostLikesList(postId){
+  const viewer=auth?.currentUser;if(!viewer)return;
+  const dialog=document.createElement("dialog");dialog.className="follow-list-dialog post-likes-dialog";
+  const head=document.createElement("div");head.className="follow-list-head";
+  const title=document.createElement("h3");title.textContent="Liked by";
+  const close=document.createElement("button");close.type="button";close.className="follow-list-close";close.textContent="×";close.setAttribute("aria-label","Close");close.addEventListener("click",()=>dialog.close());head.append(title,close);dialog.append(head);
+  const body=document.createElement("div");body.className="follow-list-body";body.textContent="Loading…";dialog.append(body);
+  document.body.append(dialog);dialog.addEventListener("close",()=>dialog.remove(),{once:true});dialog.showModal();
+  try{
+    const likes=await getDocs(query(collection(db,"postLikes"),where("postId","==",postId),limit(500)));
+    body.replaceChildren();
+    if(likes.empty){const empty=document.createElement("p");empty.className="follow-list-empty";empty.textContent="No likes yet.";body.append(empty);return;}
+    const people=await Promise.all(likes.docs.map(async likeDoc=>{
+      const like=likeDoc.data();if(!like.uid)return null;
+      const profileSnap=await getDoc(doc(db,"userProfiles",like.uid));
+      const profile=profileSnap.exists()?profileSnap.data():{};
+      return {uid:like.uid,displayName:profile.displayName||like.displayName||"GRAMORA member",username:await getUsernameForUid(like.uid,profile),photoURL:profile.photoURL||""};
+    }));
+    people.filter(Boolean).forEach(person=>{
+      const row=document.createElement("div");row.className="follow-person-row";
+      const open=document.createElement("button");open.type="button";open.className="follow-person-profile";
+      const avatar=document.createElement("span");avatar.className="follow-person-avatar";
+      if(person.photoURL){const img=document.createElement("img");img.src=person.photoURL;img.alt="";avatar.append(img);}else avatar.textContent=person.displayName.trim().charAt(0).toUpperCase();
+      const info=document.createElement("span");info.className="follow-person-info";
+      const name=document.createElement("strong");name.textContent=person.displayName;
+      const username=document.createElement("small");username.textContent="@"+(person.username||"username-not-set");info.append(name,username);open.append(avatar,info);
+      open.addEventListener("click",()=>{dialog.close();openPersonProfile(person.uid);});row.append(open);body.append(row);
+    });
+    if(!body.children.length)body.textContent="Like karne wale profiles nahi mil paye.";
+  }catch(error){console.error("Post likes list failed:",error);body.textContent="Likes list load nahi hui. Firestore Rules publish karein.";}
+}
 async function getPostEngagement(postId,postUid){
   const user=auth?.currentUser;if(!user)return {liked:false,count:0};
   const [own,all]=await Promise.all([
@@ -602,15 +637,16 @@ async function loadPostEngagement(post,root){
       getDocs(query(collection(db,"postComments"),where("postId","==",post.id),limit(100))),
       getDoc(doc(db,"postLikes",post.id+"_"+auth.currentUser.uid))
     ]);
-    likeCount.textContent=likesSnap.size+" likes";
+    likeCount.textContent=likesSnap.size+" likes";likeCount.onclick=()=>showPostLikesList(post.id);
     likeButton.classList.toggle("liked",ownLike.exists());likeButton.setAttribute("aria-pressed",String(ownLike.exists()));
     likeButton.innerHTML=(ownLike.exists()?"♥":"♡")+" <span>"+(ownLike.exists()?"Liked":"Like")+"</span>";
     list.replaceChildren();
     if(commentsSnap.empty){const empty=document.createElement("p");empty.className="muted tiny";empty.textContent="Abhi koi comment nahi hai. Pehla comment karein!";list.append(empty);}
     commentsSnap.docs.sort((x,y)=>(x.data().createdAt?.toMillis?.()||0)-(y.data().createdAt?.toMillis?.()||0)).forEach(item=>{
       const d=item.data(),row=document.createElement("div");row.className="post-comment-item";
-      const author=document.createElement("b");author.textContent=d.displayName||"GRAMORA member";
+      const author=document.createElement("button");author.type="button";author.className="post-comment-author";author.textContent=d.displayName||"GRAMORA member";author.addEventListener("click",()=>openPersonProfile(d.uid));
       const message=document.createElement("span");message.textContent=d.text||"";row.append(author,message);
+      if(d.uid){getDoc(doc(db,"userProfiles",d.uid)).then(profileSnap=>{if(!author.isConnected)return;const profile=profileSnap.exists()?profileSnap.data():{};const username=profile.username||"";author.title=username?"@"+username:"Open profile";}).catch(()=>{});}
       if(d.uid===auth.currentUser.uid){const del=document.createElement("button");del.type="button";del.textContent="×";del.setAttribute("aria-label","Delete comment");del.addEventListener("click",async()=>{del.disabled=true;try{await deleteDoc(doc(db,"postComments",item.id));await loadPostEngagement(post,root);}catch(error){alert("Comment delete nahi hua. Firestore Rules check karein.");del.disabled=false;}});row.append(del);}
       list.append(row);
     });
@@ -642,11 +678,12 @@ function renderPosts(docs){
     const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.innerHTML="⟳ <span>Repost</span>";
     const originalId=isRepost?data.originalPostId:postDoc.id;
     const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,background:data.originalBackground,createdAt:data.originalCreatedAt}:data;
-    const likeCount=document.createElement("small");likeCount.className="post-like-count";likeCount.textContent="Loading likes…";
+    const likeCount=document.createElement("button");likeCount.type="button";likeCount.className="post-like-count";likeCount.textContent="Loading likes…";
     const comment=document.createElement("button");comment.className="post-comment-open";comment.type="button";comment.innerHTML="▢ <span>Comment</span>";
     const postForDetail={id:originalId,...originalData};
     like.addEventListener("click",()=>togglePostLike(originalId,authorUid,like,likeCount));
     comment.addEventListener("click",()=>openPostDetail(postForDetail,false));
+    likeCount.addEventListener("click",()=>showPostLikesList(originalId));
     refreshPostLikeButton(originalId,authorUid,like,likeCount);
     if(!isRepost&&auth?.currentUser?.uid!==data.uid)repost.addEventListener("click",()=>createPostRepost(originalId,originalData,repost));
     else if(isRepost){repost.disabled=true;repost.textContent="⟳ Reposted";}
