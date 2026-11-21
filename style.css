@@ -201,3 +201,20 @@ body.profile-active .stories-section{display:none!important}
 .people-results .person-info b{font-size:15px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .people-results .person-info small{font-size:13px;color:var(--muted)}
 .people-results{gap:10px}
+
+
+/* Multi-account switcher */
+.account-add-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.account-add-row>button,.account-switch-button{border:0;border-radius:8px;padding:9px 12px;background:#2563eb;color:#fff;font-weight:700;white-space:nowrap;cursor:pointer}
+.account-switcher-list{display:grid;gap:9px;margin:12px 0 18px}
+.account-switch-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--line,#343640);border-radius:10px}
+.account-switch-info{display:flex;align-items:center;gap:10px;min-width:0}
+.account-switch-info>span:last-child{display:grid;min-width:0}
+.account-switch-info b,.account-switch-info small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.account-switch-info small{font-size:11px;opacity:.7}
+.account-switch-avatar{width:36px;height:36px;flex:0 0 36px;border-radius:50%;display:grid;place-items:center;background:#343640;color:#fff;font-weight:700}
+.account-switch-button:disabled{background:#23865b;opacity:1}
+.account-dialog{max-width:430px}
+.account-login-form{padding:18px}
+.post-head .avatar{overflow:hidden;flex:0 0 42px}
+.post-head .avatar img{width:100%;height:100%;display:block;object-fit:cover;border-radius:50%}
