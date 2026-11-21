@@ -489,3 +489,18 @@ body.light .story-dialog textarea,body.light .story-dialog input{background:#f7f
 body.light .story-user-ring{background:linear-gradient(#fff,#fff) padding-box,linear-gradient(135deg,#f58529,#dd2a7b 55%,#8134af) border-box!important}
 body.light .story-user-ring.story-seen{background:linear-gradient(#fff,#fff) padding-box,linear-gradient(#858995,#858995) border-box!important}
 body.light .story-add-ring i{border-color:#fff}
+
+
+/* Story likes and replies */
+.story-engagement{display:flex;align-items:center;gap:12px;padding:10px 4px;border-top:1px solid var(--line,#393d48)}
+.story-like-button{border:0;background:transparent;color:inherit;font:inherit;font-weight:800;padding:8px 10px;border-radius:999px;cursor:pointer}
+.story-like-button.liked{color:#e1306c}
+.story-like-count{font-size:13px;opacity:.8}
+.story-replies{padding:8px 2px 4px;border-top:1px solid var(--line,#393d48)}
+.story-reply-list{max-height:150px;overflow:auto;margin:8px 0}
+.story-reply-item{margin:7px 0;font-size:13px;overflow-wrap:anywhere}
+.story-reply-item b{margin-right:4px}
+.story-reply-form{display:flex;gap:7px;align-items:center}
+.story-reply-form input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line,#393d48);border-radius:999px;background:var(--input-bg,#20232b);color:inherit;font:inherit}
+.story-reply-form button{padding:9px 14px;border:0;border-radius:999px;background:linear-gradient(135deg,#e1306c,#833ab4);color:#fff;font-weight:800}
+body.light .story-reply-form input{background:#f7f5f2;color:#202127;border-color:#e5e1dc}
