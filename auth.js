@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs, where, deleteDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
@@ -18,8 +18,9 @@ function saveAccountList(){ localStorage.setItem("gramoraAccounts", JSON.stringi
 function accountAppName(uid){ return "gramora-account-" + uid; }
 function getAccountInstance(uid){
   if(accountInstances.has(uid)) return accountInstances.get(uid);
-  const name=accountAppName(uid);
-  const secondaryApp=initializeApp(firebaseConfig,name);
+  const record=savedAccounts.find(x=>x.uid===uid);
+  const name=record?.appName||accountAppName(uid);
+  const secondaryApp=getApps().find(x=>x.name===name)||initializeApp(firebaseConfig,name);
   const secondaryAuth=getAuth(secondaryApp);
   const secondaryDb=getFirestore(secondaryApp);
   const instance={app:secondaryApp,auth:secondaryAuth,db:secondaryDb};
@@ -419,7 +420,7 @@ postForm.addEventListener("submit",async event=>{
     const user=auth.currentUser;
     const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
     const profile=profileSnap.exists()?profileSnap.data():{};
-    await addDoc(collection(db,"posts"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",photoURL:profile.photoURL||"",text,createdAt:serverTimestamp()});
+    await addDoc(collection(db,"posts"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",text,createdAt:serverTimestamp()});
     document.getElementById("caption").value="";
     status.textContent="Posted successfully!";
     dialog.close();
@@ -555,13 +556,65 @@ function escapeHtml(value){
 const settingsDialog=document.getElementById("settingsDialog");
 document.getElementById("closeCreate")?.addEventListener("click",()=>document.getElementById("createDialog").close());
 document.getElementById("settingsBtn")?.addEventListener("click",()=>settingsDialog.showModal());
+document.getElementById("addAccountBtn")?.addEventListener("click",()=>{
+  document.getElementById("addAccountDialog")?.showModal();
+});
+document.getElementById("closeAddAccount")?.addEventListener("click",()=>{
+  document.getElementById("addAccountDialog")?.close();
+});
+document.getElementById("addAccountForm")?.addEventListener("submit",async event=>{
+  event.preventDefault();
+  const email=document.getElementById("addAccountEmail").value.trim().toLowerCase();
+  const password=document.getElementById("addAccountPassword").value;
+  const status=document.getElementById("addAccountStatus");
+  const button=event.currentTarget.querySelector('button[type="submit"]');
+  if(auth?.currentUser?.email?.toLowerCase()===email){status.textContent="Ye account pehle se active hai.";return;}
+  button.disabled=true;button.textContent="Adding account…";status.textContent="Signing in securely…";
+  try{
+    let record=savedAccounts.find(x=>x.email?.toLowerCase()===email);
+    let instance;
+    if(record){
+      instance=getAccountInstance(record.uid);
+      if(!instance.auth.currentUser) await signInWithEmailAndPassword(instance.auth,email,password);
+    }else{
+      const appName="gramora-login-"+email.replace(/[^a-z0-9]/g,"-").slice(0,45);
+      const secondaryApp=getApps().find(x=>x.name===appName)||initializeApp(firebaseConfig,appName);
+      const secondaryAuth=getAuth(secondaryApp);
+      const secondaryDb=getFirestore(secondaryApp);
+      const credential=await signInWithEmailAndPassword(secondaryAuth,email,password);
+      instance={app:secondaryApp,auth:secondaryAuth,db:secondaryDb};
+      accountInstances.set(credential.user.uid,instance);
+      rememberAccount(credential.user,appName);
+    }
+    activateAccount(instance);
+    document.getElementById("addAccountDialog").close();
+    document.getElementById("settingsDialog")?.close();
+    event.currentTarget.reset();
+  }catch(error){
+    console.error("Add account failed:",error);
+    status.textContent=authError(error.code);
+  }finally{button.disabled=false;button.innerHTML='Add account <span>↗</span>';}
+});
+
 document.getElementById("closeSettings")?.addEventListener("click",()=>settingsDialog.close());
 document.querySelectorAll(".settings-tab").forEach(tab=>tab.addEventListener("click",()=>{
   document.querySelectorAll(".settings-tab").forEach(x=>x.classList.toggle("active",x===tab));
   document.querySelectorAll(".settings-panel").forEach(panel=>panel.hidden=panel.dataset.panel!==tab.dataset.settings);
 }));
 document.getElementById("settingsLogout")?.addEventListener("click",async()=>{
-  try{await signOut(auth);settingsDialog.close();}catch(error){document.getElementById("settingsStatus").textContent=authError(error.code);}
+  const currentUid=auth?.currentUser?.uid;
+  try{
+    await signOut(auth);
+    savedAccounts=savedAccounts.filter(x=>x.uid!==currentUid);
+    saveAccountList();
+    const next=savedAccounts[0];
+    if(next){
+      const instance=next.appName==="[DEFAULT]"?{app,auth:getAuth(app),db:getFirestore(app)}:getAccountInstance(next.uid);
+      activateAccount(instance);
+    }else{gate.hidden=false;}
+    renderAccountSwitcher();
+    settingsDialog.close();
+  }catch(error){document.getElementById("settingsStatus").textContent=authError(error.code);}
 });
 document.getElementById("settingsPassword")?.addEventListener("click",async()=>{
   const email=auth?.currentUser?.email;
