@@ -104,7 +104,6 @@ if(auth) onAuthStateChanged(auth,async user=>{
   gate.hidden=!!user;
   if(accountBar) accountBar.hidden=!user;
   if(user){
-    accountLabel.textContent=user.displayName||user.email;
     try{await ensureProfile(user);renderProfile(user);startPostsFeed(user);}
     catch(error){console.error(error);showMessage("Could not load your profile. Check Firestore Security Rules.",true);}
   }
