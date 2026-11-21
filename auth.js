@@ -150,8 +150,17 @@ function renderPosts(docs){
     const actions=document.createElement("div");actions.className="post-actions";
     const like=document.createElement("button");like.className="like";like.type="button";like.innerHTML="♡ <span>Like</span>";
     const save=document.createElement("button");save.className="save";save.type="button";save.innerHTML="▣ <span>Save</span>";
-    actions.append(like,save);article.append(head,content,actions);feed.append(article);
+    actions.append(like,save);
+    if(auth?.currentUser?.uid===data.uid){const del=document.createElement("button");del.className="delete-post";del.type="button";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(postDoc.id,del,()=>getDocsForFeed()));actions.append(del);}
+    article.append(head,content,actions);feed.append(article);
   });
+}
+async function deleteOwnPost(postId,button,afterDelete){
+  if(!auth?.currentUser)return;
+  if(!confirm("Delete this post permanently?"))return;
+  button.disabled=true;button.textContent="Deleting…";
+  try{await deleteDoc(doc(db,"posts",postId));if(typeof afterDelete==="function")await afterDelete();}
+  catch(error){console.error("Delete post failed:",error);alert(error.code==="permission-denied"?"Firestore Rules denied deleting this post. Publish the latest rules.":"Could not delete this post. Please try again.");button.disabled=false;button.textContent="Delete";}
 }
 function formatPostDate(timestamp){
   if(!timestamp||!timestamp.toDate)return "Just now";
@@ -210,51 +219,44 @@ async function loadPublicProfile(viewer,targetUid){
     const snap=await getDoc(doc(db,"userProfiles",targetUid));
     if(!snap.exists()){feed.textContent="Profile unavailable.";return;}
     const p=snap.data();
-    const posts=await getDocs(query(collection(db,"posts"),where("uid","==",targetUid)));
-    const followers=await getDocs(query(collection(db,"follows"),where("followingUid","==",targetUid)));
-    const following=await getDocs(query(collection(db,"follows"),where("followerUid","==",targetUid)));
-    const followId=viewer.uid+"_"+targetUid;
-    const already=await getDoc(doc(db,"follows",followId));
+    let posts=[],followersCount=0,followingCount=0,already=false;
+    const results=await Promise.allSettled([
+      getDocs(query(collection(db,"posts"),where("uid","==",targetUid),limit(60))),
+      getDocs(query(collection(db,"follows"),where("followingUid","==",targetUid),limit(100))),
+      getDocs(query(collection(db,"follows"),where("followerUid","==",targetUid),limit(100))),
+      getDoc(doc(db,"follows",viewer.uid+"_"+targetUid))
+    ]);
+    if(results[0].status==="fulfilled")posts=results[0].value.docs;
+    if(results[1].status==="fulfilled")followersCount=results[1].value.size;
+    if(results[2].status==="fulfilled")followingCount=results[2].value.size;
+    if(results[3].status==="fulfilled")already=results[3].value.exists();
     const panel=document.createElement("section");panel.className="ig-profile";
     const avatar=p.photoURL?'<img alt="" src="'+escapeHtml(p.photoURL)+'">':escapeHtml((p.displayName||"G").charAt(0).toUpperCase());
-    panel.innerHTML='<div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>@'+escapeHtml(p.username||"member")+'</strong></div><div class="ig-profile-stats"><span><b>'+posts.size+'</b> posts</span><button class="stat-open" data-list="followers" type="button"><b>'+followers.size+'</b> followers</button><button class="stat-open" data-list="following" type="button"><b>'+following.size+'</b> following</button></div></div></div><div class="ig-profile-bio"><b>'+escapeHtml(p.displayName||"GRAMORA member")+'</b><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already.exists()?"Following":"Follow")+'</button></div><div class="ig-profile-grid"></div>';
+    panel.innerHTML='<div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>@'+escapeHtml(p.username||"member")+'</strong></div><div class="ig-profile-stats"><span><b>'+posts.length+'</b> posts</span><button class="stat-open" data-list="followers" type="button"><b>'+followersCount+'</b> followers</button><button class="stat-open" data-list="following" type="button"><b>'+followingCount+'</b> following</button></div></div></div><div class="ig-profile-bio"><b>'+escapeHtml(p.displayName||"GRAMORA member")+'</b><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already?"Following":"Follow")+'</button></div><div class="ig-profile-grid"></div>';
     feed.replaceChildren(panel);
-    panel.querySelectorAll(".stat-open").forEach(btn=>btn.addEventListener("click",()=>showFollowList(user.uid,btn.dataset.list)));
-    const avatarWrap=panel.querySelector(".ig-avatar-wrap");
-    const photoButton=document.createElement("label");
-    photoButton.className="dp-add";
-    photoButton.textContent="＋";
-    const photoInput=document.createElement("input");
-    photoInput.type="file";photoInput.accept="image/*";photoInput.className="dp-file";
-    photoButton.append(photoInput);avatarWrap.append(photoButton);
-    photoInput.addEventListener("change",async event=>{
-      const file=event.target.files && event.target.files[0];if(!file)return;
-      if(!file.type.startsWith("image/")){alert("Please choose an image.");return;}
-      if(file.size>5*1024*1024){alert("Image must be smaller than 5 MB.");return;}
-      try{
-        const image=await new Promise((resolve,reject)=>{
-          const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=reader.result;};reader.onerror=reject;reader.readAsDataURL(file);
-        });
-        const canvas=document.createElement("canvas");canvas.width=400;canvas.height=400;
-        const side=Math.min(image.width,image.height);
-        canvas.getContext("2d").drawImage(image,(image.width-side)/2,(image.height-side)/2,side,side,0,0,400,400);
-        const photoURL=canvas.toDataURL("image/jpeg",0.75);
-        await setDoc(doc(db,"userProfiles",user.uid),{photoURL,updatedAt:serverTimestamp()},{merge:true});
-        panel.querySelector(".ig-profile-avatar").innerHTML='<img alt="Profile photo" src="'+photoURL+'">';
-      }catch(error){console.error(error);alert("Photo update failed. Please try again.");}
-      finally{event.target.value="";}
-    });
+    panel.querySelectorAll(".stat-open").forEach(btn=>btn.addEventListener("click",()=>showFollowList(targetUid,btn.dataset.list)));
     panel.querySelector(".public-follow").addEventListener("click",async e=>{
       const btn=e.currentTarget;
       try{
-        if((await getDoc(doc(db,"follows",followId))).exists()){await deleteDoc(doc(db,"follows",followId));btn.textContent="Follow";}
-        else{await setDoc(doc(db,"follows",followId),{followerUid:viewer.uid,followingUid:targetUid,createdAt:serverTimestamp()});btn.textContent="Following";}
-      }catch(err){alert("Follow action failed. Publish the updated Firestore Rules.");}
+        if((await getDoc(doc(db,"follows",viewer.uid+"_"+targetUid))).exists()){
+          await deleteDoc(doc(db,"follows",viewer.uid+"_"+targetUid));btn.textContent="Follow";
+        }else{
+          await setDoc(doc(db,"follows",viewer.uid+"_"+targetUid),{followerUid:viewer.uid,followingUid:targetUid,createdAt:serverTimestamp()});btn.textContent="Following";
+        }
+      }catch(err){console.error("Follow action:",err);alert("Follow action failed. Check that the latest Firestore Rules are published.");}
     });
     const grid=panel.querySelector(".ig-profile-grid");
-    posts.docs.forEach(d=>{const tile=document.createElement("div");tile.className="ig-post-tile";tile.textContent=d.data().text||"";grid.append(tile);});
-    panel.querySelectorAll(".stat-open").forEach(btn=>btn.addEventListener("click",()=>showFollowList(targetUid,btn.dataset.list)));
-  }catch(err){console.error(err);feed.textContent="Could not load this profile. Check Firestore Rules.";}
+    posts.forEach(d=>{const tile=document.createElement("div");tile.className="ig-post-tile";tile.textContent=d.data().text||"";grid.append(tile);});
+    if(results.slice(1).some(x=>x.status==="rejected")){
+      const note=document.createElement("p");note.className="muted tiny";note.textContent="Some follower details could not be loaded. Check Firestore Rules.";panel.append(note);
+    }
+    if(results[0].status==="rejected"){
+      const note=document.createElement("p");note.className="muted tiny";note.textContent="Posts could not be loaded. Check Firestore Rules.";panel.append(note);
+    }
+  }catch(err){
+    console.error("Public profile load failed:",err);
+    feed.textContent="Could not load profile: "+(err.code||err.message||"Please try again.");
+  }
 }
 async function showFollowList(uid,type){
   try{
@@ -343,6 +345,10 @@ async function loadProfilePage(user){
       <form class="ig-edit-form" hidden><h3>Edit profile</h3><label>Display name<input name="displayName" maxlength="60"></label><label>Username<input name="username" value="${escapeHtml(username)}" disabled></label><label>Bio<textarea name="bio" maxlength="160" rows="3"></textarea></label><button class="ig-save-profile" type="submit">Save changes</button><p class="ig-edit-status" role="status"></p></form>
     `;
     feed.replaceChildren(panel);
+    const avatarWrap=panel.querySelector(".ig-avatar-wrap");
+    const photoButton=document.createElement("label");photoButton.className="dp-add";photoButton.textContent="＋";photoButton.title="Add profile photo";
+    const photoInput=document.createElement("input");photoInput.type="file";photoInput.accept="image/*";photoInput.className="dp-file";photoButton.append(photoInput);avatarWrap.append(photoButton);
+    photoInput.addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith("image/")){alert("Choose an image file.");return;}if(file.size>4*1024*1024){alert("Image must be under 4 MB.");e.target.value="";return;}try{const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file);});const img=await new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=reject;image.src=dataUrl;});const canvas=document.createElement("canvas");canvas.width=320;canvas.height=320;const side=Math.min(img.width,img.height);canvas.getContext("2d").drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,320,320);const photoURL=canvas.toDataURL("image/jpeg",0.68);await setDoc(doc(db,"userProfiles",user.uid),{photoURL,updatedAt:serverTimestamp()},{merge:true});panel.querySelector(".ig-profile-avatar").innerHTML='<img alt="Profile photo" src="'+photoURL+'">';}catch(err){console.error(err);alert("Profile photo could not be saved. Check Firestore Rules and image size.");}finally{e.target.value="";}});
     const grid=panel.querySelector(".ig-profile-grid");
     function showTab(tab){
       panel.querySelectorAll("[data-profile-tab]").forEach(b=>b.classList.toggle("active",b.dataset.profileTab===tab));
@@ -351,9 +357,11 @@ async function loadProfilePage(user){
         if(postsLoadError){grid.innerHTML='<div class="ig-no-posts"><strong>!</strong><b>Posts unavailable</b><span>'+escapeHtml(postsLoadError)+'</span></div>';return;}
         if(!posts.length){grid.innerHTML='<div class="ig-no-posts"><strong>▧</strong><b>Share your first post</b><span>When you share posts, they will appear on your profile.</span></div>';return;}
         posts.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).forEach(post=>{
+          const wrap=document.createElement("div");wrap.className="ig-post-wrap";
           const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.textContent=post.text||"";
           tile.addEventListener("click",()=>{tile.classList.toggle("expanded");});
-          grid.append(tile);
+          const del=document.createElement("button");del.type="button";del.className="delete-post profile-delete-post";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(post.id,del,async()=>{const i=posts.findIndex(x=>x.id===post.id);if(i>=0)posts.splice(i,1);showTab("posts");}));
+          wrap.append(tile,del);grid.append(wrap);
         });
       }else{
         const empty=document.createElement("div");empty.className="ig-no-posts";empty.innerHTML='<strong>▧</strong><b>'+({reels:"No Reels yet",reposts:"No reposts yet",tagged:"No tagged posts yet"}[tab])+'</b><span>This section will show your '+tab+' here.</span>';grid.append(empty);
