@@ -119,7 +119,7 @@ function startPostsFeed(user){
     if(activeView==="home") renderPosts(snapshot.docs);
   },error=>{
     console.error("Posts feed error:",error);
-    if(activeView==="home") showFeedMessage("Could not load posts. Check Firestore Rules.");
+    if(activeView==="home") showFeedMessage("Could not load posts ("+(error.code||"unknown")+"): "+(error.message||"Check Firestore Rules."));
   });
 }
 function showFeedMessage(text){
@@ -168,14 +168,14 @@ async function getDocsForFeed(){
   try{
     const snapshot=await getDocs(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)));
     if(activeView==="home")renderPosts(snapshot.docs);
-  }catch(error){console.error(error);showFeedMessage("Could not load posts.");}
+  }catch(error){console.error(error);showFeedMessage("Could not load posts ("+(error.code||"unknown")+"): "+(error.message||"Check Firestore Rules."));}
 }
 const postForm=document.getElementById("postForm");
 postForm.addEventListener("submit",async event=>{
   event.preventDefault();
   const dialog=document.getElementById("createDialog");
   const status=document.getElementById("postStatus");
-  if(event.submitter?.value==="cancel"){dialog.close();return;}
+  
   if(!auth?.currentUser){status.textContent="Please log in to publish a post.";return;}
   const text=document.getElementById("caption").value.trim();
   if(!text){status.textContent="Write something before sharing.";return;}
@@ -213,10 +213,8 @@ function renderProfile(user){
     const bioInput=document.createElement("input");bioInput.maxLength=160;bioInput.placeholder="Tell the community about yourself";
     const usernameText=document.createElement("p");usernameText.className="muted";
     const save=document.createElement("button");save.type="button";save.textContent="Save profile";
-    const logout=document.createElement("button");logout.type="button";logout.textContent="Log out";logout.style.marginLeft="10px";logout.style.background="#343741";
-    logout.addEventListener("click",()=>signOut(auth));
     const status=document.createElement("p");status.className="muted";
-    panel.append(avatar,heading,email,usernameText,nameLabel,nameInput,bioLabel,bioInput,save,logout,status);feed.append(panel);
+    panel.append(avatar,heading,email,usernameText,nameLabel,nameInput,bioLabel,bioInput,save,status);feed.append(panel);
     document.getElementById("viewTitle").textContent="Your profile";
     try{
       const snap=await getDoc(doc(db,"userProfiles",user.uid));
@@ -243,6 +241,7 @@ function renderProfile(user){
 
 // Settings center
 const settingsDialog=document.getElementById("settingsDialog");
+document.getElementById("closeCreate")?.addEventListener("click",()=>document.getElementById("createDialog").close());
 document.getElementById("settingsBtn")?.addEventListener("click",()=>settingsDialog.showModal());
 document.getElementById("closeSettings")?.addEventListener("click",()=>settingsDialog.close());
 document.querySelectorAll(".settings-tab").forEach(tab=>tab.addEventListener("click",()=>{
