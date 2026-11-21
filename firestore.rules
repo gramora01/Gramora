@@ -1,93 +1,140 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // AUTHENTICATION CHECK
     function signedIn() {
       return request.auth != null;
     }
 
+    // ACCOUNT OWNER CHECK
     function owns(uid) {
       return signedIn() && request.auth.uid == uid;
     }
 
+    // USER PROFILES
     match /userProfiles/{uid} {
-      // Profiles can be viewed by signed-in members, but only the owner can edit.
+
+      // Signed-in users can view public profiles.
       allow read: if signedIn();
 
+      // Only the account owner can create their profile.
       allow create: if owns(uid)
         && request.resource.data.uid == uid
         && request.resource.data.keys().hasOnly([
-          'uid', 'displayName', 'username', 'email', 'bio', 'photoURL',
-          'followersCount', 'followingCount', 'createdAt', 'updatedAt'
+          'uid',
+          'displayName',
+          'username',
+          'email',
+          'bio',
+          'photoURL',
+          'followersCount',
+          'followingCount',
+          'createdAt',
+          'updatedAt'
         ]);
 
+      // Only the owner can update allowed profile fields.
       allow update: if owns(uid)
         && request.resource.data.uid == resource.data.uid
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['displayName', 'username', 'bio', 'photoURL', 'updatedAt']);
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly([
+            'displayName',
+            'username',
+            'bio',
+            'photoURL',
+            'updatedAt'
+          ]);
 
-      // Account profiles cannot be deleted by another member or through the client.
+      // Profile deletion is blocked from the client.
       allow delete: if false;
     }
 
+    // USERNAME RESERVATIONS
     match /usernames/{username} {
+
       allow read: if signedIn();
 
+      // A user can reserve a username for their own UID.
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['uid', 'createdAt']);
+        && request.resource.data.keys().hasOnly([
+          'uid',
+          'createdAt'
+        ]);
 
-      // Only the owner of this username reservation can release it.
+      // Only the owner can release their username.
       allow delete: if signedIn()
         && resource.data.uid == request.auth.uid;
 
+      // Username reservation cannot be overwritten.
       allow update: if false;
     }
 
+    // FOLLOW SYSTEM
     match /follows/{followId} {
+
       allow read: if signedIn();
 
+      // Users can create only their own follow relationship.
       allow create: if signedIn()
         && request.resource.data.followerUid == request.auth.uid
         && request.resource.data.followingUid is string
         && request.resource.data.followingUid != request.auth.uid
-        && followId == request.auth.uid + '_' + request.resource.data.followingUid
+        && followId == request.auth.uid + '_'
+          + request.resource.data.followingUid
         && request.resource.data.keys().hasOnly([
-          'followerUid', 'followingUid', 'createdAt'
+          'followerUid',
+          'followingUid',
+          'createdAt'
         ]);
 
-      // A user can remove only the follow relationship they created.
+      // Only the follower can remove their relationship.
       allow delete: if signedIn()
         && resource.data.followerUid == request.auth.uid;
 
       allow update: if false;
     }
 
+    // POSTS
     match /posts/{postId} {
+
+      // Signed-in members can view posts.
       allow read: if signedIn();
 
+      // A user can create only their own post.
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly([
-          'uid', 'displayName', 'username', 'text', 'createdAt'
+          'uid',
+          'displayName',
+          'username',
+          'text',
+          'createdAt'
         ])
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 2000;
 
-      // The post owner may edit only its text; ownership cannot be transferred.
+      // Only the post owner can edit post text.
+      // Ownership cannot be transferred.
       allow update: if signedIn()
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == resource.data.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text'])
+        && request.resource.data.diff(resource.data)
+          .affectedKeys().hasOnly(['text'])
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 2000;
 
+      // Only the post owner can delete their post.
       allow delete: if signedIn()
         && resource.data.uid == request.auth.uid;
     }
 
-    // All other collections are private from client writes unless explicitly allowed above.
+    // DENY ALL OTHER COLLECTIONS
     match /{document=**} {
       allow read, write: if false;
     }
