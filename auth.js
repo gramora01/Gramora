@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
@@ -105,11 +105,100 @@ if(auth) onAuthStateChanged(auth,async user=>{
   accountBar.hidden=!user;
   if(user){
     accountLabel.textContent=user.displayName||user.email;
-    try{await ensureProfile(user);renderProfile(user);}
+    try{await ensureProfile(user);renderProfile(user);startPostsFeed(user);}
     catch(error){console.error(error);showMessage("Could not load your profile. Check Firestore Security Rules.",true);}
   }
 });
 
+let activeFeedUnsubscribe=null;
+let activeView="home";
+function startPostsFeed(user){
+  if(activeFeedUnsubscribe) activeFeedUnsubscribe();
+  const postsQuery=query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40));
+  activeFeedUnsubscribe=onSnapshot(postsQuery,snapshot=>{
+    if(activeView==="home") renderPosts(snapshot.docs);
+  },error=>{
+    console.error("Posts feed error:",error);
+    if(activeView==="home") showFeedMessage("Could not load posts. Check Firestore Rules.");
+  });
+}
+function showFeedMessage(text){
+  const feed=document.getElementById("feed");
+  feed.replaceChildren();
+  const p=document.createElement("p");p.className="muted";p.textContent=text;feed.append(p);
+}
+function renderPosts(docs){
+  const feed=document.getElementById("feed");
+  feed.replaceChildren();
+  if(!docs.length){
+    const empty=document.createElement("div");empty.className="welcome-card";
+    const heading=document.createElement("h2");heading.textContent="Your feed is ready.";
+    const note=document.createElement("p");note.textContent="Be the first to share a moment with the GRAMORA community.";
+    empty.append(heading,note);feed.append(empty);return;
+  }
+  docs.forEach(postDoc=>{
+    const data=postDoc.data();
+    const article=document.createElement("article");article.className="post";
+    const head=document.createElement("div");head.className="post-head";
+    const avatar=document.createElement("div");avatar.className="avatar";
+    avatar.textContent=(data.displayName||"G").trim().charAt(0).toUpperCase();
+    const identity=document.createElement("div");
+    const name=document.createElement("b");name.textContent=data.displayName||"GRAMORA member";
+    const meta=document.createElement("small");
+    meta.textContent=(data.username?"@"+data.username+" · ":"")+formatPostDate(data.createdAt);
+    identity.append(name,meta);head.append(avatar,identity);
+    const content=document.createElement("p");content.className="post-text";content.textContent=data.text||"";
+    const actions=document.createElement("div");actions.className="post-actions";
+    const like=document.createElement("button");like.className="like";like.type="button";like.innerHTML="♡ <span>Like</span>";
+    const save=document.createElement("button");save.className="save";save.type="button";save.innerHTML="▣ <span>Save</span>";
+    actions.append(like,save);article.append(head,content,actions);feed.append(article);
+  });
+}
+function formatPostDate(timestamp){
+  if(!timestamp||!timestamp.toDate)return "Just now";
+  return timestamp.toDate().toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"});
+}
+document.addEventListener("gramora:view",event=>{
+  activeView=event.detail;
+  if(activeView==="home"&&auth?.currentUser){
+    getDocsForFeed();
+  }
+});
+async function getDocsForFeed(){
+  try{
+    const snapshot=await getDocs(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)));
+    if(activeView==="home")renderPosts(snapshot.docs);
+  }catch(error){console.error(error);showFeedMessage("Could not load posts.");}
+}
+const postForm=document.getElementById("postForm");
+postForm.addEventListener("submit",async event=>{
+  event.preventDefault();
+  if(!auth?.currentUser){showMessage("Please log in to publish a post.",true);return;}
+  const text=document.getElementById("caption").value.trim();
+  if(!text){showMessage("Write something before sharing.",true);return;}
+  const button=postForm.querySelector(".publish");
+  button.disabled=true;button.textContent="Sharing…";
+  try{
+    const user=auth.currentUser;
+    const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
+    const profile=profileSnap.exists()?profileSnap.data():{};
+    await addDoc(collection(db,"posts"),{
+      uid:user.uid,
+      displayName:profile.displayName||user.displayName||"GRAMORA member",
+      username:profile.username||"",
+      text:text,
+      createdAt:serverTimestamp()
+    });
+    document.getElementById("caption").value="";
+    document.getElementById("createDialog").close();
+    activeView="home";
+    document.querySelector('[data-view="home"]')?.click();
+    showMessage("Your post was shared successfully.");
+  }catch(error){
+    console.error(error);
+    showMessage(error.code==="permission-denied"?"Firestore Rules blocked this post. Publish the updated rules.":"Could not share post. Check your internet and try again.",true);
+  }finally{button.disabled=false;button.textContent="Share post";}
+});
 function renderProfile(user){
   const profileButton=document.querySelector('[data-view="profile"]');
   if(!profileButton||profileButton.dataset.profileBound)return;
