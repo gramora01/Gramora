@@ -1331,7 +1331,6 @@ async function loadProfilePage(user){
     panel.querySelector(".profile-add").addEventListener("click",()=>{document.querySelector('.mobile-nav [data-view="explore"], .sidebar [data-view="explore"]')?.click();});
     panel.querySelector(".add-highlight").addEventListener("click",()=>openHighlightCreator(user));
     loadProfileHighlights(user,panel);
-    panel.querySelector(".profile-more").addEventListener("click",()=>alert("More profile options will be added in Settings."));
     editForm.addEventListener("submit",async event=>{
       event.preventDefault();
       const newName=editForm.elements.displayName.value.trim(),newUsername=editForm.elements.username.value.trim().toLowerCase().replace(/^@/,""),bio=editForm.elements.bio.value.trim(),status=editForm.querySelector(".ig-edit-status"),save=editForm.querySelector("button[type=submit]");
