@@ -548,3 +548,12 @@ body.light .highlight-choice{background:#f7f5f2;border-color:#e5e1dc}
 .explore-page .person-result{width:100%;background:transparent;color:inherit;text-align:left;cursor:pointer}
 .explore-page .person-result .avatar{width:42px;height:42px;flex:0 0 42px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#343945}
 .explore-page .person-result .avatar img{width:100%;height:100%;object-fit:cover}
+
+/* Feed repost and clickable post-author profile */
+.post-author-link{width:100%;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;font:inherit}
+.post-author-link:focus-visible{outline:2px solid var(--accent,#6c8cff);outline-offset:3px;border-radius:10px}
+.post-author-identity{display:grid;gap:3px;min-width:0}
+.post-reposted-by{font-size:12px;font-weight:700;color:var(--muted);padding:0 2px 8px}
+.post-actions .repost{border:0;background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer;padding:8px 10px;border-radius:10px}
+.post-actions .repost:disabled{opacity:.7;cursor:default}
+.post-actions .repost:not(:disabled):active{background:var(--line)}
