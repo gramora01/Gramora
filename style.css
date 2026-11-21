@@ -394,3 +394,11 @@ body.light .mobile-nav .nav{color:#515563!important}
 body.light .mobile-nav .nav.active{background:#eeedff!important;color:#5146d8!important}
 body.light .mobile-create{background:linear-gradient(135deg,#6558e8,#8b5cf6)!important;border-color:#6558e8!important;color:#fff!important;box-shadow:0 4px 12px rgba(101,88,232,.22)}
 body.light button:focus-visible{outline:3px solid rgba(101,88,232,.35);outline-offset:2px}
+
+/* Keep Posts, Followers and Following in matching vertical stat columns. */
+.ig-profile-stats{display:flex;align-items:flex-start;justify-content:space-around;gap:8px}
+.ig-profile-stats .profile-stat{display:flex;flex:1;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;text-decoration:none}
+.ig-profile-stats .profile-stat b{display:block;font-size:17px;line-height:1.25;font-weight:800}
+.ig-profile-stats .profile-stat small{display:block;font-size:13px;line-height:1.3;color:inherit;white-space:nowrap}
+.ig-profile-stats button.profile-stat{border:0;background:transparent;padding:4px 2px;font:inherit;cursor:pointer}
+@media(max-width:600px){.ig-profile-stats .profile-stat b{font-size:15px}.ig-profile-stats .profile-stat small{font-size:12px}}
