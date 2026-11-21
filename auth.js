@@ -278,12 +278,10 @@ async function recordStoryView(storyId,storyData){
   const user=auth?.currentUser;if(!user||user.uid===storyData.uid)return;
   try{
     const ref=doc(db,"storyViews",storyId+"_"+user.uid);
-    const existing=await getDoc(ref);
-    if(!existing.exists()){
-      const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
-      const profile=profileSnap.exists()?profileSnap.data():{};
-      await setDoc(ref,{storyId,storyUid:storyData.uid,uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",createdAt:serverTimestamp()});
-    }
+    const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
+    const profile=profileSnap.exists()?profileSnap.data():{};
+    const viewData={storyId,storyUid:storyData.uid,uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",createdAt:serverTimestamp()};
+    await setDoc(ref,viewData);
   }catch(error){console.error("Story view could not be recorded:",error);}
 }
 async function loadStoryViewers(storyId,storyData){
