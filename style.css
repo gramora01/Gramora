@@ -606,3 +606,17 @@ body.light .highlight-choice{background:#f7f5f2;border-color:#e5e1dc}
 .settings-panel[data-panel="saved"] .settings-row{cursor:pointer}
 .post-actions .save.saved{color:#e1306c!important;font-weight:800}
 body.light .post-actions .save.saved{color:#e1306c!important}
+
+
+/* Long-press actions for profile photos */
+.dp-action-dialog{width:min(88vw,330px);max-width:330px;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--panel,#17191f);color:var(--text,#fff);text-align:center}
+.dp-action-dialog h3{margin:0 0 16px;font-size:16px}
+.dp-action-buttons{display:grid;gap:9px}
+.dp-action-buttons button,.dp-action-cancel{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;background:var(--bg,#101217);color:inherit;font-size:14px;font-weight:700}
+.dp-action-cancel{margin-top:10px;background:transparent;color:var(--muted)}
+.dp-viewer-dialog{width:min(92vw,520px);max-width:520px;height:min(78vh,520px);padding:0;border:0;border-radius:20px;background:transparent;overflow:visible}
+.dp-viewer-dialog::backdrop{background:#000d;backdrop-filter:blur(5px)}
+.dp-viewer-close{position:absolute;z-index:2;top:8px;right:8px;width:38px;height:38px;border:0;border-radius:50%;background:#111c;color:#fff;font-size:27px}
+.dp-viewer-image{width:100%;height:100%;display:grid;place-items:center;overflow:hidden;border-radius:20px;background:#17191f;color:#fff;font-size:100px;font-weight:700}
+.dp-viewer-image img{width:100%;height:100%;object-fit:contain}
+.post-head .avatar,.ig-profile-avatar{-webkit-user-select:none;user-select:none;touch-action:pan-y}
