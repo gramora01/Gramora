@@ -153,3 +153,26 @@ body.profile-active .stories-section{display:none!important}
 .follow-list-body .person-info small{color:#a9afbd}
 .stat-open{border:0;background:transparent;color:inherit;padding:4px 6px;cursor:pointer;text-align:center;font:inherit}
 .stat-open:active{opacity:.65}
+
+
+/* Instagram-style followers and following dialog */
+.follow-list-dialog{width:min(94vw,460px);max-height:min(82vh,720px);padding:0 18px 18px;background:#101116;color:#f5f5f7;border:1px solid #292b33;border-radius:18px;overflow:auto}
+.follow-list-dialog::backdrop{background:rgba(0,0,0,.72);backdrop-filter:blur(5px)}
+.follow-list-head{height:64px;display:flex;align-items:center;justify-content:center;position:sticky;top:0;background:#101116;border-bottom:1px solid #292b33;z-index:2}
+.follow-list-head h3{margin:0;font-size:19px;font-weight:700}
+.follow-list-close{position:absolute;right:0;width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:#f5f5f7;font-size:29px;cursor:pointer}
+.follow-list-search{width:100%;height:46px;margin:16px 0 8px;padding:0 16px;border:0;border-radius:12px;background:#262830;color:#fff;font-size:15px;outline:none}
+.follow-list-search::placeholder{color:#a4a6af}
+.follow-list-body{display:grid;gap:2px}
+.follow-person-row{display:flex;align-items:center;gap:12px;min-height:68px;padding:8px 0}
+.follow-person-row[hidden]{display:none}
+.follow-person-profile{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.follow-person-avatar{width:48px;height:48px;flex:0 0 48px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:#30333d;color:#fff;font-size:19px;font-weight:600}
+.follow-person-avatar img{width:100%;height:100%;object-fit:cover}
+.follow-person-info{min-width:0;display:grid;gap:4px}
+.follow-person-info strong{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.follow-person-info small{font-size:13px;color:#a5a7b0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.follow-person-action{min-width:100px;height:36px;padding:0 14px;border:0;border-radius:9px;background:#405de6;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+.follow-person-action.is-following{background:#292c34;color:#f5f5f7}
+.follow-person-action:disabled{opacity:.55}
+.follow-list-empty{text-align:center;color:#a5a7b0;padding:28px 8px}
