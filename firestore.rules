@@ -112,8 +112,11 @@ service cloud.firestore {
           'displayName',
           'username',
           'text',
+          'background',
           'createdAt'
         ])
+        && request.resource.data.background is string
+        && request.resource.data.background.size() <= 200
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 2000;
@@ -124,7 +127,9 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.diff(resource.data)
-          .affectedKeys().hasOnly(['text'])
+           .affectedKeys().hasOnly(['text','background'])
+        && request.resource.data.background is string
+        && request.resource.data.background.size() <= 200
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 2000;
@@ -145,7 +150,7 @@ service cloud.firestore {
         && repostId == request.resource.data.originalPostId + '_' + request.auth.uid
         && request.resource.data.originalText is string
         && request.resource.data.originalText.size() <= 2000
-        && request.resource.data.keys().hasOnly(['uid','displayName','originalPostId','originalUid','originalDisplayName','originalUsername','originalPhotoURL','originalText','originalCreatedAt','createdAt']);
+        && request.resource.data.keys().hasOnly(['uid','displayName','originalPostId','originalUid','originalDisplayName','originalUsername','originalPhotoURL','originalText','originalBackground','originalCreatedAt','createdAt']);
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
       allow update: if false;
     }
@@ -156,8 +161,10 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly([
-          'uid','displayName','text','songTitle','songArtist','songUrl','previewUrl','createdAt','expiresAt'
+          'uid','displayName','text','songTitle','songArtist','songUrl','previewUrl','background','createdAt','expiresAt'
         ])
+        && request.resource.data.background is string
+        && request.resource.data.background.size() <= 200
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 500
@@ -171,7 +178,15 @@ service cloud.firestore {
         && request.resource.data.expiresAt > request.time
         && request.resource.data.expiresAt <= request.time + duration.value(25, 'h');
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
-      allow update: if false;
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text','background'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 500
+        && request.resource.data.background is string
+        && request.resource.data.background.size() <= 200;
     }
 
     // STORY HIGHLIGHTS: owner creates and manages saved story collections.
