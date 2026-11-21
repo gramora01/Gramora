@@ -600,3 +600,9 @@ body.light .highlight-choice{background:#f7f5f2;border-color:#e5e1dc}
 .post-detail-like-count{color:inherit}
 .post-comment-author{border:0;background:transparent;color:inherit;font:inherit;font-weight:800;padding:0;cursor:pointer;text-align:left}
 .post-likes-dialog{max-width:min(92vw,420px)}
+
+
+/* Saved posts in settings and feed */
+.settings-panel[data-panel="saved"] .settings-row{cursor:pointer}
+.post-actions .save.saved{color:#e1306c!important;font-weight:800}
+body.light .post-actions .save.saved{color:#e1306c!important}
