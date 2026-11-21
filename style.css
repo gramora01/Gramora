@@ -72,3 +72,5 @@ body.light .topbar{background:#090a0e}body.light .brand{color:#fff}body.light .s
 .top-action{margin-right:auto}.top-heart{font-size:31px}.topbar .brand{position:absolute;left:50%;transform:translateX(-50%)}
 .topbar-right{margin-left:auto}
 @media(max-width:680px){.topbar{justify-content:space-between}.top-action{position:absolute;left:7px;top:11px;margin:0;font-size:30px}.topbar .brand{left:50%;transform:translateX(-50%)}.topbar-right{right:8px;top:7px}.top-heart{display:none}}
+
+@media(max-width:680px){.topbar-right{display:flex;align-items:center;gap:3px;right:5px;top:8px}.top-heart{display:block;font-size:26px;padding:3px}.account-bar{max-width:75px;padding:2px 3px;background:transparent}.account-avatar{display:none}.account-bar #accountLabel{display:none}.account-bar button{font-size:9px;padding:3px 4px}}
