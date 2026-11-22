@@ -744,7 +744,10 @@ storyReplyForm?.addEventListener("submit",async event=>{
   }catch(error){console.error("Story reply failed:",error);status.textContent="Reply nahi bhej paye. Firestore Rules check karein.";}
   finally{button.disabled=false;}
 });
-const songSearchButton=document.getElementById("storySongSearchButton");
+
+document.getElementById("openStoryMusic")?.addEventListener("click",()=>{const sheet=document.getElementById("storyMusicSheet");if(sheet)sheet.hidden=false;});
+document.getElementById("closeStoryMusic")?.addEventListener("click",()=>{const sheet=document.getElementById("storyMusicSheet");if(sheet)sheet.hidden=true;});
+\nconst songSearchButton=document.getElementById("storySongSearchButton");
 const songSearchInput=document.getElementById("storySongSearch");
 const songSearchResults=document.getElementById("storySongResults");
 const selectedPreview=document.getElementById("storySongPreviewUrl");
