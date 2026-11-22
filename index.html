@@ -71,22 +71,48 @@
 
 
 
-  <dialog id="storyCreateDialog" class="story-dialog">
+  <dialog id="storyCreateDialog" class="story-dialog gramora-story-editor">
     <form id="storyForm">
-      <div class="dialog-head"><div><p class="eyebrow">24-HOUR STORY</p><h2>Create a text story</h2></div><button id="closeStoryCreate" class="close-btn" type="button" aria-label="Close">×</button></div>
-      <label for="storyText">Your story</label>
-      <textarea id="storyText" maxlength="500" rows="5" placeholder="What's happening?" required></textarea>
-      <input id="storyBackground" type="hidden"><label>Choose a story background</label><div id="storyBackgroundPicker" class="background-picker"><button type="button" data-bg="linear-gradient(135deg,#ff9966,#ff5e62)" style="background:linear-gradient(135deg,#ff9966,#ff5e62)" aria-label="Background 1"></button><button type="button" data-bg="linear-gradient(135deg,#7f7fd5,#86a8e7,#91eae4)" style="background:linear-gradient(135deg,#7f7fd5,#86a8e7,#91eae4)" aria-label="Background 2"></button><button type="button" data-bg="linear-gradient(135deg,#654ea3,#eaafc8)" style="background:linear-gradient(135deg,#654ea3,#eaafc8)" aria-label="Background 3"></button><button type="button" data-bg="linear-gradient(135deg,#11998e,#38ef7d)" style="background:linear-gradient(135deg,#11998e,#38ef7d)" aria-label="Background 4"></button><button type="button" data-bg="linear-gradient(135deg,#232526,#414345)" style="background:linear-gradient(135deg,#232526,#414345)" aria-label="Background 5"></button><button type="button" data-bg="linear-gradient(135deg,#f7971e,#ffd200)" style="background:linear-gradient(135deg,#f7971e,#ffd200)" aria-label="Background 6"></button><button type="button" data-bg="linear-gradient(135deg,#fc466b,#3f5efb)" style="background:linear-gradient(135deg,#fc466b,#3f5efb)" aria-label="Background 7"></button><button type="button" data-bg="linear-gradient(135deg,#eeaeca,#94bbe9)" style="background:linear-gradient(135deg,#eeaeca,#94bbe9)" aria-label="Background 8"></button></div>
-      <p class="muted tiny">Text story · Story 24 hours tak visible rahegi.</p>
-      <div class="story-song-fields"><p class="eyebrow">ADD MUSIC TO YOUR STORY</p>
+      <div class="gramora-story-topbar">
+        <button id="closeStoryCreate" class="gramora-story-cancel" type="button">Cancel</button>
+        <span class="gramora-story-mode">TEXT STORY</span>
+        <button class="gramora-story-done" type="submit">Done</button>
+      </div>
+      <div class="gramora-story-stage">
+        <textarea id="storyText" maxlength="500" rows="4" placeholder="Type something..." required aria-label="Your story text"></textarea>
+        <div class="gramora-story-style-strip" aria-hidden="true"><span>Classic</span><span>Modern</span><span class="active">Elegant</span><span>Strong</span></div>
+      </div>
+      <input id="storyBackground" type="hidden" value="linear-gradient(135deg,#ff9966,#ff5e62)">
+      <div class="gramora-story-tools">
+        <div id="storyBackgroundPicker" class="background-picker" aria-label="Story background colours">
+          <button type="button" data-bg="linear-gradient(135deg,#ff9966,#ff5e62)" style="background:linear-gradient(135deg,#ff9966,#ff5e62)" aria-label="Coral background"></button>
+          <button type="button" data-bg="linear-gradient(135deg,#7f7fd5,#86a8e7,#91eae4)" style="background:linear-gradient(135deg,#7f7fd5,#86a8e7,#91eae4)" aria-label="Blue background"></button>
+          <button type="button" data-bg="linear-gradient(135deg,#654ea3,#eaafc8)" style="background:linear-gradient(135deg,#654ea3,#eaafc8)" aria-label="Purple background"></button>
+          <button type="button" data-bg="linear-gradient(135deg,#11998e,#38ef7d)" style="background:linear-gradient(135deg,#11998e,#38ef7d)" aria-label="Green background"></button>
+          <button type="button" data-bg="linear-gradient(135deg,#232526,#414345)" style="background:linear-gradient(135deg,#232526,#414345)" aria-label="Dark background"></button>
+          <button type="button" data-bg="linear-gradient(135deg,#f7971e,#ffd200)" style="background:linear-gradient(135deg,#f7971e,#ffd200)" aria-label="Yellow background"></button>
+          <button type="button" data-bg="linear-gradient(135deg,#fc466b,#3f5efb)" style="background:linear-gradient(135deg,#fc466b,#3f5efb)" aria-label="Pink blue background"></button>
+          <button type="button" data-bg="linear-gradient(135deg,#eeaeca,#94bbe9)" style="background:linear-gradient(135deg,#eeaeca,#94bbe9)" aria-label="Pastel background"></button>
+        </div>
+        <div class="gramora-story-toolrow">
+          <span class="gramora-story-tool" aria-hidden="true">Aa</span>
+          <span class="gramora-story-tool" aria-hidden="true">◉</span>
+          <button id="openStoryMusic" class="gramora-story-tool gramora-story-music" type="button">♫ <small>Music</small></button>
+          <span class="gramora-story-tool" aria-hidden="true">▧</span>
+          <span class="gramora-story-tool" aria-hidden="true">⋯</span>
+        </div>
+      </div>
+      <div class="story-song-fields gramora-music-sheet" id="storyMusicSheet" hidden>
+        <div class="gramora-sheet-handle"></div>
+        <div class="gramora-music-heading"><strong>Add music</strong><button id="closeStoryMusic" type="button" aria-label="Close music picker">×</button></div>
+        <div class="gramora-music-tabs" aria-hidden="true"><span class="active">For you</span><span>Trending</span><span>Saved</span><span>Original audio</span></div>
         <label for="storySongSearch">Search songs</label>
-        <div class="story-song-search-row"><input id="storySongSearch" placeholder="Song ya singer search karein"><button id="storySongSearchButton" type="button" class="outline-btn">Search</button></div>
+        <div class="story-song-search-row"><input id="storySongSearch" placeholder="Search..." autocomplete="off"><button id="storySongSearchButton" type="button" class="outline-btn">Search</button></div>
         <div id="storySongResults" class="story-song-results" aria-live="polite"></div>
         <input id="storySongTitle" type="hidden"><input id="storySongArtist" type="hidden"><input id="storySongUrl" type="hidden"><input id="storySongPreviewUrl" type="hidden">
-        <p class="muted tiny">Search se song select karein. Available songs ka 30-second preview story ke andar play hoga; full licensed tracks har song ke liye available nahi hote.</p>
+        <p class="muted tiny">Choose a song to add its available preview to your story.</p>
       </div>
       <p id="storyCreateStatus" class="post-status" role="status"></p>
-      <button class="create-btn publish" type="submit">Share story</button>
     </form>
   </dialog>
   <dialog id="storyViewerDialog" class="story-dialog story-viewer">
