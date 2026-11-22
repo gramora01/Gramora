@@ -635,6 +635,7 @@ function openStoryViewer(docs,id){
   const ownerDeleteAction=ownerMenu?.querySelector('[data-story-menu-action="delete"]');if(ownerDeleteAction)ownerDeleteAction.onclick=()=>{ownerMenu.hidden=true;deleteButton?.click();};
   content.textContent=data.text||"";
   content.style.background=data.background||POST_BACKGROUNDS[4];
+  const viewerLyrics=document.getElementById("storyViewerLyrics");if(viewerLyrics){viewerLyrics.textContent=data.lyrics||"";viewerLyrics.hidden=!(data.lyrics||"").trim();}
   const viewerName=document.getElementById("storyViewerName");if(viewerName)viewerName.textContent=data.displayName||"GRAMORA member";
   const viewerTime=document.getElementById("storyViewerTime");if(viewerTime)viewerTime.textContent=formatPostDate(data.createdAt);
   const avatar=document.getElementById("storyViewerAvatar");if(avatar){const profile=storyProfileCache.get(data.uid)||{};avatar.replaceChildren();if(profile.photoURL){const image=document.createElement("img");image.src=profile.photoURL;image.alt="";avatar.append(image);}else avatar.textContent=(data.displayName||"G").trim().charAt(0).toUpperCase();if(!storyProfileCache.has(data.uid))getStoryProfile(data.uid).then(p=>{if(dialog.dataset.storyId===id&&p?.photoURL){const image=document.createElement("img");image.src=p.photoURL;image.alt="";avatar.replaceChildren(image);}});}
@@ -678,7 +679,7 @@ function openStoryViewer(docs,id){
       storyEditingId=id;setStoryEditingMode(true);document.getElementById("storyText").value=data.text||"";if(storyCharCount)storyCharCount.textContent=String((data.text||"").length);
       const bg=data.background||POST_BACKGROUNDS[4];document.getElementById("storyBackground").value=bg;document.getElementById("storyText").style.background=bg;
       document.querySelectorAll("#storyBackgroundPicker [data-bg]").forEach(button=>button.classList.toggle("selected",button.dataset.bg===bg));
-      document.getElementById("storySongTitle").value=data.songTitle||"";document.getElementById("storySongArtist").value=data.songArtist||"";document.getElementById("storySongUrl").value=data.songUrl||"";document.getElementById("storySongPreviewUrl").value=data.previewUrl||"";document.getElementById("storySongArtwork").value=data.songArtwork||"";document.getElementById("storySongStart").value=String(data.songStart||0);document.getElementById("storyMusicAttached").hidden=!data.songTitle;document.getElementById("storySongAttachedTitle").textContent=data.songTitle||"";document.getElementById("storySongAttachedArtist").textContent=data.songArtist||"";document.getElementById("storySongArtworkPreview").src=data.songArtwork||"";
+      document.getElementById("storySongTitle").value=data.songTitle||"";document.getElementById("storySongLyrics").value=data.lyrics||"";document.getElementById("storyLyricsEditor").hidden=!data.songTitle;document.getElementById("storyLyricsPreview").textContent=data.lyrics||"";document.getElementById("storyLyricsPreview").hidden=!(data.lyrics||"").trim();document.getElementById("storySongArtist").value=data.songArtist||"";document.getElementById("storySongUrl").value=data.songUrl||"";document.getElementById("storySongPreviewUrl").value=data.previewUrl||"";document.getElementById("storySongArtwork").value=data.songArtwork||"";document.getElementById("storySongStart").value=String(data.songStart||0);document.getElementById("storyMusicAttached").hidden=!data.songTitle;document.getElementById("storySongAttachedTitle").textContent=data.songTitle||"";document.getElementById("storySongAttachedArtist").textContent=data.songArtist||"";document.getElementById("storySongArtworkPreview").src=data.songArtwork||"";
       document.getElementById("storyCreateDialog").querySelector("h2").textContent="Edit your story";document.querySelector("#storyForm button[type=submit]").textContent="Save story";
       dialog.close();document.getElementById("storyCreateDialog").showModal();
     };
@@ -1037,7 +1038,7 @@ document.getElementById("addStoryMusic")?.addEventListener("click",()=>{
   document.getElementById("storySongAttachedTitle").textContent=title;
   document.getElementById("storySongAttachedArtist").textContent=artist;
   document.getElementById("storySongArtworkPreview").src=art;
-  storyMusicAttached.hidden=false;stopStoryMusicPreview();storyMusicSheet.hidden=true;
+  storyMusicAttached.hidden=false;stopStoryMusicPreview();storyMusicSheet.hidden=true;const lyrics=document.getElementById("storySongLyrics").value.trim();document.getElementById("storyLyricsPreview").textContent=lyrics;document.getElementById("storyLyricsPreview").hidden=!lyrics;
 });
 document.getElementById("storyMusicRemove")?.addEventListener("click",()=>{
   stopStoryMusicPreview();["storySongTitle","storySongArtist","storySongUrl","storySongPreviewUrl","storySongArtwork"].forEach(id=>document.getElementById(id).value="");
@@ -1046,6 +1047,7 @@ document.getElementById("storyMusicRemove")?.addEventListener("click",()=>{
 const storyTextArea=document.getElementById("storyText");
 const storyCharCount=document.getElementById("storyCharCount");
 storyTextArea?.addEventListener("input",()=>{if(storyCharCount)storyCharCount.textContent=String(storyTextArea.value.length);});
+document.getElementById("storySongLyrics")?.addEventListener("input",event=>{const preview=document.getElementById("storyLyricsPreview");preview.textContent=event.target.value;preview.hidden=!event.target.value.trim();});
 document.querySelectorAll(".gramora-story-style-strip [data-story-font]").forEach(button=>button.addEventListener("click",()=>{
   const fonts={classic:"650 32px Arial,sans-serif",modern:"700 32px system-ui,sans-serif",elegant:"italic 500 32px Georgia,serif",strong:"800 32px Impact,sans-serif"};
   storyTextArea.style.font=fonts[button.dataset.storyFont]||fonts.classic;
@@ -1091,13 +1093,14 @@ storyForm?.addEventListener("submit",async event=>{
   const text=document.getElementById("storyText").value.trim();
   const background=document.getElementById("storyBackground").value||POST_BACKGROUNDS[4];
   const songTitle=document.getElementById("storySongTitle").value.trim();
+  const lyrics=document.getElementById("storySongLyrics").value.trim();
   const songArtist=document.getElementById("storySongArtist").value.trim();
   const songUrl=document.getElementById("storySongUrl").value.trim();
   const previewUrl=storyPreviewInput?.value.trim()||"";
   const songArtwork=document.getElementById("storySongArtwork").value.trim();
   const songStart=Number(document.getElementById("storySongStart").value||0);
   if(!auth?.currentUser){status.textContent="Story share karne ke liye login karein.";return;}
-  if(!text){status.textContent="Pehle apni text story likhein.";return;}
+  if(!text&&!songTitle){status.textContent="Story text likhein ya song add karein.";return;}
   if(songUrl&&!/^https:\/\/(open\.spotify\.com|music\.apple\.com|music\.youtube\.com|www\.youtube\.com|youtu\.be)\//i.test(songUrl)){
     status.textContent="Valid Apple Music, Spotify ya YouTube song link add karein.";return;
   }
@@ -1107,12 +1110,12 @@ storyForm?.addEventListener("submit",async event=>{
     const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
     const profile=profileSnap.exists()?profileSnap.data():{};
     if(storyEditingId){
-      await updateDoc(doc(db,"stories",storyEditingId),{text,background,songTitle,songArtist,songUrl,previewUrl,songArtwork,songStart});storyEditingId=null;status.textContent="Story update ho gayi!";
+      await updateDoc(doc(db,"stories",storyEditingId),{text,lyrics,background,songTitle,songArtist,songUrl,previewUrl,songArtwork,songStart});storyEditingId=null;status.textContent="Story update ho gayi!";
     }else{
-      await addDoc(collection(db,"stories"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",text,songTitle,songArtist,songUrl,previewUrl,songArtwork,songStart,background,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)});
+      await addDoc(collection(db,"stories"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",text,lyrics,songTitle,songArtist,songUrl,previewUrl,songArtwork,songStart,background,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)});
       status.textContent="Story share ho gayi!";
     }
-    storyForm.reset();setStoryEditingMode(true);if(storyEditorDone)storyEditorDone.textContent="Done";if(storyCharCount)storyCharCount.textContent="0";if(storyTextArea){storyTextArea.style.font="";storyTextArea.style.color="#fff";storyTextArea.style.textAlign="center";}document.querySelectorAll(".gramora-story-style-strip [data-story-font]").forEach((item,index)=>item.classList.toggle("active",index===0));stopStoryMusicPreview();if(storyMusicAttached)storyMusicAttached.hidden=true;if(storyMusicSelection)storyMusicSelection.hidden=true;storySongResults?.replaceChildren();
+    storyForm.reset();setStoryEditingMode(true);if(storyEditorDone)storyEditorDone.textContent="Done";if(storyCharCount)storyCharCount.textContent="0";if(storyTextArea){storyTextArea.style.font="";storyTextArea.style.color="#fff";storyTextArea.style.textAlign="center";}document.querySelectorAll(".gramora-story-style-strip [data-story-font]").forEach((item,index)=>item.classList.toggle("active",index===0));stopStoryMusicPreview();if(storyMusicAttached)storyMusicAttached.hidden=true;if(storyMusicSelection)storyMusicSelection.hidden=true;document.getElementById("storyLyricsEditor").hidden=true;document.getElementById("storyLyricsPreview").hidden=true;storySongResults?.replaceChildren();
     document.getElementById("storyCreateDialog").close();document.getElementById("storyCreateDialog").querySelector("h2").textContent="Create a text story";
   }catch(error){
     console.error("Story publish failed:",error);
