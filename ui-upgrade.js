@@ -61,7 +61,7 @@
   function syncStory(dialog){
     const ownerSection=$("storyViewerViews");
     dialog.classList.toggle("gv-owner",!!ownerSection&&!ownerSection.hidden);
-    const menu=dialog.querySelector(".gv-menu");if(menu&&!dialog.open)menu.hidden=true;
+    const menu=dialog.querySelector(".gv-menu");if(menu&&!dialog.open&&!menu.hidden)menu.hidden=true;
   }
   function buildChat(form){
     if(form.dataset.gvActions)return;form.dataset.gvActions="1";
