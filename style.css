@@ -1050,3 +1050,24 @@ body.light .gramora-story-viewer{color:#fff!important}
  .gramora-story-owner-actions button{min-width:54px;padding-inline:5px}
  .gramora-story-viewer .gramora-viewer-song{top:calc(max(env(safe-area-inset-top),8px) + 66px)!important}
 }
+
+
+/* Story viewer interaction polish: activity, reply and minimal heart */
+.gramora-story-tapzone{z-index:4}
+.gramora-story-viewer .highlight-story-nav{display:none!important}
+.gramora-story-viewer .gramora-viewer-bottom{padding:10px 14px max(12px,env(safe-area-inset-bottom))!important}
+.gramora-story-viewer .gramora-viewer-reply-row{display:flex;align-items:center;gap:10px;width:100%}
+.gramora-story-viewer .story-reply-form{display:flex;align-items:center;flex:1;min-width:0;gap:8px;min-height:46px;padding:4px 5px 4px 16px;border:1px solid rgba(255,255,255,.58);border-radius:28px;background:rgba(20,20,24,.34);box-shadow:0 3px 16px #0002;backdrop-filter:blur(12px)}
+.gramora-story-viewer .story-reply-form input{flex:1;min-width:0;height:36px;padding:0 2px;border:0!important;outline:0!important;background:transparent!important;color:#fff!important;font-size:14px!important;box-shadow:none!important}
+.gramora-story-viewer .story-reply-form input::placeholder{color:rgba(255,255,255,.78)}
+.gramora-story-viewer .story-reply-form button[type=submit]{flex:0 0 36px;width:36px;height:36px;border:0;border-radius:50%;background:#fff;color:#222;display:grid;place-items:center}
+.gramora-story-viewer .story-reply-form button[type=submit][hidden]{display:none!important}
+.gramora-story-viewer .story-reply-form button[type=submit] svg{width:19px;height:19px}
+.gramora-story-viewer .story-like-button{flex:0 0 30px;width:30px;height:34px;padding:0;border:0;background:transparent;color:#fff;display:grid;place-items:center}
+.gramora-story-viewer .story-like-button svg{width:23px!important;height:23px!important}
+.gramora-story-viewer .story-like-button.liked svg path{fill:#ff315f;stroke:#ff315f}
+.gramora-story-viewer .story-viewer-reply-row .story-like-count{display:none!important}
+@media(max-width:420px){
+ .gramora-story-viewer .gramora-viewer-bottom{padding-left:12px!important;padding-right:12px!important}
+ .gramora-story-viewer .story-reply-form{min-height:44px}
+}
