@@ -595,10 +595,16 @@ let storyActivityTouchY=0;
 const storyActivitySheet=document.getElementById("storyActivitySheet");
 storyActivitySheet?.addEventListener("touchstart",event=>{storyActivityTouchY=event.changedTouches[0].clientY;},{passive:true});
 storyActivitySheet?.addEventListener("touchend",event=>{if(event.changedTouches[0].clientY-storyActivityTouchY>65)closeStoryActivitySheet();},{passive:true});
-document.getElementById("storyViewerDialog")?.addEventListener("close",stopStoryViewerTimer);
+document.getElementById("storyViewerDialog")?.addEventListener("close",()=>{
+  stopStoryViewerTimer();
+  closeStoryActivitySheet();
+});
 document.getElementById("storyViewerPrevious")?.addEventListener("click",()=>navigateStoryViewer(-1));
 document.getElementById("storyViewerNext")?.addEventListener("click",()=>navigateStoryViewer(1));
 function openStoryViewer(docs,id){
+  const activitySheet=document.getElementById("storyActivitySheet");
+  if(activitySheet)activitySheet.hidden=true;
+  storyViewerPaused=false;
   const storyDoc=docs.find(item=>item.id===id);if(!storyDoc)return;
   const data=storyDoc.data(),dialog=document.getElementById("storyViewerDialog");
   storyViewerSequence=dialog._highlightStories?.length?dialog._highlightStories:docs.filter(item=>item.data().uid===data.uid).sort((a,b)=>(a.data().createdAt?.toMillis?.()||0)-(b.data().createdAt?.toMillis?.()||0));
