@@ -1020,3 +1020,33 @@ body.light .gramora-story-editor #storyEditorDone[aria-pressed="true"]{
 body.light .gramora-chat-compose{background:var(--bg,#fff)!important}
 body.light .gramora-chat-compose input{background:#f3f3f5;color:#18191d;border-color:#e3e3e8}
 @media(max-width:380px){.gramora-chat-compose{gap:5px;padding-left:8px!important;padding-right:8px!important}.gramora-chat-compose .gramora-chat-sticker-toggle{flex-basis:34px;width:34px}.gramora-chat-compose input{padding:0 13px}}
+
+
+/* Instagram-like story viewer final layout */
+.gramora-story-viewer .gramora-viewer-header-actions #storyViewerEdit,
+.gramora-story-viewer .gramora-viewer-header-actions #storyViewerDelete{display:none!important}
+.gramora-story-viewer .gramora-viewer-stage{position:relative}
+.gramora-story-viewer .gramora-viewer-song{top:calc(max(env(safe-area-inset-top),8px) + 66px)!important;bottom:auto!important;left:16px!important;right:16px!important;justify-content:flex-start!important;max-width:none!important;z-index:6}
+.gramora-story-viewer .gramora-viewer-song .gramora-story-music-sticker{max-width:min(78%,340px);min-height:42px;padding:5px 12px 5px 7px;border:1px solid #ffffff35;border-radius:9px;background:rgba(15,15,18,.56);backdrop-filter:blur(14px);box-shadow:0 3px 16px #0004}
+.gramora-story-viewer .story-viewer-text{padding:132px 26px 86px!important}
+.gramora-story-owner-actions{display:flex;align-items:center;justify-content:space-around;gap:10px;padding:7px 0 10px;border-top:1px solid #ffffff22}
+.gramora-story-owner-actions[hidden],.gramora-story-owner-menu[hidden]{display:none!important}
+.gramora-story-owner-actions button{min-width:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:5px 9px;border:0;border-radius:10px;background:transparent;color:#fff;font-size:11px;font-weight:600}
+.gramora-story-owner-actions button svg{width:24px;height:24px;display:block}
+.gramora-story-owner-actions button:active{background:#ffffff20;transform:scale(.96)}
+.gramora-story-owner-menu{position:absolute;z-index:12;right:14px;bottom:78px;min-width:180px;padding:6px;border:1px solid #ffffff28;border-radius:13px;background:#202127;box-shadow:0 12px 32px #0008}
+.gramora-story-owner-menu button{display:block;width:100%;padding:12px 13px;border:0;border-radius:8px;background:transparent;color:#fff;text-align:left;font-size:13px}
+.gramora-story-owner-menu button:active{background:#ffffff18}
+.gramora-story-viewer .gramora-viewer-reply-row[hidden]{display:none!important}
+.gramora-story-viewer .gramora-viewer-reply-row .story-reply-form button svg{width:22px;height:22px;display:block;margin:auto}
+.gramora-story-viewer .gramora-viewer-reply-row .story-like-button svg{width:29px;height:29px;display:block}
+.gramora-story-viewer .gramora-viewer-reply-row .story-like-button.liked svg path{fill:#ff315f;stroke:#ff315f}
+.gramora-story-viewer .gramora-viewer-bottom{padding-top:9px!important}
+.gramora-story-viewer .story-viewers button{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border:1px solid #ffffff38;border-radius:20px;background:#ffffff15;color:#fff;font-size:12px}
+.gramora-story-viewer .story-viewer-view-list{margin-top:8px}
+body.light .gramora-story-viewer{color:#fff!important}
+@media(max-width:420px){
+ .gramora-story-owner-actions{justify-content:space-between;gap:2px}
+ .gramora-story-owner-actions button{min-width:54px;padding-inline:5px}
+ .gramora-story-viewer .gramora-viewer-song{top:calc(max(env(safe-area-inset-top),8px) + 66px)!important}
+}
