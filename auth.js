@@ -1234,6 +1234,12 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
       style.textContent += '.gramora-chat-find-panel{position:absolute;z-index:40;inset:64px 10px auto;padding:14px;border:1px solid var(--line,#444);border-radius:16px;background:var(--surface,#252833);box-shadow:0 12px 35px rgba(0,0,0,.35);max-height:70%;display:flex;flex-direction:column;gap:10px}.gramora-chat-find-head{display:flex;justify-content:space-between;align-items:center}.gramora-chat-find-head button{border:0;background:transparent;color:inherit;font-size:24px}.gramora-chat-find-panel input{width:100%;padding:12px;border:1px solid var(--line,#555);border-radius:10px;background:var(--bg,#111);color:var(--text,white)}.gramora-chat-find-results{overflow:auto;display:flex;flex-direction:column;gap:7px;font-size:13px}.gramora-chat-find-result{display:flex;flex-direction:column;gap:4px;text-align:left;padding:10px;border:1px solid var(--line,#444);border-radius:9px;background:transparent;color:inherit}.gramora-chat-find-result small{opacity:.65}.gramora-chat-search-hit{padding:10px;margin:8px;border:2px solid #8b5cf6;border-radius:10px;background:var(--surface,#333);color:var(--text,white)}';
       document.head.append(style);
     }
+    if(!document.getElementById("gramora-chat-message-row-style")){
+      const rowStyle=document.createElement("style");
+      rowStyle.id="gramora-chat-message-row-style";
+      rowStyle.textContent=".gramora-message-row{width:100%;min-width:0;display:flex;flex-direction:column;align-items:flex-start;position:relative;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}.gramora-message-row.mine{align-items:flex-end}.gramora-message-row.theirs{align-items:flex-start}.gramora-message-row .gramora-chat-bubble{max-width:min(78%,340px)}.gramora-message-row .gramora-message-receipt{align-self:flex-end}";
+      document.head.append(rowStyle);
+    }
     const chatShell=dlg.querySelector(".gramora-chat-shell");
     const chatOptions=dlg.querySelector(".gramora-chat-options");
     const chatThemePanel=dlg.querySelector(".gramora-chat-theme-panel");
@@ -1439,16 +1445,19 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
         if(m.editedAt){const edited=document.createElement("small");edited.textContent=" · edited";edited.style.fontSize="9px";bubble.append(edited);}
         const reactionValues=Object.values(m.reactions||{}).filter(Boolean);
         if(reactionValues.length){const reactionLine=document.createElement("div");reactionLine.className="gramora-chat-reactions";reactionLine.textContent=[...new Set(reactionValues)].join(" ");bubble.append(reactionLine);}
+        const messageRow=document.createElement("div");
+        messageRow.className="gramora-message-row "+(mine?"mine":"theirs");
         let holdTimer=null,holdTriggered=false;
         const openActions=()=>showMessageActions(m,mine,bubble);
         let swipeStartX=0,swipeStartY=0,swipeHandled=false;
         bubble.addEventListener("pointerdown",()=>{holdTriggered=false;holdTimer=setTimeout(()=>{holdTriggered=true;openActions();},550);});
         ["pointerup","pointerleave","pointercancel"].forEach(type=>bubble.addEventListener(type,()=>{if(holdTimer)clearTimeout(holdTimer);}));
-        bubble.addEventListener("touchstart",event=>{const touch=event.changedTouches[0];swipeStartX=touch.clientX;swipeStartY=touch.clientY;swipeHandled=false;},{passive:true});
-        bubble.addEventListener("touchend",event=>{const touch=event.changedTouches[0],dx=touch.clientX-swipeStartX,dy=touch.clientY-swipeStartY;if(dx>58&&Math.abs(dy)<48&&!holdTriggered){swipeHandled=true;if(holdTimer)clearTimeout(holdTimer);setReply(m);bubble.animate([{transform:"translateX(0)"},{transform:"translateX(9px)"},{transform:"translateX(0)"}],{duration:180});}},{passive:true});
-        bubble.addEventListener("contextmenu",event=>{event.preventDefault();openActions();});
+        messageRow.addEventListener("touchstart",event=>{const touch=event.changedTouches[0];swipeStartX=touch.clientX;swipeStartY=touch.clientY;swipeHandled=false;},{passive:true});
+        messageRow.addEventListener("touchend",event=>{const touch=event.changedTouches[0],dx=touch.clientX-swipeStartX,dy=touch.clientY-swipeStartY;if(dx>58&&Math.abs(dy)<58&&!holdTriggered){swipeHandled=true;if(holdTimer)clearTimeout(holdTimer);setReply(m);bubble.animate([{transform:"translateX(0)"},{transform:"translateX(9px)"},{transform:"translateX(0)"}],{duration:180});}},{passive:true});
+        messageRow.addEventListener("contextmenu",event=>{event.preventDefault();openActions();});
         bubble.addEventListener("selectstart",event=>event.preventDefault());
-        messageBox.append(bubble);
+        messageRow.append(bubble);
+        messageBox.append(messageRow);
         if(mine&&m.id===latestOwnMessageId){
           const receipt=document.createElement("small");
           receipt.className="gramora-message-receipt";
@@ -1459,7 +1468,7 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
             receipt.textContent="Seen "+ago;
           }else receipt.textContent=m.status==="seen"?"Seen":"Sent";
           receipt.style.cssText="display:block;align-self:flex-end;text-align:right;font-size:10px;line-height:1.2;opacity:.78;margin-top:-6px;margin-right:5px;color:var(--muted,#999)";
-          messageBox.append(receipt);
+          messageRow.append(receipt);
         }
       });
       messageBox.scrollTop=messageBox.scrollHeight;
