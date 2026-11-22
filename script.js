@@ -45,6 +45,13 @@ function showPlaceholder(view,title){
       .gramora-inbox-empty h3{margin:0 0 9px;color:var(--text,#f5f5f7);font-size:17px;font-weight:700}
       .gramora-inbox-empty p{max-width:290px;margin:0;color:var(--muted,#9ca3af);font-size:13px;line-height:1.65}
       body.light .gramora-inbox-search,body.light .gramora-inbox-empty-icon{background:#f3f4f8}
+      body.light .gramora-conversation{background:#fff!important;color:#20212a!important;border-color:#e4e6ee!important;box-shadow:0 2px 10px rgba(25,30,50,.045)}
+      body.light .gramora-conversation-details strong{color:#20212a!important}
+      body.light .gramora-conversation-details small,body.light .gramora-conversation-arrow{color:#73798a!important}
+      body.light .gramora-conversation.has-unread .gramora-conversation-details small{color:#34394a!important;font-weight:700}
+      body.light .gramora-conversation:active{background:#f0f1f7!important}
+      body.light .gramora-conversation-avatar{color:#fff!important}
+      body.light .gramora-inbox-unread{background:#d946a5!important;color:#fff!important}
       @media(max-width:680px){.gramora-inbox{padding:18px 16px 26px}.gramora-inbox-head h2{font-size:27px}.gramora-inbox-empty{min-height:40vh}}
     `;
     document.head.append(inboxStyle);
