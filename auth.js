@@ -1409,7 +1409,7 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
     },()=>{dlg.querySelector(".gramora-chat-status").textContent="Status unavailable";});
     if(activeChatPresenceTimer)clearInterval(activeChatPresenceTimer);
     activeChatPresenceTimer=setInterval(()=>renderGramoraChatPresence(dlg.querySelector(".gramora-chat-status"),activeChatPresenceData),15000);
-    activeChatUnsubscribe=onSnapshot(query(collection(db,"conversations",conversationRef.id,"messages"),orderBy("createdAt","desc"),limit(100)),snapshot=>{
+    activeChatUnsubscribe=onSnapshot(query(collection(db,"conversations",conversationRef.id,"messages"),orderBy("createdAt","desc"),limit(500)),snapshot=>{
       if(!dlg.open||activeChatConversationId!==conversationRef.id)return;
       messageBox.replaceChildren();
       // Hide messages at or before this user's local clear timestamp; never delete shared messages.
