@@ -839,8 +839,17 @@ document.querySelectorAll(".gramora-story-style-strip [data-story-font]").forEac
 document.getElementById("storyTextStyleToggle")?.addEventListener("click",()=>{
   const el=document.getElementById("storyText"),styles=["650 32px Arial,sans-serif","italic 500 32px Georgia,serif","800 32px Impact,sans-serif"];const n=Number(el.dataset.styleIndex||0)%styles.length;el.style.font=styles[n];el.dataset.styleIndex=String(n+1);
 });
-document.getElementById("storyTextColorToggle")?.addEventListener("click",()=>{
-  const el=document.getElementById("storyText");el.style.color=el.style.color==="rgb(255, 230, 130)"?"#fff":"#ffe682";
+const storyTextColors=["#ffffff","#ffe682","#ff9ecb","#9de7ff","#b9ffb2","#171923"];
+let storyTextColorIndex=0;
+const storyColorButton=document.getElementById("storyTextColorToggle");
+storyColorButton?.addEventListener("click",()=>{
+  const el=document.getElementById("storyText");
+  storyTextColorIndex=(storyTextColorIndex+1)%storyTextColors.length;
+  const color=storyTextColors[storyTextColorIndex];
+  el.style.setProperty("color",color,"important");
+  storyColorButton.style.setProperty("--story-color-preview",color);
+  storyColorButton.setAttribute("aria-label","Text colour: "+color+". Tap to change");
+  storyColorButton.classList.add("is-active");
 });
 document.getElementById("storyTextAlignToggle")?.addEventListener("click",()=>{
   const el=document.getElementById("storyText");el.style.textAlign=el.style.textAlign==="left"?"center":el.style.textAlign==="center"?"right":"left";
