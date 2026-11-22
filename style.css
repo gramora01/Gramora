@@ -801,3 +801,36 @@ button.gramora-story-tool{cursor:pointer}
 .gramora-story-editor form{overflow-y:auto}
 .gramora-story-stage{min-height:180px}
 .gramora-story-editor #storyText{background:transparent;color:#fff}
+
+/* Story editor clarity, responsive spacing and tactile feedback */
+.gramora-story-editor{isolation:isolate;overscroll-behavior:contain}
+.gramora-story-editor form{padding-bottom:max(env(safe-area-inset-bottom),12px)}
+.gramora-story-topbar{padding-inline:clamp(18px,5vw,28px)}
+.gramora-story-cancel,.gramora-story-done{transition:opacity .18s ease,transform .18s ease}
+.gramora-story-cancel:active,.gramora-story-done:active{opacity:.7;transform:scale(.96)}
+.gramora-story-stage{padding-inline:clamp(20px,6vw,34px)}
+.gramora-story-editor #storyText{width:100%;box-sizing:border-box;border-radius:18px;transition:font .2s ease,color .2s ease,background .2s ease}
+.gramora-story-editor #storyText:focus{outline:1px solid #ffffff35!important;outline-offset:5px}
+.gramora-story-style-strip{justify-content:flex-start;overflow-x:auto;scrollbar-width:none}
+.gramora-story-style-strip::-webkit-scrollbar{display:none}
+.gramora-story-style-strip button{flex:0 0 auto;border:1px solid #ffffff45;border-radius:22px;padding:9px 16px;background:#ffffff12;color:#fff;font:500 14px Georgia,serif;transition:background .2s ease,color .2s ease,transform .2s ease}
+.gramora-story-style-strip button.active{background:#fff;color:#202027;border-color:#fff;font-family:system-ui,sans-serif;font-weight:800}
+.gramora-story-style-strip button:active{transform:scale(.95)}
+.gramora-story-counter{display:flex;justify-content:space-between;align-items:center;color:#ffffffb8;font-size:11px;padding:0 3px 8px}
+.gramora-story-counter b{color:#fff;font-variant-numeric:tabular-nums}
+.gramora-story-editor #storyBackgroundPicker button{width:38px;height:38px;flex-basis:38px;transition:transform .2s ease,outline .2s ease}
+.gramora-story-editor #storyBackgroundPicker button:active{transform:scale(.9)}
+.gramora-story-tool{transition:transform .18s ease,background .2s ease,box-shadow .2s ease}
+.gramora-story-tool:focus-visible,.gramora-story-share:focus-visible,.gramora-story-style-strip button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.gramora-story-music-sheet{height:min(78%,720px);padding-inline:clamp(16px,5vw,24px);gap:15px;overscroll-behavior:contain}
+.gramora-music-heading{position:sticky;top:0;background:#202127;padding:4px 0;z-index:1}
+.gramora-music-sheet .story-song-search-row{position:sticky;top:44px;background:#202127;padding:4px 0;z-index:1}
+.gramora-music-sheet .story-song-results{max-height:34vh;overflow-y:auto;overscroll-behavior:contain}
+.gramora-music-sheet .story-song-result{min-height:76px;transition:background .18s ease,transform .18s ease}
+.gramora-music-sheet .story-song-result:active{transform:scale(.985)}
+.gramora-story-share{cursor:pointer;transition:transform .18s ease,filter .18s ease,box-shadow .18s ease}
+.gramora-story-share:active{transform:scale(.985);filter:brightness(1.08)}
+.gramora-story-share:disabled{opacity:.65;cursor:wait}
+.gramora-story-editor #storyCreateStatus{position:static;margin:0 16px 8px;min-height:18px;text-align:center;color:#fff}
+@media(max-height:720px){.gramora-story-stage{padding-top:8px;padding-bottom:4px}.gramora-story-editor #storyText{min-height:110px;padding-block:12px}.gramora-story-tools{padding-bottom:10px}.gramora-story-style-strip{padding:5px 0 9px}}
+@media(prefers-reduced-motion:reduce){.gramora-story-editor *, .gramora-music-sheet *{transition:none!important;animation:none!important}}
