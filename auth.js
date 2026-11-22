@@ -1304,6 +1304,7 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
     activeChatUnsubscribe=onSnapshot(query(collection(db,"conversations",conversationRef.id,"messages"),orderBy("createdAt","asc"),limit(100)),snapshot=>{
       if(!dlg.open||activeChatConversationId!==conversationRef.id)return;
       messageBox.replaceChildren();
+      const latestOwnMessageId=[...snapshot.docs].reverse().find(item=>item.data().senderUid===viewer.uid)?.id||null;
       // Mark incoming messages as seen only while this conversation is open.
       snapshot.docs.forEach(messageDoc=>{
         const data=messageDoc.data();
@@ -1318,16 +1319,9 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
         const bubble=document.createElement("div");bubble.className="gramora-chat-bubble "+(mine?"mine":"theirs");
         if(m.replyToText){const quoted=document.createElement("span");quoted.className="gramora-chat-quoted";quoted.textContent="↪ "+m.replyToText;bubble.append(quoted);}
         if(m.type==="sticker"){bubble.style.fontSize="42px";bubble.textContent=m.text||"❤️";}
-        else if(m.type==="gif"&&(m.gifUrl||m.gifData)){const img=document.createElement("img");img.className="gramora-chat-gif";img.src=m.gifUrl||m.gifData;img.alt="GIF";img.loading="lazy";bubble.append(img);}
+        else if(m.type==="gif"&&(m.gifUrl||m.gifData)){const img=document.createElement("img");img.className="gramora-chat-gif";img.src=m.gifUrl||m.gifData;img.alt="GIF";img.loading="lazy";img.style.cssText="border:0;outline:0;box-shadow:none";bubble.append(img);}
         else bubble.append(document.createTextNode(m.text||""));
         if(m.editedAt){const edited=document.createElement("small");edited.textContent=" · edited";edited.style.fontSize="9px";bubble.append(edited);}
-        if(mine){
-          const receipt=document.createElement("small");
-          receipt.className="gramora-message-receipt";
-          receipt.textContent=m.status==="seen"?"Seen":"Sent";
-          receipt.style.cssText="display:block;text-align:right;font-size:10px;opacity:.78;margin-top:4px";
-          bubble.append(receipt);
-        }
         const reactionValues=Object.values(m.reactions||{}).filter(Boolean);
         if(reactionValues.length){const reactionLine=document.createElement("div");reactionLine.className="gramora-chat-reactions";reactionLine.textContent=[...new Set(reactionValues)].join(" ");bubble.append(reactionLine);}
         let holdTimer=null,holdTriggered=false;
@@ -1340,6 +1334,18 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
         bubble.addEventListener("contextmenu",event=>{event.preventDefault();openActions();});
         bubble.addEventListener("selectstart",event=>event.preventDefault());
         messageBox.append(bubble);
+        if(mine&&m.id===latestOwnMessageId){
+          const receipt=document.createElement("small");
+          receipt.className="gramora-message-receipt";
+          const seenDate=m.seenAt?.toDate?.();
+          if(m.status==="seen"&&seenDate){
+            const elapsed=Math.max(0,Date.now()-seenDate.getTime()),minutes=Math.floor(elapsed/60000),hours=Math.floor(elapsed/3600000),days=Math.floor(elapsed/86400000);
+            const ago=minutes<1?"just now":hours<1?minutes+" min ago":days<1?hours+" hr ago":days+" day"+(days===1?"":"s")+" ago";
+            receipt.textContent="Seen "+ago;
+          }else receipt.textContent=m.status==="seen"?"Seen":"Sent";
+          receipt.style.cssText="display:block;align-self:flex-end;text-align:right;font-size:10px;line-height:1.2;opacity:.78;margin-top:-6px;margin-right:5px;color:var(--muted,#999)";
+          messageBox.append(receipt);
+        }
       });
       messageBox.scrollTop=messageBox.scrollHeight;
     },error=>{console.error("GRAMORA chat listener:",error);messageBox.textContent="Chat load nahi ho paayi. Firestore Rules check karein.";});
