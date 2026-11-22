@@ -1237,7 +1237,7 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
     if(!document.getElementById("gramora-chat-message-row-style")){
       const rowStyle=document.createElement("style");
       rowStyle.id="gramora-chat-message-row-style";
-      rowStyle.textContent=".gramora-message-row{width:100%;min-width:0;display:flex;flex-direction:column;align-items:flex-start;position:relative;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}.gramora-message-row.mine{align-items:flex-end}.gramora-message-row.theirs{align-items:flex-start}.gramora-message-row .gramora-chat-bubble{max-width:min(78%,340px)}.gramora-message-row .gramora-message-receipt{align-self:flex-end}";
+      rowStyle.textContent=".gramora-message-row{width:100%;min-width:0;display:flex;flex-direction:column;align-items:flex-start;position:relative;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}.gramora-message-row.mine{align-items:flex-end}.gramora-message-row.theirs{align-items:flex-start}.gramora-message-row .gramora-chat-bubble{max-width:min(78%,340px)}.gramora-message-row .gramora-message-receipt{align-self:flex-end;display:block;margin-top:4px!important;margin-right:5px;line-height:1.25;padding:0 2px;position:static;clear:both}";
       document.head.append(rowStyle);
     }
     const chatShell=dlg.querySelector(".gramora-chat-shell");
@@ -1467,7 +1467,7 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
             const ago=minutes<1?"just now":hours<1?minutes+" min ago":days<1?hours+" hr ago":days+" day"+(days===1?"":"s")+" ago";
             receipt.textContent="Seen "+ago;
           }else receipt.textContent=m.status==="seen"?"Seen":"Sent";
-          receipt.style.cssText="display:block;align-self:flex-end;text-align:right;font-size:10px;line-height:1.2;opacity:.78;margin-top:-6px;margin-right:5px;color:var(--muted,#999)";
+          receipt.style.cssText="display:block;align-self:flex-end;text-align:right;font-size:10px;line-height:1.2;opacity:.78;margin-top:4px;margin-right:5px;padding:0 2px;color:var(--muted,#999)";
           messageRow.append(receipt);
         }
       });
