@@ -344,6 +344,18 @@ service cloud.firestore {
         && resource.data.toUid == request.auth.uid;
     }
 
+
+    // ONLINE PRESENCE: signed-in users can see status; each user controls only their own status.
+    match /userPresence/{uid} {
+      allow read: if signedIn();
+      allow create, update: if owns(uid)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.online is bool
+        && request.resource.data.lastSeen is timestamp
+        && request.resource.data.keys().hasOnly(['uid','online','lastSeen']);
+      allow delete: if false;
+    }
+
     // DIRECT MESSAGES: only the two conversation participants can access a chat.
     match /conversations/{conversationId} {
       function isParticipant() {
@@ -399,14 +411,47 @@ service cloud.firestore {
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0
           && request.resource.data.text.size() <= 2000
-          && request.resource.data.type == 'text'
+          && request.resource.data.type in ['text','sticker','gif']
           && request.resource.data.createdAt is timestamp
           && request.resource.data.keys().hasOnly([
-            'senderUid','text','type','createdAt'
-          ]);
+            'senderUid','text','type','createdAt','replyToId','replyToText','mediaUrl'
+          ])
+          && (!('replyToId' in request.resource.data) || request.resource.data.replyToId is string)
+          && (!('replyToText' in request.resource.data) || request.resource.data.replyToText is string)
+          && (!('mediaUrl' in request.resource.data)
+            || (request.resource.data.mediaUrl is string
+              && request.resource.data.mediaUrl.size() <= 2000
+              && request.resource.data.mediaUrl.matches('https://.*')));
 
-        // Messages are immutable in the first release.
-        allow update, delete: if false;
+        // A sender can edit only their own text message.
+        allow update: if isChatParticipant()
+          && resource.data.senderUid == request.auth.uid
+          && resource.data.type == 'text'
+          && request.resource.data.senderUid == resource.data.senderUid
+          && request.resource.data.type == resource.data.type
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text','editedAt'])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 2000
+          && request.resource.data.editedAt is timestamp;
+        allow delete: if false;
+      }
+
+      // Typing state is private to chat participants; each user controls only their own doc.
+      match /typing/{uid} {
+        function canUseTyping() {
+          return signedIn()
+            && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantUids;
+        }
+        allow read: if canUseTyping();
+        allow create, update: if canUseTyping()
+          && uid == request.auth.uid
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.typing == true
+          && request.resource.data.updatedAt is timestamp
+          && request.resource.data.keys().hasOnly(['uid','typing','updatedAt']);
+        allow delete: if canUseTyping() && uid == request.auth.uid;
+      }
       }
     }
 
