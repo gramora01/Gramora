@@ -1245,22 +1245,20 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
     dlg.querySelectorAll("[data-chat-theme]").forEach(button=>button.addEventListener("click",()=>{
       const theme=button.dataset.chatTheme;chatShell.dataset.chatTheme=theme;localStorage.setItem(chatThemeKey,theme);chatThemePanel.hidden=true;
     }));
-    dlg.querySelector(".gramora-chat-option-clear").addEventListener("click",async()=>{
+    dlg.querySelector(".gramora-chat-option-clear").addEventListener("click",()=>{
       chatOptions.hidden=true;
-      if(!confirm("Clear all messages in this chat? This will delete the conversation for BOTH people and cannot be undone."))return;
-      const clearButton=dlg.querySelector(".gramora-chat-option-clear");clearButton.disabled=true;
+      if(!confirm("Clear this chat from your account only? The other person will still see all messages."))return;
       try{
-        const allMessages=await getDocs(collection(db,"conversations",conversationRef.id,"messages"));
-        for(let start=0;start<allMessages.docs.length;start+=400){
-          await Promise.all(allMessages.docs.slice(start,start+400).map(message=>deleteDoc(message.ref)));
-        }
-        await updateDoc(conversationRef,{lastMessage:"",lastMessageAt:serverTimestamp(),lastMessageSenderUid:viewer.uid,updatedAt:serverTimestamp()});
-        chatThemePanel.hidden=true;
-        alert("All chat messages cleared.");
+        const clearKey="gramora-chat-cleared:"+viewer.uid+":"+conversationRef.id;
+        localStorage.setItem(clearKey,String(Date.now()));
+        messageBox.replaceChildren();
+        const empty=document.createElement("p");empty.className="gramora-chat-empty";empty.textContent="Chat cleared for you. New messages will appear here.";messageBox.append(empty);
+        chatOptions.hidden=true;chatThemePanel.hidden=true;
+        alert("Chat cleared from your account. The other person’s chat is unchanged.");
       }catch(error){
-        console.error("Clear chat failed:",error);
-        alert("Chat clear nahi ho payi. Firestore Rules publish karke dobara try karein.");
-      }finally{clearButton.disabled=false;}
+        console.error("Local chat clear failed:",error);
+        alert("Chat clear nahi ho payi. Device storage check karein.");
+      }
     });
     dlg.querySelector(".gramora-chat-back").addEventListener("click",closeGramoraChat);
     if(!dlg.open){document.body.classList.add("gramora-chat-open");dlg.showModal();}
@@ -1333,18 +1331,20 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
     activeChatUnsubscribe=onSnapshot(query(collection(db,"conversations",conversationRef.id,"messages"),orderBy("createdAt","desc"),limit(100)),snapshot=>{
       if(!dlg.open||activeChatConversationId!==conversationRef.id)return;
       messageBox.replaceChildren();
-      // Fetch the newest 100 messages, then display them oldest-to-newest.
-      const orderedMessageDocs=[...snapshot.docs].reverse();
-      const latestOwnMessageId=snapshot.docs.find(item=>item.data().senderUid===viewer.uid)?.id||null;
-      // Mark incoming messages as seen only while this conversation is open.
+      // Hide messages at or before this user's local clear timestamp; never delete shared messages.
+      const clearedAt=Number(localStorage.getItem("gramora-chat-cleared:"+viewer.uid+":"+conversationRef.id)||0);
+      const visibleMessageDocs=snapshot.docs.filter(item=>(item.data().createdAt?.toMillis?.()||0)>clearedAt);
+      const orderedMessageDocs=[...visibleMessageDocs].reverse();
+      const latestOwnMessageId=visibleMessageDocs.find(item=>item.data().senderUid===viewer.uid)?.id||null;
+      // Mark only visible incoming messages as seen while this conversation is open.
       orderedMessageDocs.forEach(messageDoc=>{
         const data=messageDoc.data();
         if(data.senderUid!==viewer.uid&&data.status!=="seen"){
           updateDoc(messageDoc.ref,{status:"seen",seenAt:serverTimestamp()}).catch(error=>console.warn("Message seen status failed:",error));
         }
       });
-      conversationRefSnapshotLastMessage=snapshot.docs.length?snapshot.docs[0].data().text||"":conversationRefSnapshotLastMessage;
-      if(snapshot.empty){const empty=document.createElement("p");empty.className="gramora-chat-empty";empty.textContent="Start your conversation 👋";messageBox.append(empty);}
+      conversationRefSnapshotLastMessage=visibleMessageDocs.length?(visibleMessageDocs[0].data().text||""):"";
+      if(!visibleMessageDocs.length){const empty=document.createElement("p");empty.className="gramora-chat-empty";empty.textContent=clearedAt?"Chat cleared for you. New messages will appear here.":"Start your conversation 👋";messageBox.append(empty);}
       orderedMessageDocs.forEach(messageDoc=>{
         const m={id:messageDoc.id,...messageDoc.data()},mine=m.senderUid===viewer.uid;
         const bubble=document.createElement("div");bubble.className="gramora-chat-bubble "+(mine?"mine":"theirs")+(m.type==="gif"?" gramora-gif-message":"");
@@ -1495,18 +1495,21 @@ async function renderGramoraInbox(user){
         let profile={};
         try{const profileSnap=await getDoc(doc(db,"userProfiles",otherUid));if(profileSnap.exists())profile=profileSnap.data();}
         catch(error){console.warn("Chat profile unavailable",error);}
+        const clearedAt=Number(localStorage.getItem("gramora-chat-cleared:"+user.uid+":"+conversationDoc.id)||0);
         let unreadCount=0;
         try{
           const recentMessages=await getDocs(query(collection(db,"conversations",conversationDoc.id,"messages"),orderBy("createdAt","desc"),limit(50)));
           unreadCount=recentMessages.docs.filter(messageDoc=>{
             const message=messageDoc.data();
-            return message.senderUid===otherUid&&message.status!=="seen";
+            return (message.createdAt?.toMillis?.()||0)>clearedAt&&message.senderUid===otherUid&&message.status!=="seen";
           }).length;
         }catch(error){console.warn("Unread message count unavailable",error);}
+        const lastMessageAt=data.lastMessageAt?.toMillis?.()||0;
+        const visibleLastMessage=lastMessageAt>clearedAt?(data.lastMessage||""):"";
         return {id:conversationDoc.id,uid:otherUid,profile,
           displayName:profile.displayName||profile.username||"GRAMORA member",
           username:profile.username||"member",photoURL:profile.photoURL||"",
-          lastMessage:data.lastMessage||"",lastMessageAt:data.lastMessageAt?.toMillis?.()||0,unreadCount};
+          lastMessage:visibleLastMessage,lastMessageAt,unreadCount};
       }));
       if(token!==inboxRenderToken||auth?.currentUser?.uid!==user.uid)return;
       const sorted=rows.filter(Boolean).sort((a,b)=>b.lastMessageAt-a.lastMessageAt);
