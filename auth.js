@@ -247,10 +247,17 @@ async function openGramoraNotifications(){
           try{
             const status=await getBlockStatus(user.uid,item.fromUid);
             if(status.blockedByMe||status.blockedMe)throw new Error("Blocked accounts cannot follow each other.");
-            confirmStep="follow record create";
-            await setDoc(doc(db,"follows",item.fromUid+"_"+user.uid),{followerUid:item.fromUid,followingUid:user.uid,createdAt:serverTimestamp()});
+            const followRef=doc(db,"follows",item.fromUid+"_"+user.uid);
+            const requestRef=doc(db,"followRequests",item.fromUid+"_"+user.uid);
+            confirmStep="follow record check";
+            const [existingFollow,existingRequest]=await Promise.all([getDoc(followRef),getDoc(requestRef)]);
+            if(!existingFollow.exists()){
+              if(!existingRequest.exists())throw new Error("This follow request is no longer available. Refresh Notifications.");
+              confirmStep="follow record create";
+              await setDoc(followRef,{followerUid:item.fromUid,followingUid:user.uid,createdAt:serverTimestamp()});
+            }
             confirmStep="follow request delete";
-            await deleteDoc(doc(db,"followRequests",item.fromUid+"_"+user.uid));
+            if(existingRequest.exists())await deleteDoc(requestRef);
             confirmStep="notification mark as read";
             await updateDoc(doc(db,"notifications",item.id),{read:true});
             row.remove();refreshNotificationBadge();if(!list.querySelector(".gramora-notification"))list.textContent="You’re all caught up. No notifications yet.";
