@@ -122,7 +122,6 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.followerUid is string
         && request.resource.data.followingUid is string
-        && request.resource.data.followingUid != request.auth.uid
         && followId == request.resource.data.followerUid + '_'
           + request.resource.data.followingUid
         && request.resource.data.keys().hasOnly([
