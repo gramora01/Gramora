@@ -705,17 +705,31 @@ async function getStoryViewerPeople(storyId,ownerUid){
 async function renderStoryActivityPreview(storyId,ownerUid){
   const button=document.querySelector('#storyOwnerActions [data-story-owner-action="activity"]');
   if(!button)return;
-  const label=button.querySelector("span");if(!label)return;
+  const label=button.querySelector("span"),icon=button.querySelector("svg");if(!label)return;
   try{
     const entries=await getStoryViewerPeople(storyId,ownerUid);
     if(document.getElementById("storyViewerDialog")?.dataset.storyId!==storyId)return;
-    if(!entries.length){label.textContent="Activity";button.title="Story activity";return;}
-    const people=await Promise.all(entries.slice(0,3).map(async item=>{
+    if(!entries.length){
+      button.querySelector(".gramora-activity-avatar-stack")?.remove();
+      if(icon)icon.hidden=false;
+      label.hidden=false;label.textContent="Activity";button.title="Story activity";return;
+    }
+    const viewers=await Promise.all(entries.slice(0,3).map(async item=>{
       const data=item.data(),profileSnap=await getDoc(doc(db,"userProfiles",data.uid)),profile=profileSnap.exists()?profileSnap.data():{};
-      return "@"+(await getUsernameForUid(data.uid,profile)||"user");
+      return {uid:data.uid,photoURL:profile.photoURL||profile.photoUrl||profile.avatarUrl||"",name:profile.displayName||data.displayName||"Viewer"};
     }));
     if(document.getElementById("storyViewerDialog")?.dataset.storyId!==storyId)return;
-    label.textContent=people.join(" · ");button.title=entries.length+" views";
+    let stack=button.querySelector(".gramora-activity-avatar-stack");
+    if(!stack){stack=document.createElement("span");stack.className="gramora-activity-avatar-stack";button.append(stack);}
+    stack.replaceChildren();
+    viewers.forEach((person,index)=>{
+      const avatar=document.createElement("span");avatar.className="gramora-activity-avatar";avatar.style.setProperty("--avatar-order",String(index));avatar.title=person.name;
+      if(person.photoURL){const img=document.createElement("img");img.src=person.photoURL;img.alt="";img.loading="lazy";avatar.append(img);}
+      else avatar.textContent=(person.name||"G").trim().charAt(0).toUpperCase();
+      stack.append(avatar);
+    });
+    if(icon)icon.hidden=true;
+    label.hidden=true;button.title=entries.length+" views";
   }catch(error){console.error("Story activity preview failed:",error);}
 }
 function closeStoryActivitySheet(){
