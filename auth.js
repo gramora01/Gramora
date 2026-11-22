@@ -635,6 +635,7 @@ function openStoryViewer(docs,id){
       const details=document.createElement("span");details.className="gramora-story-track-details";
       const label=document.createElement("span");label.className="gramora-story-track-title";label.textContent=data.songTitle+(data.songArtist?" · "+data.songArtist:"");
       const progress=document.createElement("span");progress.className="gramora-story-track-progress";
+      if(!data.previewUrl)progress.hidden=true;
       const fill=document.createElement("i");fill.className="gramora-story-track-progress-fill";progress.append(fill);
       details.append(label,progress);track.append(icon,details);
       if(data.previewUrl&&audio){
