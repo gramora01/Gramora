@@ -836,3 +836,75 @@ button.gramora-story-tool{cursor:pointer}
 @media(prefers-reduced-motion:reduce){.gramora-story-editor *, .gramora-music-sheet *{transition:none!important;animation:none!important}}
 
 .gramora-story-editor .story-viewer-audio{width:calc(100% - 32px);margin:10px 16px;border-radius:14px;accent-color:#8d62ed}
+
+/* Story editor controls: contrast and visibility in both app themes */
+.gramora-story-editor .gramora-story-toolrow .gramora-story-tool{
+  position:relative;isolation:isolate;border:1px solid #ffffff65;
+  background:linear-gradient(145deg,#4b4d59,#282a33);color:#fff;
+  box-shadow:0 3px 12px #0004,inset 0 1px 0 #ffffff22;
+  -webkit-tap-highlight-color:transparent;
+}
+.gramora-story-editor .gramora-story-toolrow .gramora-story-tool:focus-visible{
+  outline:2px solid #fff;outline-offset:3px;
+}
+.gramora-story-editor #storyTextColorToggle::after{
+  content:"";position:absolute;right:1px;bottom:1px;width:12px;height:12px;
+  border-radius:50%;background:var(--story-color-preview,#fff);
+  border:1px solid #fff;box-shadow:0 0 0 2px #252630;
+}
+.gramora-story-editor #storyTextColorToggle.is-active{
+  box-shadow:0 0 0 2px #ffffff85,0 5px 18px #0005;
+}
+body.light .gramora-story-editor .gramora-story-tools{
+  background:linear-gradient(180deg,#fffefa,#f1edf4);
+  border-top:1px solid #ded8e5;box-shadow:0 -10px 30px #25153b25;
+}
+body.light .gramora-story-editor .gramora-story-toolrow .gramora-story-tool{
+  color:#24202b;background:linear-gradient(145deg,#fff,#e9e4ef);
+  border:1px solid #c9bfd6;box-shadow:0 3px 12px #5a3b7026,inset 0 1px 0 #fff;
+}
+body.light .gramora-story-editor .gramora-story-toolrow .gramora-story-tool:focus-visible{
+  outline-color:#6849e8;
+}
+body.light .gramora-story-editor .gramora-story-share{
+  color:#fff;box-shadow:0 8px 22px #6849e84d,0 0 0 1px #ffffff55 inset;
+}
+body.light .gramora-story-editor .gramora-story-style-strip button{
+  color:#32283c;background:#fff;border-color:#cfc5d8;box-shadow:0 2px 8px #24153016;
+}
+body.light .gramora-story-editor .gramora-story-style-strip button.active{
+  color:#fff;background:#6544d8;border-color:#6544d8;box-shadow:0 4px 14px #6544d84d;
+}
+body.light .gramora-story-editor #storyBackgroundPicker button.selected{
+  outline-color:#6544d8;box-shadow:0 0 0 2px #fff,0 0 0 4px #6544d8;
+}
+body.light .gramora-story-editor .gramora-story-cancel,
+body.light .gramora-story-editor .gramora-story-done{
+  text-shadow:0 1px 5px #0004;
+}
+body.light .gramora-music-sheet{
+  background:#fff;color:#22232a;border:1px solid #e4dfeb;
+  box-shadow:0 -18px 50px #130c2340;
+}
+body.light .gramora-music-sheet .gramora-music-heading,
+body.light .gramora-music-sheet .story-song-search-row{background:#fff;color:#22232a}
+body.light .gramora-music-sheet .story-song-result{color:#22232a;background:#fff;border-bottom:1px solid #eeeaf2}
+body.light .gramora-music-sheet .story-song-result small,
+body.light .gramora-music-sheet .gramora-track-details small{color:#686371}
+body.light .gramora-music-sheet .gramora-music-tabs button{
+  color:#4c4655;background:#f1eef5;border:1px solid #e2dbea;
+}
+body.light .gramora-music-sheet .gramora-music-tabs button.active{
+  color:#fff;background:#6544d8;border-color:#6544d8;
+}
+body.light .gramora-music-sheet .gramora-music-selection{
+  border-color:#e4dfeb;color:#24202b;
+}
+body.light .gramora-music-sheet .gramora-music-selection small{color:#6c6674}
+body.light .gramora-music-sheet .gramora-music-preview-actions button,
+body.light .gramora-music-sheet .gramora-attached-actions button{
+  background:#eeeaf4;color:#292331;border:1px solid #ded6e9;
+}
+body.light .gramora-music-sheet .gramora-music-preview-actions #addStoryMusic{
+  color:#fff;background:#6544d8;border-color:#6544d8;
+}
