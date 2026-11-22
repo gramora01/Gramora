@@ -1211,7 +1211,7 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
       dlg.querySelector(".gramora-chat-shell").append(menu);
     }
     async function sendPayload(payload,preview){
-      await addDoc(collection(db,"conversations",conversationRef.id,"messages"),{senderUid:viewer.uid,...payload,createdAt:serverTimestamp()});
+      await addDoc(collection(db,"conversations",conversationRef.id,"messages"),{senderUid:viewer.uid,...payload,status:"sent",createdAt:serverTimestamp()});
       await updateDoc(conversationRef,{lastMessage:preview,lastMessageAt:serverTimestamp(),lastMessageSenderUid:viewer.uid,updatedAt:serverTimestamp()});
     }
     function stopTyping(){if(chatTypingStopTimer)clearTimeout(chatTypingStopTimer);deleteDoc(doc(db,"conversations",conversationRef.id,"typing",viewer.uid)).catch(()=>{});}
@@ -1232,6 +1232,13 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
     activeChatUnsubscribe=onSnapshot(query(collection(db,"conversations",conversationRef.id,"messages"),orderBy("createdAt","asc"),limit(100)),snapshot=>{
       if(!dlg.open||activeChatConversationId!==conversationRef.id)return;
       messageBox.replaceChildren();
+      // Mark incoming messages as seen only while this conversation is open.
+      snapshot.docs.forEach(messageDoc=>{
+        const data=messageDoc.data();
+        if(data.senderUid!==viewer.uid&&data.status!=="seen"){
+          updateDoc(messageDoc.ref,{status:"seen",seenAt:serverTimestamp()}).catch(error=>console.warn("Message seen status failed:",error));
+        }
+      });
       conversationRefSnapshotLastMessage=snapshot.docs.length?snapshot.docs[snapshot.docs.length-1].data().text||"":conversationRefSnapshotLastMessage;
       if(snapshot.empty){const empty=document.createElement("p");empty.className="gramora-chat-empty";empty.textContent="Start your conversation 👋";messageBox.append(empty);}
       snapshot.forEach(messageDoc=>{
@@ -1242,6 +1249,13 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
         else if(m.type==="gif"&&(m.gifUrl||m.gifData)){const img=document.createElement("img");img.className="gramora-chat-gif";img.src=m.gifUrl||m.gifData;img.alt="GIF";img.loading="lazy";bubble.append(img);}
         else bubble.append(document.createTextNode(m.text||""));
         if(m.editedAt){const edited=document.createElement("small");edited.textContent=" · edited";edited.style.fontSize="9px";bubble.append(edited);}
+        if(mine){
+          const receipt=document.createElement("small");
+          receipt.className="gramora-message-receipt";
+          receipt.textContent=m.status==="seen"?"Seen":"Sent";
+          receipt.style.cssText="display:block;text-align:right;font-size:10px;opacity:.78;margin-top:4px";
+          bubble.append(receipt);
+        }
         const reactionValues=Object.values(m.reactions||{}).filter(Boolean);
         if(reactionValues.length){const reactionLine=document.createElement("div");reactionLine.className="gramora-chat-reactions";reactionLine.textContent=[...new Set(reactionValues)].join(" ");bubble.append(reactionLine);}
         let holdTimer=null,holdTriggered=false;
