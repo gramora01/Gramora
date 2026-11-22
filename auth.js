@@ -2278,7 +2278,7 @@ highlightForm?.addEventListener("submit",async event=>{
   if(!selected.length){status.textContent="Kam se kam ek story select karein.";return;}
   if(selected.length>20){status.textContent="Ek highlight mein maximum 20 stories select kar sakte hain.";return;}
   const stories=selected.map(id=>activeStoryDocs.find(item=>item.id===id)).filter(Boolean).map(item=>{
-    const d=item.data();return {storyId:item.id,uid:d.uid,displayName:d.displayName||"GRAMORA member",text:d.text||"",background:d.background||POST_BACKGROUNDS[4],songTitle:d.songTitle||"",songArtist:d.songArtist||"",songUrl:d.songUrl||"",previewUrl:d.previewUrl||"",createdAt:d.createdAt||null};
+    const d=item.data();return {storyId:item.id,uid:d.uid,displayName:d.displayName||"GRAMORA member",text:d.text||"",lyrics:d.lyrics||"",background:d.background||POST_BACKGROUNDS[4],songTitle:d.songTitle||"",songArtist:d.songArtist||"",songUrl:d.songUrl||"",previewUrl:d.previewUrl||"",createdAt:d.createdAt||null};
   });
   if(!stories.length){status.textContent="Selected stories ab available nahi hain.";return;}
   button.disabled=true;status.textContent="Highlight save ho raha hai…";
