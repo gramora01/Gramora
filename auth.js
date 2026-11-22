@@ -167,11 +167,14 @@ async function openGramoraNotifications(){
     if(!items.length){list.textContent="You’re all caught up. No notifications yet.";return;}
     for(const item of items){
       const row=document.createElement("div");row.className="gramora-notification"+(item.read?"":" unread");row.setAttribute("role","button");row.tabIndex=0;
+      const profileButton=document.createElement("button");profileButton.type="button";profileButton.className="gramora-notification-profile";
       const avatar=document.createElement("span");avatar.className="gramora-notification-avatar";avatar.textContent=(item.fromName||"G").trim().charAt(0).toUpperCase();
       const body=document.createElement("span");body.className="gramora-notification-copy";
       const message=document.createElement("span");message.textContent=(item.fromName||"Someone")+" "+(item.message||"interacted with you.");
       const time=document.createElement("small");const stamp=item.createdAt?.toDate?.();time.textContent=stamp?stamp.toLocaleString():"";
-      body.append(message,time);row.append(avatar,body);
+      body.append(message,time);profileButton.append(avatar,body);
+      profileButton.addEventListener("click",async event=>{event.stopPropagation();if(!item.fromUid)return;try{if(!item.read)await updateDoc(doc(db,"notifications",item.id),{read:true});}catch(error){console.warn("Notification read status failed:",error);}dialog.close();refreshNotificationBadge();await openPersonProfile(item.fromUid);});
+      row.append(profileButton);
       if(!item.read){const dot=document.createElement("i");dot.className="notification-unread-dot";row.append(dot);}
       const remove=document.createElement("button");remove.type="button";remove.className="notification-delete-btn";remove.textContent="Delete";remove.setAttribute("aria-label","Delete notification");
       remove.addEventListener("click",async event=>{
@@ -423,8 +426,10 @@ async function loadStoryViewers(storyId,storyData){
     const snap=await getDocs(query(collection(db,"storyViews"),where("storyUid","==",auth.currentUser.uid)));
     button.textContent="Viewers · "+snap.size;
     snap.docs.filter(item=>item.data().storyId===storyId).sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(item=>{
-      const row=document.createElement("p");row.className="story-viewer-person";
-      row.textContent=item.data().displayName||"GRAMORA member";list.append(row);
+      const person=item.data(),row=document.createElement("button");row.type="button";row.className="story-viewer-person story-person-link";
+      row.textContent=person.displayName||"GRAMORA member";
+      row.addEventListener("click",()=>openPersonProfile(person.uid));
+      list.append(row);
     });
     if(!snap.size)list.textContent="Abhi kisi ne story nahi dekhi.";
   }catch(error){console.error("Story viewers load failed:",error);button.textContent="Viewers";list.textContent="Viewers load nahi ho paye. Firestore Rules check karein.";}
@@ -500,6 +505,38 @@ function openStoryViewer(docs,id){
     if(playAttempt&&typeof playAttempt.catch==="function")playAttempt.catch(()=>{});
   }
 }
+async function showStoryPeopleList(storyId,type){
+  const viewer=auth?.currentUser;if(!viewer)return;
+  const isLikes=type==="likes",title=isLikes?"Story likes":"Story viewers",collectionName=isLikes?"storyLikes":"storyViews";
+  const dialog=document.createElement("dialog");dialog.className="follow-list-dialog post-likes-dialog";
+  const head=document.createElement("div");head.className="follow-list-head";
+  const heading=document.createElement("h3");heading.textContent=title;
+  const close=document.createElement("button");close.type="button";close.className="follow-list-close";close.textContent="×";close.addEventListener("click",()=>dialog.close());
+  head.append(heading,close);dialog.append(head);
+  const body=document.createElement("div");body.className="follow-list-body";body.textContent="Loading…";dialog.append(body);
+  document.body.append(dialog);dialog.addEventListener("close",()=>dialog.remove(),{once:true});dialog.showModal();
+  try{
+    const snap=await getDocs(query(collection(db,collectionName),where("storyUid","==",viewer.uid),limit(500)));
+    const entries=snap.docs.filter(d=>d.data().storyId===storyId);
+    const people=await Promise.all(entries.map(async d=>{
+      const data=d.data();if(!data.uid)return null;
+      const ps=await getDoc(doc(db,"userProfiles",data.uid)),profile=ps.exists()?ps.data():{};
+      return {uid:data.uid,name:profile.displayName||data.displayName||"GRAMORA member",username:await getUsernameForUid(data.uid,profile),photoURL:profile.photoURL||""};
+    }));
+    body.replaceChildren();
+    if(!people.filter(Boolean).length){body.textContent=isLikes?"No likes yet.":"No viewers yet.";return;}
+    people.filter(Boolean).forEach(person=>{
+      const row=document.createElement("div");row.className="follow-person-row";
+      const open=document.createElement("button");open.type="button";open.className="follow-person-profile";
+      const avatar=document.createElement("span");avatar.className="follow-person-avatar";
+      if(person.photoURL){const img=document.createElement("img");img.src=person.photoURL;img.alt="";avatar.append(img);}else avatar.textContent=person.name.trim().charAt(0).toUpperCase();
+      const info=document.createElement("span");info.className="follow-person-info";
+      const name=document.createElement("strong");name.textContent=person.name;
+      const username=document.createElement("small");username.textContent="@"+(person.username||"username-not-set");
+      info.append(name,username);open.append(avatar,info);open.addEventListener("click",()=>{dialog.close();openPersonProfile(person.uid);});row.append(open);body.append(row);
+    });
+  }catch(error){console.error("Story people list failed:",error);body.textContent="List load nahi hui. Firestore Rules check karein.";}
+}
 async function loadStoryEngagement(storyId,storyData){
   const likeButton=document.getElementById("storyViewerLike");
   const likeCount=document.getElementById("storyViewerLikeCount");
@@ -521,6 +558,8 @@ async function loadStoryEngagement(storyId,storyData){
       const storyLikes=likesSnap.docs.filter(item=>item.data().storyId===storyId);
       liked=storyLikes.some(item=>item.id===ownLikeId);
       if(likeCount)likeCount.textContent=String(storyLikes.length);
+
+      if(likeCountWrap)likeCountWrap.onclick=()=>showStoryPeopleList(storyId,"likes");
     }else{
       const ownLikeSnap=await getDoc(doc(db,"storyLikes",ownLikeId));
       liked=ownLikeSnap.exists();
