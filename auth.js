@@ -580,9 +580,17 @@ storyViewerStage?.addEventListener("touchstart",event=>{
 },{passive:true});
 storyViewerStage?.addEventListener("touchend",event=>{
   const touch=event.changedTouches[0],dx=touch.clientX-storyViewerTouchX,dy=touch.clientY-storyViewerTouchY;
+  const activitySheet=document.getElementById("storyActivitySheet");
   if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)){navigateStoryViewer(dx<0?1:-1);}
-  else if(dy>90){document.getElementById("storyViewerDialog")?.close();}
+  else if(dy<-65){
+    const current=storyViewerSequence[storyViewerIndex],data=current?.data?.();
+    if(data&&data.uid===auth?.currentUser?.uid&&!document.getElementById("storyViewerDialog")?._highlightStories?.length)openStoryActivitySheet(current.id,data.uid);
+  }else if(dy>75){
+    if(activitySheet&&!activitySheet.hidden)closeStoryActivitySheet();
+    else document.getElementById("storyViewerDialog")?.close();
+  }
 },{passive:true});
+document.getElementById("storyActivityClose")?.addEventListener("click",closeStoryActivitySheet);
 document.getElementById("storyViewerDialog")?.addEventListener("close",stopStoryViewerTimer);
 document.getElementById("storyViewerPrevious")?.addEventListener("click",()=>navigateStoryViewer(-1));
 document.getElementById("storyViewerNext")?.addEventListener("click",()=>navigateStoryViewer(1));
@@ -603,7 +611,7 @@ function openStoryViewer(docs,id){
     button.onclick=async()=>{
       if(!isOwnStory)return;
       const action=button.dataset.storyOwnerAction;
-      if(action==="activity"){showStoryPeopleList(id,"views");return;}
+      if(action==="activity"){openStoryActivitySheet(id,data.uid);return;}
       if(action==="highlight"){openHighlightCreator(auth.currentUser);return;}
       if(action==="more"){if(ownerMenu)ownerMenu.hidden=!ownerMenu.hidden;return;}
       if(action==="share"){
@@ -678,12 +686,72 @@ function openStoryViewer(docs,id){
   }
   renderStories(activeStoryDocs);
   loadStoryEngagement(id,data);
+  if(isOwnStory)renderStoryActivityPreview(id,data.uid);
   if(!dialog.open)dialog.showModal();
   if(audio&&!audio.hidden){
     const playAttempt=audio.play();
     if(playAttempt&&typeof playAttempt.catch==="function")playAttempt.catch(()=>{});
   }
   startStoryViewerTimer();
+}
+async function getStoryViewerPeople(storyId,ownerUid){
+  const snap=await getDocs(query(collection(db,"storyViews"),where("storyUid","==",ownerUid),limit(1000)));
+  return snap.docs.filter(item=>item.data().storyId===storyId).sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0));
+}
+async function renderStoryActivityPreview(storyId,ownerUid){
+  const button=document.querySelector('#storyOwnerActions [data-story-owner-action="activity"]');
+  if(!button)return;
+  const label=button.querySelector("span");if(!label)return;
+  try{
+    const entries=await getStoryViewerPeople(storyId,ownerUid);
+    if(document.getElementById("storyViewerDialog")?.dataset.storyId!==storyId)return;
+    if(!entries.length){label.textContent="Activity";button.title="Story activity";return;}
+    const people=await Promise.all(entries.slice(0,3).map(async item=>{
+      const data=item.data(),profileSnap=await getDoc(doc(db,"userProfiles",data.uid)),profile=profileSnap.exists()?profileSnap.data():{};
+      return "@"+(await getUsernameForUid(data.uid,profile)||"user");
+    }));
+    if(document.getElementById("storyViewerDialog")?.dataset.storyId!==storyId)return;
+    label.textContent=people.join(" · ");button.title=entries.length+" views";
+  }catch(error){console.error("Story activity preview failed:",error);}
+}
+function closeStoryActivitySheet(){
+  const sheet=document.getElementById("storyActivitySheet");
+  if(sheet)sheet.hidden=true;
+  storyViewerPaused=false;
+}
+async function openStoryActivitySheet(storyId,ownerUid){
+  const dialog=document.getElementById("storyViewerDialog"),sheet=document.getElementById("storyActivitySheet");
+  if(!dialog||!sheet||dialog.dataset.storyId!==storyId||ownerUid!==auth?.currentUser?.uid)return;
+  sheet.hidden=false;storyViewerPaused=true;
+  const count=document.getElementById("storyActivityCount"),list=document.getElementById("storyActivityList");
+  if(count)count.textContent="… views";
+  if(list){list.replaceChildren();const loading=document.createElement("p");loading.textContent="Loading viewers…";list.append(loading);}
+  try{
+    const entries=await getStoryViewerPeople(storyId,ownerUid);
+    if(dialog.dataset.storyId!==storyId||sheet.hidden)return;
+    if(count)count.textContent=entries.length.toLocaleString()+" "+(entries.length===1?"view":"views");
+    if(!list)return;
+    list.replaceChildren();
+    if(!entries.length){const empty=document.createElement("p");empty.className="gramora-story-no-viewers";empty.textContent="No viewers yet";list.append(empty);return;}
+    for(const item of entries){
+      const data=item.data();if(!data.uid)continue;
+      const profileSnap=await getDoc(doc(db,"userProfiles",data.uid)),profile=profileSnap.exists()?profileSnap.data():{};
+      const username=await getUsernameForUid(data.uid,profile)||"user";
+      const row=document.createElement("button");row.type="button";row.className="gramora-story-viewer-row";
+      const avatar=document.createElement("span");avatar.className="gramora-story-viewer-avatar";
+      if(profile.photoURL){const img=document.createElement("img");img.src=profile.photoURL;img.alt="";avatar.append(img);}else avatar.textContent=(profile.displayName||data.displayName||username).trim().charAt(0).toUpperCase();
+      const info=document.createElement("span");info.className="gramora-story-viewer-info";
+      const name=document.createElement("strong");name.textContent=profile.displayName||data.displayName||"GRAMORA member";
+      const id=document.createElement("small");id.textContent="@"+username;
+      info.append(name,id);row.append(avatar,info);
+      row.addEventListener("click",async()=>{closeStoryActivitySheet();dialog.close();await openPersonProfile(data.uid);});
+      list.append(row);
+    }
+  }catch(error){
+    console.error("Story viewers could not load:",error);
+    if(count)count.textContent="Views";
+    if(list){list.replaceChildren();const message=document.createElement("p");message.className="gramora-story-no-viewers";message.textContent="Viewers load nahi hue. Firestore Rules check karein.";list.append(message);}
+  }
 }
 async function showStoryPeopleList(storyId,type){
   const viewer=auth?.currentUser;if(!viewer)return;
