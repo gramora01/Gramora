@@ -1161,6 +1161,84 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
   }
 }
 
+
+let activeInboxUnsubscribe=null;
+let inboxRenderToken=0;
+function stopGramoraInbox(){
+  if(activeInboxUnsubscribe){activeInboxUnsubscribe();activeInboxUnsubscribe=null;}
+  inboxRenderToken++;
+}
+async function renderGramoraInbox(user){
+  stopGramoraInbox();
+  const token=inboxRenderToken;
+  const page=document.querySelector(".gramora-inbox");
+  if(!page||!user||!db)return;
+  const empty=page.querySelector(".gramora-inbox-empty");
+  const emptyTitle=empty?.querySelector("h3");
+  const emptyText=empty?.querySelector("p");
+  if(emptyTitle)emptyTitle.textContent="Loading chats…";
+  if(emptyText)emptyText.textContent="Your conversations will appear here.";
+  activeInboxUnsubscribe=onSnapshot(
+    query(collection(db,"conversations"),where("participantUids","array-contains",user.uid)),
+    async snapshot=>{
+      if(token!==inboxRenderToken||auth?.currentUser?.uid!==user.uid)return;
+      const list=page.querySelector(".gramora-conversation-list");
+      if(!list)return;
+      const rows=await Promise.all(snapshot.docs.map(async conversationDoc=>{
+        const data=conversationDoc.data();
+        const otherUid=(data.participantUids||[]).find(uid=>uid!==user.uid);
+        if(!otherUid)return null;
+        let profile={};
+        try{const profileSnap=await getDoc(doc(db,"userProfiles",otherUid));if(profileSnap.exists())profile=profileSnap.data();}
+        catch(error){console.warn("Chat profile unavailable",error);}
+        return {id:conversationDoc.id,uid:otherUid,profile,
+          displayName:profile.displayName||profile.username||"GRAMORA member",
+          username:profile.username||"member",photoURL:profile.photoURL||"",
+          lastMessage:data.lastMessage||"",lastMessageAt:data.lastMessageAt?.toMillis?.()||0};
+      }));
+      if(token!==inboxRenderToken||auth?.currentUser?.uid!==user.uid)return;
+      const sorted=rows.filter(Boolean).sort((a,b)=>b.lastMessageAt-a.lastMessageAt);
+      list.replaceChildren();
+      sorted.forEach(item=>{
+        const row=document.createElement("button");row.type="button";row.className="gramora-conversation";
+        const avatar=document.createElement("span");avatar.className="gramora-conversation-avatar";
+        if(item.photoURL){const img=document.createElement("img");img.src=item.photoURL;img.alt="";avatar.append(img);}
+        else avatar.textContent=item.displayName.charAt(0).toUpperCase();
+        const details=document.createElement("span");details.className="gramora-conversation-details";
+        const name=document.createElement("strong");name.textContent=item.displayName;
+        const preview=document.createElement("small");preview.textContent=item.lastMessage||"Start a conversation";
+        details.append(name,preview);
+        const arrow=document.createElement("span");arrow.className="gramora-conversation-arrow";arrow.textContent="›";
+        row.append(avatar,details,arrow);
+        row.addEventListener("click",()=>openGramoraChat(user,item.uid,item.profile));
+        list.append(row);
+      });
+      const search=page.querySelector(".gramora-inbox-search input");
+      const term=search?.value.trim().toLowerCase()||"";
+      let visible=0;
+      list.querySelectorAll(".gramora-conversation").forEach(row=>{
+        const match=row.textContent.toLowerCase().includes(term);row.hidden=!match;if(match)visible++;
+      });
+      if(empty){
+        empty.hidden=visible>0;
+        if(emptyTitle)emptyTitle.textContent=sorted.length?(term?"No conversations found":"No conversations to show"):"Your messages will appear here";
+        if(emptyText)emptyText.textContent=sorted.length?"Try another name or username.":"When you message someone, your conversation will appear here.";
+      }
+    },
+    error=>{
+      console.error("GRAMORA inbox listener:",error);
+      if(token!==inboxRenderToken)return;
+      if(empty){empty.hidden=false;if(emptyTitle)emptyTitle.textContent="Couldn't load chats";if(emptyText)emptyText.textContent="Check internet connection and Firestore Rules.";}
+    }
+  );
+}
+document.addEventListener("gramora:view",event=>{
+  if(event.detail==="messages"){
+    const user=auth?.currentUser;
+    if(user)renderGramoraInbox(user);
+  }else stopGramoraInbox();
+});
+
 async function loadPublicProfile(viewer,targetUid){
   const feed=document.getElementById("feed");
   if(targetUid===viewer.uid){loadProfilePage(viewer);return;}
