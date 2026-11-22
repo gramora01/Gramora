@@ -237,6 +237,28 @@ async function openGramoraNotifications(){
       body.append(message,time);profileButton.append(avatar,body);
       profileButton.addEventListener("click",async event=>{event.stopPropagation();if(!item.fromUid)return;try{if(!item.read)await updateDoc(doc(db,"notifications",item.id),{read:true});}catch(error){console.warn("Notification read status failed:",error);}dialog.close();refreshNotificationBadge();await openPersonProfile(item.fromUid);});
       row.append(profileButton);
+      if(item.type==="follow_request"&&item.fromUid){
+        const actions=document.createElement("div");actions.className="follow-request-actions notification-follow-actions";
+        const accept=document.createElement("button");accept.type="button";accept.className="blocked-unblock";accept.textContent="Confirm";
+        const decline=document.createElement("button");decline.type="button";decline.className="blocked-refresh";decline.textContent="Delete";
+        accept.addEventListener("click",async event=>{
+          event.stopPropagation();accept.disabled=true;decline.disabled=true;accept.textContent="…";
+          try{
+            const status=await getBlockStatus(user.uid,item.fromUid);
+            if(status.blockedByMe||status.blockedMe)throw new Error("Blocked accounts cannot follow each other.");
+            await setDoc(doc(db,"follows",item.fromUid+"_"+user.uid),{followerUid:item.fromUid,followingUid:user.uid,createdAt:serverTimestamp()});
+            await deleteDoc(doc(db,"followRequests",item.fromUid+"_"+user.uid));
+            await updateDoc(doc(db,"notifications",item.id),{read:true});
+            row.remove();refreshNotificationBadge();if(!list.querySelector(".gramora-notification"))list.textContent="You’re all caught up. No notifications yet.";
+          }catch(error){console.error("Follow request confirmation failed:",error);accept.disabled=false;decline.disabled=false;accept.textContent="Confirm";alert(error.code==="permission-denied"?"Latest Firestore Rules publish karein.":(error.message||"Request accept nahi hui."));}
+        });
+        decline.addEventListener("click",async event=>{
+          event.stopPropagation();decline.disabled=true;
+          try{await deleteDoc(doc(db,"followRequests",item.fromUid+"_"+user.uid));await deleteDoc(doc(db,"notifications",item.id));row.remove();refreshNotificationBadge();if(!list.querySelector(".gramora-notification"))list.textContent="You’re all caught up. No notifications yet.";}
+          catch(error){console.error("Follow request delete failed:",error);decline.disabled=false;alert("Request delete nahi hui. Latest Firestore Rules check karein.");}
+        });
+        actions.append(accept,decline);row.append(actions);
+      }
       if(!item.read){const dot=document.createElement("i");dot.className="notification-unread-dot";row.append(dot);}
       const remove=document.createElement("button");remove.type="button";remove.className="notification-delete-btn";remove.textContent="Delete";remove.setAttribute("aria-label","Delete notification");
       remove.addEventListener("click",async event=>{
