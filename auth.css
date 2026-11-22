@@ -67,3 +67,19 @@ body.profile-active .ig-profile-actions .public-unblock{
 .blocked-account-row small{color:var(--muted);font-size:12px}
 .blocked-unblock,.blocked-refresh{border:1px solid var(--line);border-radius:9px;padding:8px 12px;background:transparent;color:var(--text);font-weight:750;cursor:pointer}
 .blocked-unblock:disabled{opacity:.5}
+
+
+/* Private account settings and profile state */
+.private-account-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.privacy-switch{position:relative;display:inline-flex;flex:0 0 48px;width:48px;height:28px;cursor:pointer}
+.privacy-switch input{position:absolute;opacity:0;width:1px;height:1px}
+.privacy-switch span{position:absolute;inset:0;border-radius:30px;background:#555b68;transition:.2s}
+.privacy-switch span:before{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;border-radius:50%;background:white;transition:.2s}
+.privacy-switch input:checked+span{background:#d94f91}
+.privacy-switch input:checked+span:before{transform:translateX(20px)}
+.privacy-switch input:focus-visible+span{outline:3px solid #d94f9180;outline-offset:3px}
+.privacy-status{min-height:16px;margin:5px 0 12px;color:var(--muted);font-size:12px}
+.follow-request-actions{display:flex;gap:6px;align-items:center}
+.private-profile-notice{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:9px;padding:36px 18px;text-align:center;color:var(--muted)}
+.private-profile-notice strong{font-size:16px;color:var(--text)}
+.private-profile-notice span{font-size:13px;max-width:260px;line-height:1.5}
