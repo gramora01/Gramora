@@ -1237,13 +1237,45 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
     const chatOptions=dlg.querySelector(".gramora-chat-options");
     const chatThemePanel=dlg.querySelector(".gramora-chat-theme-panel");
     const chatThemeKey="gramora-chat-theme:"+viewer.uid+":"+targetUid;
+    const chatThemeStyles={
+      default:{page:"var(--bg,#101116)",incoming:"var(--surface,#292b33)",text:"var(--text,#fff)",input:"var(--surface,#242630)",mine:"linear-gradient(135deg,#8b5cf6,#d946a5)"},
+      love:{page:"#fff0f4",incoming:"#ffe0e9",text:"#512638",input:"#fff",mine:"linear-gradient(135deg,#ff5d8f,#ff9a76)"},
+      ocean:{page:"#eaf8ff",incoming:"#cceefa",text:"#12384a",input:"#fff",mine:"linear-gradient(135deg,#087ea4,#55c7e8)"},
+      sunset:{page:"#fff3e8",incoming:"#ffe0c7",text:"#512d20",input:"#fff",mine:"linear-gradient(135deg,#f97316,#f43f5e)"},
+      midnight:{page:"#171a35",incoming:"#292e55",text:"#f3f3ff",input:"#24294a",mine:"linear-gradient(135deg,#4f46e5,#8b5cf6)"},
+      mint:{page:"#eafaf2",incoming:"#cceedd",text:"#174333",input:"#fff",mine:"linear-gradient(135deg,#059669,#34d399)"}
+    };
+    if(!document.getElementById("gramora-chat-theme-fix")){
+      const themeStyle=document.createElement("style");themeStyle.id="gramora-chat-theme-fix";
+      themeStyle.textContent='#gramoraChatDialog .gramora-chat-shell[data-chat-theme] .gramora-chat-messages,#gramoraChatDialog .gramora-chat-shell[data-chat-theme] .gramora-chat-header,#gramoraChatDialog .gramora-chat-shell[data-chat-theme] .gramora-chat-compose{background:var(--gramora-theme-page)!important;color:var(--gramora-theme-text)!important}#gramoraChatDialog .gramora-chat-shell[data-chat-theme] .gramora-chat-bubble.theirs{background:var(--gramora-theme-incoming)!important;color:var(--gramora-theme-text)!important;border-color:transparent!important}#gramoraChatDialog .gramora-chat-shell[data-chat-theme] .gramora-chat-bubble.mine{background:var(--gramora-theme-mine)!important;color:#fff!important}#gramoraChatDialog .gramora-chat-shell[data-chat-theme] .gramora-chat-compose input{background:var(--gramora-theme-input)!important;color:var(--gramora-theme-text)!important;border-color:rgba(120,120,140,.25)!important}#gramoraChatDialog .gramora-chat-shell[data-chat-theme] .gramora-chat-back,#gramoraChatDialog .gramora-chat-shell[data-chat-theme] .gramora-chat-more,#gramoraChatDialog .gramora-chat-shell[data-chat-theme] .gramora-chat-sticker-toggle{color:var(--gramora-theme-text)!important}#gramoraChatDialog .gramora-chat-shell[data-chat-theme] .gramora-chat-status{color:#16845b!important}#gramoraChatDialog .gramora-chat-shell[data-chat-theme="midnight"] .gramora-chat-messages,#gramoraChatDialog .gramora-chat-shell[data-chat-theme="midnight"] .gramora-chat-header,#gramoraChatDialog .gramora-chat-shell[data-chat-theme="midnight"] .gramora-chat-compose{background:#171a35!important;color:#f3f3ff!important}';
+      document.head.append(themeStyle);
+    }
+    function applyChatTheme(theme){
+      const palette=chatThemeStyles[theme]||chatThemeStyles.default;
+      const safeTheme=Object.prototype.hasOwnProperty.call(chatThemeStyles,theme)?theme:"default";
+      chatShell.dataset.chatTheme=safeTheme;
+      chatShell.style.setProperty("--gramora-theme-page",palette.page);
+      chatShell.style.setProperty("--gramora-theme-incoming",palette.incoming);
+      chatShell.style.setProperty("--gramora-theme-text",palette.text);
+      chatShell.style.setProperty("--gramora-theme-input",palette.input);
+      chatShell.style.setProperty("--gramora-theme-mine",palette.mine);
+      chatShell.querySelector(".gramora-chat-messages").style.setProperty("background",palette.page,"important");
+      chatShell.querySelector(".gramora-chat-header").style.setProperty("background",palette.page,"important");
+      chatShell.querySelector(".gramora-chat-compose").style.setProperty("background",palette.page,"important");
+      chatShell.querySelector(".gramora-chat-compose input").style.setProperty("background",palette.input,"important");
+      chatShell.querySelector(".gramora-chat-compose input").style.setProperty("color",palette.text,"important");
+      chatShell.querySelectorAll(".gramora-chat-theme-grid [data-chat-theme]").forEach(button=>button.classList.toggle("active",button.dataset.chatTheme===safeTheme));
+    }
     const savedChatTheme=localStorage.getItem(chatThemeKey)||"default";
-    chatShell.dataset.chatTheme=savedChatTheme;
+    applyChatTheme(savedChatTheme);
     dlg.querySelector(".gramora-chat-more").addEventListener("click",()=>{chatOptions.hidden=!chatOptions.hidden;chatThemePanel.hidden=true;});
     dlg.querySelector(".gramora-chat-option-theme").addEventListener("click",()=>{chatOptions.hidden=true;chatThemePanel.hidden=false;});
     dlg.querySelector(".gramora-chat-theme-close").addEventListener("click",()=>chatThemePanel.hidden=true);
-    dlg.querySelectorAll("[data-chat-theme]").forEach(button=>button.addEventListener("click",()=>{
-      const theme=button.dataset.chatTheme;chatShell.dataset.chatTheme=theme;localStorage.setItem(chatThemeKey,theme);chatThemePanel.hidden=true;
+    dlg.querySelectorAll(".gramora-chat-theme-grid [data-chat-theme]").forEach(button=>button.addEventListener("click",()=>{
+      const theme=button.dataset.chatTheme;
+      applyChatTheme(theme);
+      try{localStorage.setItem(chatThemeKey,theme);}catch(error){console.warn("Chat theme could not be saved:",error);}
+      chatThemePanel.hidden=true;
     }));
     dlg.querySelector(".gramora-chat-option-clear").addEventListener("click",()=>{
       chatOptions.hidden=true;
