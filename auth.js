@@ -1025,6 +1025,29 @@ function renderPosts(docs){
       const del=document.createElement("button");del.className="delete-post";del.type="button";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(postDoc.id,del,()=>getDocsForFeed()));actions.append(del);
     }
     feed.append(article);
+    // Resolve the latest profile details instead of relying on old names saved in post documents.
+    const profileUids=[authorUid,isRepost?data.uid:null].filter(Boolean);
+    Promise.all(profileUids.map(uid=>getDoc(doc(db,"userProfiles",uid)).then(snap=>({uid,data:snap.exists()?snap.data():null}))))
+      .then(results=>{
+        if(!article.isConnected)return;
+        const profiles=new Map(results.map(item=>[item.uid,item.data]));
+        const latestAuthor=profiles.get(authorUid);
+        if(latestAuthor){
+          const latestName=latestAuthor.displayName||authorName||"GRAMORA member";
+          const latestUsername=latestAuthor.username||authorUsername||"";
+          name.textContent=latestName;
+          meta.textContent=(latestUsername?"@"+latestUsername+" · ":"")+formatPostDate(isRepost?data.originalCreatedAt:data.createdAt);
+          avatar.textContent=latestName.trim().charAt(0).toUpperCase()||"G";
+          if(latestAuthor.photoURL){
+            const img=document.createElement("img");img.src=latestAuthor.photoURL;img.alt="";avatar.replaceChildren(img);
+          }
+        }
+        if(isRepost){
+          const latestReposter=profiles.get(data.uid);
+          const repostLabel=article.querySelector(".post-reposted-by");
+          if(latestReposter&&repostLabel)repostLabel.textContent="↻ "+(latestReposter.displayName||data.displayName||"GRAMORA member")+" reposted";
+        }
+      }).catch(error=>console.warn("Latest feed profile lookup failed:",error));
   });
 }
 async function createPostRepost(postId,original,button){
