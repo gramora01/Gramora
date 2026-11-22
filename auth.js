@@ -593,7 +593,6 @@ function openStoryViewer(docs,id){
   storyViewerIndex=storyViewerSequence.findIndex(item=>item.id===id);if(storyViewerIndex<0)storyViewerIndex=0;
   dialog.dataset.storyId=id;
   const content=document.getElementById("storyViewerText");
-  const byline=document.getElementById("storyViewerByline");
   const deleteButton=document.getElementById("storyViewerDelete");
   const isOwnStory=data.uid===auth?.currentUser?.uid&&!dialog._highlightStories?.length;
   const ownerActions=document.getElementById("storyOwnerActions");
@@ -618,8 +617,8 @@ function openStoryViewer(docs,id){
   const ownerDeleteAction=ownerMenu?.querySelector('[data-story-menu-action="delete"]');if(ownerDeleteAction)ownerDeleteAction.onclick=()=>{ownerMenu.hidden=true;deleteButton?.click();};
   content.textContent=data.text||"";
   content.style.background=data.background||POST_BACKGROUNDS[4];
-  byline.textContent=formatPostDate(data.createdAt);
   const viewerName=document.getElementById("storyViewerName");if(viewerName)viewerName.textContent=data.displayName||"GRAMORA member";
+  const viewerTime=document.getElementById("storyViewerTime");if(viewerTime)viewerTime.textContent=formatPostDate(data.createdAt);
   const avatar=document.getElementById("storyViewerAvatar");if(avatar){const profile=storyProfileCache.get(data.uid)||{};avatar.replaceChildren();if(profile.photoURL){const image=document.createElement("img");image.src=profile.photoURL;image.alt="";avatar.append(image);}else avatar.textContent=(data.displayName||"G").trim().charAt(0).toUpperCase();if(!storyProfileCache.has(data.uid))getStoryProfile(data.uid).then(p=>{if(dialog.dataset.storyId===id&&p?.photoURL){const image=document.createElement("img");image.src=p.photoURL;image.alt="";avatar.replaceChildren(image);}});}
   renderStoryViewerProgress();
   markStorySeen(id);
@@ -634,17 +633,12 @@ function openStoryViewer(docs,id){
       const icon=document.createElement("span");icon.className="gramora-story-track-icon";icon.textContent="♫";
       const details=document.createElement("span");details.className="gramora-story-track-details";
       const label=document.createElement("span");label.className="gramora-story-track-title";label.textContent=data.songTitle+(data.songArtist?" · "+data.songArtist:"");
-      const progress=document.createElement("span");progress.className="gramora-story-track-progress";
-      if(!data.previewUrl)progress.hidden=true;
-      const fill=document.createElement("i");fill.className="gramora-story-track-progress-fill";progress.append(fill);
-      details.append(label,progress);track.append(icon,details);
+      details.append(label);track.append(icon,details);
       if(data.previewUrl&&audio){
         audio.src=data.previewUrl;audio.hidden=false;audio.controls=false;
         const startAt=Math.max(0,Number(data.songStart||0));
         audio.ontimeupdate=()=>{
-          const elapsed=Math.max(0,audio.currentTime-startAt);
-          fill.style.width=Math.min(100,elapsed/15*100)+"%";
-          if(elapsed>=15)audio.pause();
+          if(audio.currentTime-startAt>=15)audio.pause();
         };
         audio.onloadedmetadata=()=>{try{audio.currentTime=startAt;}catch(error){}};
       }else if(data.songUrl){
@@ -1304,8 +1298,16 @@ async function deleteOwnPost(postId,button,afterDelete){
   catch(error){console.error("Delete post failed:",error);alert(error.code==="permission-denied"?"Firestore Rules denied deleting this post. Publish the latest rules.":"Could not delete this post. Please try again.");button.disabled=false;button.textContent="Delete";}
 }
 function formatPostDate(timestamp){
-  if(!timestamp||!timestamp.toDate)return "Just now";
-  return timestamp.toDate().toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"});
+  if(!timestamp)return "Just now";
+  const date=typeof timestamp.toDate==="function"?timestamp.toDate():new Date(typeof timestamp==="number"?(timestamp<1e12?timestamp*1000:timestamp):timestamp);
+  if(Number.isNaN(date.getTime()))return "Just now";
+  const minutes=Math.max(0,Math.floor((Date.now()-date.getTime())/60000));
+  if(minutes<1)return "Just now";
+  if(minutes<60)return minutes+" min";
+  const hours=Math.floor(minutes/60);
+  if(hours<24)return hours+" hr";
+  const days=Math.floor(hours/24);
+  return days+" day"+(days===1?"":"s");
 }
 document.addEventListener("gramora:view",event=>{
   activeView=event.detail;
