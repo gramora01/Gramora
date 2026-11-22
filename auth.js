@@ -471,36 +471,52 @@ function makeStoryAvatar(ring,profile,name){
 function renderStories(docs){
   const strip=document.querySelector(".stories");if(!strip)return;
   strip.replaceChildren();
+  const current=auth?.currentUser;
+  const ownStories=docs.filter(item=>item.data().uid===current?.uid)
+    .sort((a,b)=>(a.data().createdAt?.toMillis?.()||0)-(b.data().createdAt?.toMillis?.()||0));
   const create=document.createElement("button");create.className="story your-story";create.type="button";
   const createRing=document.createElement("span");createRing.className="story-ring story-add-ring";
-  const current=auth?.currentUser;const currentProfile=storyProfileCache.get(current?.uid)||{};
+  const currentProfile=storyProfileCache.get(current?.uid)||{};
   makeStoryAvatar(createRing,currentProfile,currentProfile.displayName||current?.displayName||"G");
-  const plus=document.createElement("i");plus.textContent="＋";createRing.append(plus);
+  const plus=document.createElement("i");plus.textContent="＋";plus.setAttribute("aria-label","Add story");createRing.append(plus);
   const createLabel=document.createElement("small");createLabel.textContent="Your story";
   create.append(createRing,createLabel);
-  create.addEventListener("click",()=>{
+  const openCreator=event=>{
+    event?.stopPropagation();
     storyEditingId=null;storyForm?.reset();
     document.getElementById("storyCreateDialog").querySelector("h2").textContent="Create a text story";
     document.querySelector("#storyForm button[type=submit]").textContent="Share story";
     document.getElementById("storyCreateDialog")?.showModal();
+  };
+  plus.addEventListener("click",openCreator);
+  create.addEventListener("click",()=>{
+    if(ownStories.length)openStoryViewer(ownStories,ownStories[0].id);
+    else openCreator();
   });
   strip.append(create);
   const latestByUser=new Map();
-  docs.forEach(storyDoc=>{const uid=storyDoc.data().uid;if(uid&&!latestByUser.has(uid))latestByUser.set(uid,storyDoc);});
+  docs.forEach(storyDoc=>{
+    const uid=storyDoc.data().uid;
+    if(uid&&uid!==current?.uid&&!latestByUser.has(uid))latestByUser.set(uid,storyDoc);
+  });
   latestByUser.forEach((storyDoc,uid)=>{
     const data=storyDoc.data(),name=data.displayName||"GRAMORA member";
     const item=document.createElement("button");item.type="button";item.className="story";
-    const ring=document.createElement("span");ring.className="story-ring story-user-ring "+(storyWasSeen(storyDoc.id)?"story-seen":"story-unseen");
-    const label=document.createElement("small");label.textContent=uid===current?.uid?"Your story":name;
+    const userStories=docs.filter(entry=>entry.data().uid===uid)
+      .sort((a,b)=>(a.data().createdAt?.toMillis?.()||0)-(b.data().createdAt?.toMillis?.()||0));
+    const ring=document.createElement("span");ring.className="story-ring story-user-ring "+(userStories.every(entry=>storyWasSeen(entry.id))?"story-seen":"story-unseen");
+    const label=document.createElement("small");label.textContent=name;
     const profile=storyProfileCache.get(uid)||{};
     makeStoryAvatar(ring,profile,name);
-    item.append(ring,label);item.addEventListener("click",()=>openStoryViewer(docs,storyDoc.id));
+    item.append(ring,label);item.addEventListener("click",()=>openStoryViewer(userStories,userStories[0]?.id));
     strip.append(item);
     if(!storyProfileCache.has(uid))getStoryProfile(uid).then(p=>{if(ring.isConnected)makeStoryAvatar(ring,p,name);});
   });
   if(current&&!storyProfileCache.has(current.uid))getStoryProfile(current.uid).then(p=>{
-    if(createRing.isConnected)makeStoryAvatar(createRing,p,p.displayName||current.displayName||"G");
-    if(createRing.isConnected&&!createRing.querySelector("i")){const plusIcon=document.createElement("i");plusIcon.textContent="＋";createRing.append(plusIcon);}
+    if(createRing.isConnected){
+      makeStoryAvatar(createRing,p,p.displayName||current.displayName||"G");
+      if(createRing.isConnected&&!createRing.querySelector("i")){const plusIcon=document.createElement("i");plusIcon.textContent="＋";plusIcon.setAttribute("aria-label","Add story");plusIcon.addEventListener("click",openCreator);createRing.append(plusIcon);}
+    }
   });
 }
 async function recordStoryView(storyId,storyData){
@@ -550,15 +566,14 @@ function openStoryViewer(docs,id){
   loadStoryViewers(id,data);
   const highlightNav=document.getElementById("highlightStoryNav");
   if(highlightNav){
-    const index=Number(dialog.dataset.highlightIndex||0),items=dialog._highlightStories||[];
-    highlightNav.hidden=!items.length;
+    const isHighlight=!!dialog._highlightStories?.length;
+    const sequence=isHighlight?dialog._highlightStories:docs.filter(item=>item.data().uid===data.uid)
+      .sort((a,b)=>(a.data().createdAt?.toMillis?.()||0)-(b.data().createdAt?.toMillis?.()||0));
+    const index=sequence.findIndex(item=>item.id===id);
+    highlightNav.hidden=sequence.length<2;
     const prev=document.getElementById("highlightStoryPrev"),next=document.getElementById("highlightStoryNext");
-    if(prev)prev.disabled=index<=0;
-    if(next)next.disabled=index>=items.length-1;
-    if(items.length){
-      if(prev)prev.onclick=()=>{dialog.dataset.highlightIndex=String(index-1);openStoryViewer(items,items[index-1].id);};
-      if(next)next.onclick=()=>{dialog.dataset.highlightIndex=String(index+1);openStoryViewer(items,items[index+1].id);};
-    }
+    if(prev){prev.textContent="‹ Previous";prev.disabled=index<=0;prev.onclick=()=>{if(index>0)openStoryViewer(sequence,sequence[index-1].id);};}
+    if(next){next.textContent="Next ›";next.disabled=index<0||index>=sequence.length-1;next.onclick=()=>{if(index>=0&&index<sequence.length-1)openStoryViewer(sequence,sequence[index+1].id);};}
   }
   song.replaceChildren();
   const audio=document.getElementById("storyViewerAudio");
