@@ -695,7 +695,7 @@ function openStoryViewer(docs,id){
   startStoryViewerTimer();
 }
 async function getStoryViewerPeople(storyId,ownerUid){
-  const snap=await getDocs(query(collection(db,"storyViews"),where("storyUid","==",ownerUid),limit(1000)));
+  const snap=await getDocs(query(collection(db,"storyViews"),where("storyUid","==",ownerUid)));
   return snap.docs.filter(item=>item.data().storyId===storyId).sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0));
 }
 async function renderStoryActivityPreview(storyId,ownerUid){
