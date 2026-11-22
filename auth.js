@@ -51,10 +51,23 @@ function updateMobileProfileAvatar(profile,user){
   avatar.setAttribute("aria-label",name+" profile");
 }
 
+let activePresenceCleanup=null;
+function startGramoraPresence(user,selectedDb){
+  if(activePresenceCleanup)activePresenceCleanup();
+  const presenceRef=doc(selectedDb,"userPresence",user.uid);
+  const writePresence=online=>setDoc(presenceRef,{uid:user.uid,online,lastSeen:serverTimestamp()},{merge:true}).catch(error=>console.warn("Presence update failed:",error));
+  const onVisibility=()=>writePresence(!document.hidden);
+  const onPageHide=()=>writePresence(false);
+  writePresence(!document.hidden);
+  document.addEventListener("visibilitychange",onVisibility);
+  window.addEventListener("pagehide",onPageHide);
+  activePresenceCleanup=()=>{document.removeEventListener("visibilitychange",onVisibility);window.removeEventListener("pagehide",onPageHide);writePresence(false);activePresenceCleanup=null;};
+}
 function activateAccount(instance){
   if(activeAuthUnsubscribe) activeAuthUnsubscribe();
   if(activeFeedUnsubscribe){activeFeedUnsubscribe();activeFeedUnsubscribe=null;}
   if(activeNotificationUnsubscribe){activeNotificationUnsubscribe();activeNotificationUnsubscribe=null;}
+  if(activePresenceCleanup){activePresenceCleanup();activePresenceCleanup=null;}
   activeApp=instance.app; auth=instance.auth; db=instance.db;
   const selectedApp=instance.app;
   const selectedAuth=instance.auth;
@@ -67,6 +80,7 @@ function activateAccount(instance){
     if(accountBar) accountBar.hidden=!user;
     if(user){
       rememberAccount(user,selectedApp===app?"[DEFAULT]":selectedApp.name);
+      startGramoraPresence(user,selectedDb);
       if(accountLabel) accountLabel.textContent=user.displayName||user.email||"Account";
       try{
         await ensureProfile(user);
