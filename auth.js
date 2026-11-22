@@ -1012,21 +1012,39 @@ async function getVisibleContentUids(user){
 }
 function startPostsFeed(user){
   if(activeFeedUnsubscribe)activeFeedUnsubscribe();
-  let posts=[],reposts=[],ready=0,total=0,offs=[],cancelled=false;
+  let posts=[],reposts=[],ready=0,total=0,offs=[],cancelled=false,completed=false;
+  const feedLoadTimer=setTimeout(()=>{
+    if(!cancelled&&!completed&&activeView==="home"){
+      showFeedRetryMessage("Your feed is taking longer than expected. Check your connection and try again.",user);
+    }
+  },12000);
   const renderCombined=()=>{
-    if(cancelled||ready<total||activeView!=="home")return;
+    if(cancelled||ready<total)return;
+    completed=true;clearTimeout(feedLoadTimer);
+    if(activeView!=="home")return;
     const repostDocs=reposts.map(item=>({id:"repost_"+item.id,data:()=>({...item.data(),_isRepost:true,_repostId:item.id})}));
     renderPosts([...posts,...repostDocs].sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).slice(0,60));
   };
-  activeFeedUnsubscribe=()=>{cancelled=true;offs.forEach(off=>off());};
+  activeFeedUnsubscribe=()=>{cancelled=true;clearTimeout(feedLoadTimer);offs.forEach(off=>off());};
   getVisibleContentUids(user).then(uids=>{
     if(cancelled)return;total=uids.length*2;
-    if(!total){renderPosts([]);return;}
+    if(!total){completed=true;clearTimeout(feedLoadTimer);renderPosts([]);return;}
     uids.forEach(uid=>{
       offs.push(onSnapshot(query(collection(db,"posts"),where("uid","==",uid),limit(100)),snap=>{posts=posts.filter(item=>item.data().uid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.warn("A profile's posts are not visible:",error.code||error);ready++;renderCombined();}));
       offs.push(onSnapshot(query(collection(db,"reposts"),where("originalUid","==",uid),limit(100)),snap=>{reposts=reposts.filter(item=>item.data().originalUid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.warn("Reposts feed unavailable:",error);ready++;renderCombined();}));
     });
-  }).catch(error=>{console.error(error);if(activeView==="home")showFeedMessage("Could not prepare your private feed. Check Firestore Rules.");});
+  }).catch(error=>{console.error(error);completed=true;clearTimeout(feedLoadTimer);if(activeView==="home")showFeedRetryMessage("Could not prepare your feed ("+(error.code||"network error")+"). Check your connection or Firestore Rules, then retry.",user);});
+}
+function showFeedRetryMessage(message,user){
+  const feed=document.getElementById("feed");
+  if(!feed)return;
+  feed.replaceChildren();
+  const copy=document.createElement("p");copy.className="muted";copy.textContent=message;
+  copy.style.cssText="padding:24px 18px 10px;text-align:center;line-height:1.6";
+  const retry=document.createElement("button");retry.type="button";retry.textContent="Retry feed";
+  retry.style.cssText="display:block;margin:8px auto 24px;padding:11px 22px;border:0;border-radius:999px;background:linear-gradient(110deg,#d85c9a,#8b68dc);color:#fff;font-weight:800;cursor:pointer";
+  retry.addEventListener("click",()=>startPostsFeed(user));
+  feed.append(copy,retry);
 }
 function showFeedMessage(text){
   const feed=document.getElementById("feed");
