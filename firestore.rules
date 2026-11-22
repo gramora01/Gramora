@@ -428,18 +428,26 @@ service cloud.firestore {
                 && request.resource.data.gifData.size() <= 700000
                 && request.resource.data.gifData.matches('data:image/gif;base64,.*'))));
 
-        // A sender can edit only their own text message.
+        // A sender can edit only their own text; either participant can add/remove their own reaction.
         allow update: if isChatParticipant()
-          && resource.data.senderUid == request.auth.uid
-          && resource.data.type == 'text'
-          && request.resource.data.senderUid == resource.data.senderUid
-          && request.resource.data.type == resource.data.type
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text','editedAt'])
-          && request.resource.data.text is string
-          && request.resource.data.text.size() > 0
-          && request.resource.data.text.size() <= 2000
-          && request.resource.data.editedAt is timestamp;
-        allow delete: if false;
+          && (
+            (resource.data.senderUid == request.auth.uid
+              && resource.data.type == 'text'
+              && request.resource.data.senderUid == resource.data.senderUid
+              && request.resource.data.type == resource.data.type
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text','editedAt'])
+              && request.resource.data.text is string
+              && request.resource.data.text.size() > 0
+              && request.resource.data.text.size() <= 2000
+              && request.resource.data.editedAt is timestamp)
+            ||
+            (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions'])
+              && request.resource.data.reactions is map
+              && request.resource.data.reactions.keys().hasOnly(parentConversation().data.participantUids)
+              && request.resource.data.reactions.values().hasOnly(['❤️','😂','😮','😢','🔥','👍','👏','😍']))
+          );
+        // Unsend removes the sender's message for both participants.
+        allow delete: if isChatParticipant() && resource.data.senderUid == request.auth.uid;
       }
 
       // Typing state is private to chat participants; each user controls only their own doc.
