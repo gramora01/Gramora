@@ -540,14 +540,16 @@ async function loadStoryViewers(storyId,storyData){
   if(!isOwner)return;
   try{
     const snap=await getDocs(query(collection(db,"storyViews"),where("storyUid","==",auth.currentUser.uid)));
-    button.textContent="Viewers · "+snap.size;
-    snap.docs.filter(item=>item.data().storyId===storyId).sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(item=>{
+    if(document.getElementById("storyViewerDialog")?.dataset.storyId!==storyId)return;
+    const storyViews=snap.docs.filter(item=>item.data().storyId===storyId);
+    button.textContent="Viewers · "+storyViews.length;
+    storyViews.sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(item=>{
       const person=item.data(),row=document.createElement("button");row.type="button";row.className="story-viewer-person story-person-link";
       row.textContent=person.displayName||"GRAMORA member";
       row.addEventListener("click",()=>openPersonProfile(person.uid));
       list.append(row);
     });
-    if(!snap.size)list.textContent="Abhi kisi ne story nahi dekhi.";
+    if(!storyViews.length)list.textContent="Abhi kisi ne story nahi dekhi.";
   }catch(error){console.error("Story viewers load failed:",error);button.textContent="Viewers";list.textContent="Viewers load nahi ho paye. Firestore Rules check karein.";}
 }
 function openStoryViewer(docs,id){
@@ -670,6 +672,7 @@ async function loadStoryEngagement(storyId,storyData){
     let liked=false;
     if(isOwner){
       const likesSnap=await getDocs(query(collection(db,"storyLikes"),where("storyUid","==",currentUid)));
+      if(document.getElementById("storyViewerDialog")?.dataset.storyId!==storyId)return;
       const storyLikes=likesSnap.docs.filter(item=>item.data().storyId===storyId);
       liked=storyLikes.some(item=>item.id===ownLikeId);
       if(likeCount)likeCount.textContent=String(storyLikes.length);
@@ -677,6 +680,7 @@ async function loadStoryEngagement(storyId,storyData){
       if(likeCountWrap)likeCountWrap.onclick=()=>showStoryPeopleList(storyId,"likes");
     }else{
       const ownLikeSnap=await getDoc(doc(db,"storyLikes",ownLikeId));
+      if(document.getElementById("storyViewerDialog")?.dataset.storyId!==storyId)return;
       liked=ownLikeSnap.exists();
     }
     if(likeButton){
@@ -699,6 +703,7 @@ async function loadStoryEngagement(storyId,storyData){
   if(isOwner){
     try{
       const repliesSnap=await getDocs(query(collection(db,"storyReplies"),where("storyOwnerUid","==",currentUid)));
+      if(document.getElementById("storyViewerDialog")?.dataset.storyId!==storyId)return;
       const replies=repliesSnap.docs.map(item=>({id:item.id,...item.data()})).filter(reply=>reply.storyId===storyId).sort((x,y)=>(y.createdAt?.toMillis?.()||0)-(x.createdAt?.toMillis?.()||0));
       if(replyList){
         replyList.replaceChildren();
