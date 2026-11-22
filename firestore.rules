@@ -243,7 +243,11 @@ service cloud.firestore {
 
     // REPOSTS
     match /reposts/{repostId} {
-      allow read: if canViewUserContent(resource.data.originalUid);
+      // Repost owners can always view their own reposts in their profile.
+      // Other viewers can read a repost only when they can view the original post.
+      allow read: if signedIn()
+        && (resource.data.uid == request.auth.uid
+          || canViewUserContent(resource.data.originalUid));
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.originalPostId is string
