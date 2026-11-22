@@ -23,6 +23,7 @@ service cloud.firestore {
     // Private content is readable only by its owner, public viewers, or approved followers.
     function canViewUserContent(ownerUid) {
       return signedIn()
+        && noBlockWith(ownerUid)
         && (ownerUid == request.auth.uid
           || !exists(/databases/$(database)/documents/userProfiles/$(ownerUid))
           || get(/databases/$(database)/documents/userProfiles/$(ownerUid)).data.get('isPrivate', false) != true
@@ -248,6 +249,7 @@ service cloud.firestore {
         && request.resource.data.originalPostId is string
         && request.resource.data.originalUid is string
         && request.resource.data.originalUid != request.auth.uid
+        && canViewUserContent(request.resource.data.originalUid)
         && repostId == request.resource.data.originalPostId + '_' + request.auth.uid
         && request.resource.data.originalText is string
         && request.resource.data.originalText.size() <= 2000
@@ -320,6 +322,7 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.storyUid is string
+        && canViewUserContent(request.resource.data.storyUid)
         && request.resource.data.storyUid != request.auth.uid
         && request.resource.data.storyId is string
         && viewId == request.resource.data.storyId + '_' + request.auth.uid
@@ -347,6 +350,7 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.storyId is string
         && request.resource.data.storyUid is string
+        && canViewUserContent(request.resource.data.storyUid)
         && likeId == request.resource.data.storyId + '_' + request.auth.uid
         && request.resource.data.keys().hasOnly(['storyId','storyUid','uid','createdAt']);
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
@@ -362,6 +366,7 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.storyId is string
         && request.resource.data.storyOwnerUid is string
+        && canViewUserContent(request.resource.data.storyOwnerUid)
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 300
