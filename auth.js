@@ -625,13 +625,13 @@ function openStoryViewer(docs,id){
       if(action==="more"){if(ownerMenu)ownerMenu.hidden=!ownerMenu.hidden;return;}
       if(action==="share"){
         const url=location.href.split("#")[0]+"#story-"+encodeURIComponent(id);
-        try{if(navigator.share)await navigator.share({title:"GRAMORA story",text:"Check out my story on GRAMORA",url});else{await navigator.clipboard.writeText(url);if(replyStatus)replyStatus.textContent="Story link copied.";}}
-        catch(error){if(error.name!=="AbortError"&&replyStatus)replyStatus.textContent="Share nahi ho paya. Dobara try karein.";}
+        try{if(navigator.share)await navigator.share({title:"GRAMORA story",text:"Check out my story on GRAMORA",url});else{await navigator.clipboard.writeText(url);if(document.getElementById("storyReplyStatus"))document.getElementById("storyReplyStatus").textContent="Story link copied.";}}
+        catch(error){if(error.name!=="AbortError"&&document.getElementById("storyReplyStatus"))document.getElementById("storyReplyStatus").textContent="Share nahi ho paya. Dobara try karein.";}
       }
     };
   });
-  ownerMenu?.querySelector('[data-story-menu-action="edit"]')?.addEventListener("click",()=>{ownerMenu.hidden=true;editStoryButton?.click();});
-  ownerMenu?.querySelector('[data-story-menu-action="delete"]')?.addEventListener("click",()=>{ownerMenu.hidden=true;deleteButton?.click();});
+  const ownerEditAction=ownerMenu?.querySelector('[data-story-menu-action="edit"]');if(ownerEditAction)ownerEditAction.onclick=()=>{ownerMenu.hidden=true;editStoryButton?.click();};
+  const ownerDeleteAction=ownerMenu?.querySelector('[data-story-menu-action="delete"]');if(ownerDeleteAction)ownerDeleteAction.onclick=()=>{ownerMenu.hidden=true;deleteButton?.click();};
   content.textContent=data.text||"";
   content.style.background=data.background||POST_BACKGROUNDS[4];
   byline.textContent=formatPostDate(data.createdAt);
