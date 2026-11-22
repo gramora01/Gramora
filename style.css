@@ -1087,3 +1087,21 @@ body.light .gramora-story-viewer{color:#fff!important}
 .gramora-story-viewer .gramora-viewer-user{gap:9px}
 .gramora-story-viewer .gramora-viewer-header{align-items:flex-start;padding-top:2px}
 @media(max-width:420px){.gramora-story-track{width:min(56vw,235px)}}
+
+/* Instagram-style story viewer activity tray */
+.gramora-story-activity-sheet{position:absolute;z-index:20;left:0;right:0;bottom:0;max-height:68%;min-height:42%;padding:9px 16px max(14px,env(safe-area-inset-bottom));border-radius:20px 20px 0 0;background:#fff;color:#17181d;box-shadow:0 -12px 38px #0006;display:flex;flex-direction:column;overflow:hidden}
+.gramora-story-activity-sheet[hidden]{display:none!important}
+.gramora-story-sheet-grabber{width:38px;height:4px;flex:0 0 4px;margin:0 auto 13px;border-radius:99px;background:#b8b8be}
+.gramora-story-sheet-head{display:flex;align-items:center;justify-content:space-between;padding:0 1px 12px;border-bottom:1px solid #e9e9ed;font-size:15px}
+.gramora-story-sheet-head strong{font-weight:800}.gramora-story-sheet-head span{color:#777}
+.gramora-story-sheet-head button{width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:#17181d;font-size:27px;line-height:1}
+.gramora-story-activity-list{flex:1;min-height:0;overflow-y:auto;padding:7px 0;overscroll-behavior:contain}
+.gramora-story-viewer-row{width:100%;display:flex;align-items:center;gap:12px;padding:8px 2px;border:0;background:transparent;color:#17181d;text-align:left}
+.gramora-story-viewer-avatar{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;overflow:hidden;border-radius:50%;background:#ececf1;color:#444;font-size:15px;font-weight:700}
+.gramora-story-viewer-avatar img{width:100%;height:100%;object-fit:cover}
+.gramora-story-viewer-info{min-width:0;display:flex;flex-direction:column;gap:3px}
+.gramora-story-viewer-info strong{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gramora-story-viewer-info small{font-size:12px;color:#777}
+.gramora-story-no-viewers{padding:22px 8px;text-align:center;color:#777;font-size:13px}
+.gramora-story-owner-actions [data-story-owner-action="activity"] span{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+.gramora-story-owner-actions [data-story-owner-action="activity"]{min-width:72px}
