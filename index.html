@@ -197,8 +197,43 @@
       <p class="auth-legal">By continuing, you agree to use GRAMORA respectfully.</p>
     </section>
   </div>
-  <script src="script.js?v=70"></script>
-  <script type="module" src="auth.js?v=148"></script>
+  <script src="script.js?v=71"></script>
+  <script type="module" src="auth.js?v=149"></script>
+  <script>
+    // Startup failsafe: never leave GRAMORA hidden behind an endless loading state.
+    (() => {
+      const revealRecovery = () => {
+        const gate = document.getElementById("authGate");
+        const message = document.getElementById("authMessage");
+        document.body.classList.remove("auth-pending");
+        document.body.classList.add("auth-required");
+        if (gate) gate.hidden = false;
+        if (message) {
+          message.textContent = "GRAMORA could not finish starting. Check your internet connection, then reload the app.";
+          message.classList.add("error");
+        }
+        if (gate && !document.getElementById("startupReload")) {
+          const reload = document.createElement("button");
+          reload.id = "startupReload";
+          reload.type = "button";
+          reload.className = "create-btn auth-submit";
+          reload.textContent = "Reload GRAMORA";
+          reload.addEventListener("click", () => location.reload());
+          gate.querySelector(".auth-card")?.append(reload);
+        }
+      };
+      window.setTimeout(() => {
+        if (document.body.classList.contains("auth-pending")) revealRecovery();
+      }, 12000);
+      window.addEventListener("error", event => {
+        if (event.target && event.target.tagName === "SCRIPT") {
+          window.setTimeout(() => {
+            if (document.body.classList.contains("auth-pending")) revealRecovery();
+          }, 0);
+        }
+      }, true);
+    })();
+  </script>
   <script>
     if ("serviceWorker" in navigator && location.protocol === "https:") {
       window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js", { scope: "./" }).catch(error => console.warn("GRAMORA offline setup:", error)));
