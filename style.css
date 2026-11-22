@@ -762,3 +762,8 @@ button.gramora-story-tool{cursor:pointer}
 .gramora-music-sheet .story-song-result{border:0;border-bottom:1px solid #ffffff12;border-radius:0;background:transparent;padding:15px 5px;color:#fff}
 .gramora-music-sheet .muted{color:#aeb0ba}
 @media(min-width:700px){.gramora-story-editor{width:min(100vw,480px);min-height:90dvh;height:90dvh;max-height:90dvh;margin:auto;border-radius:24px}.gramora-story-editor form{border-radius:24px;overflow:hidden}}
+
+.gramora-story-sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.gramora-story-editor #storyText{background:transparent!important}
+.gramora-story-editor #storyText:focus{outline:none!important}
+.gramora-story-editor #storyCreateStatus{color:#fff!important}
