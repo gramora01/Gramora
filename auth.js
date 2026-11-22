@@ -747,7 +747,7 @@ storyReplyForm?.addEventListener("submit",async event=>{
 
 document.getElementById("openStoryMusic")?.addEventListener("click",()=>{const sheet=document.getElementById("storyMusicSheet");if(sheet)sheet.hidden=false;});
 document.getElementById("closeStoryMusic")?.addEventListener("click",()=>{const sheet=document.getElementById("storyMusicSheet");if(sheet)sheet.hidden=true;});
-\nconst songSearchButton=document.getElementById("storySongSearchButton");
+const songSearchButton=document.getElementById("storySongSearchButton");
 const songSearchInput=document.getElementById("storySongSearch");
 const songSearchResults=document.getElementById("storySongResults");
 const selectedPreview=document.getElementById("storySongPreviewUrl");
