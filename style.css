@@ -705,3 +705,19 @@ body.light .post-actions .save.saved{color:#e1306c!important}
 .gramora-inbox-empty p{max-width:290px;margin:0;color:var(--muted);font-size:13px;line-height:1.6}
 body.light .gramora-inbox-search{background:#f3f4f8}
 @media(max-width:680px){.gramora-inbox{padding:14px 16px 24px}.gramora-inbox-head h2{font-size:25px}}
+
+
+/* Public profile follow + message actions */
+body.profile-active .ig-profile-actions{
+  display:flex;align-items:center;gap:9px;width:100%;padding:12px 16px 16px;box-sizing:border-box
+}
+body.profile-active .ig-profile-actions .public-follow,
+body.profile-active .ig-profile-actions .public-message{
+  flex:1;min-height:40px;padding:0 14px;border:1px solid var(--line,#343743);
+  border-radius:9px;background:var(--surface,#20232c);color:var(--text,#f5f5f7);
+  font:inherit;font-size:13px;font-weight:700;cursor:pointer
+}
+body.profile-active .ig-profile-actions .public-message{
+  border-color:transparent;background:linear-gradient(110deg,#d85c9a,#8b68dc);color:#fff
+}
+body.profile-active .ig-profile-actions button:active{transform:scale(.98)}
