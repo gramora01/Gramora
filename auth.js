@@ -584,7 +584,7 @@ function openStoryViewer(docs,id){
     const title=document.createElement("p");title.className="story-song-title";title.textContent="♫ "+data.songTitle+(data.songArtist?" — "+data.songArtist:"");
     song.append(title);
     if(data.previewUrl&&audio){
-      audio.src=data.previewUrl;audio.hidden=false;audio.currentTime=0;
+      audio.src=data.previewUrl;audio.hidden=false;audio.currentTime=Number(data.songStart||0);audio.ontimeupdate=()=>{if(audio.currentTime>=Number(data.songStart||0)+15)audio.pause();};
     }else if(data.songUrl){
       const link=document.createElement("a");link.className="story-song-link";link.textContent="Open song ↗";
       link.href=data.songUrl;link.target="_blank";link.rel="noopener noreferrer";song.append(link);
@@ -598,7 +598,7 @@ function openStoryViewer(docs,id){
       storyEditingId=id;document.getElementById("storyText").value=data.text||"";
       const bg=data.background||POST_BACKGROUNDS[4];document.getElementById("storyBackground").value=bg;document.getElementById("storyText").style.background=bg;
       document.querySelectorAll("#storyBackgroundPicker [data-bg]").forEach(button=>button.classList.toggle("selected",button.dataset.bg===bg));
-      document.getElementById("storySongTitle").value=data.songTitle||"";document.getElementById("storySongArtist").value=data.songArtist||"";document.getElementById("storySongUrl").value=data.songUrl||"";document.getElementById("storySongPreviewUrl").value=data.previewUrl||"";
+      document.getElementById("storySongTitle").value=data.songTitle||"";document.getElementById("storySongArtist").value=data.songArtist||"";document.getElementById("storySongUrl").value=data.songUrl||"";document.getElementById("storySongPreviewUrl").value=data.previewUrl||"";document.getElementById("storySongArtwork").value=data.songArtwork||"";document.getElementById("storySongStart").value=String(data.songStart||0);document.getElementById("storyMusicAttached").hidden=!data.songTitle;document.getElementById("storySongAttachedTitle").textContent=data.songTitle||"";document.getElementById("storySongAttachedArtist").textContent=data.songArtist||"";document.getElementById("storySongArtworkPreview").src=data.songArtwork||"";
       document.getElementById("storyCreateDialog").querySelector("h2").textContent="Edit your story";document.querySelector("#storyForm button[type=submit]").textContent="Save story";
       dialog.close();document.getElementById("storyCreateDialog").showModal();
     };
@@ -745,40 +745,101 @@ storyReplyForm?.addEventListener("submit",async event=>{
   finally{button.disabled=false;}
 });
 
-document.getElementById("openStoryMusic")?.addEventListener("click",()=>{const sheet=document.getElementById("storyMusicSheet");if(sheet)sheet.hidden=false;});
-document.getElementById("closeStoryMusic")?.addEventListener("click",()=>{const sheet=document.getElementById("storyMusicSheet");if(sheet)sheet.hidden=true;});
-const songSearchButton=document.getElementById("storySongSearchButton");
-const songSearchInput=document.getElementById("storySongSearch");
-const songSearchResults=document.getElementById("storySongResults");
-const selectedPreview=document.getElementById("storySongPreviewUrl");
-songSearchButton?.addEventListener("click",async()=>{
-  const term=songSearchInput?.value.trim();
-  if(!term){songSearchResults.textContent="Song ka naam ya singer likhein.";return;}
-  songSearchButton.disabled=true;songSearchResults.textContent="Songs search ho rahe hain…";
+const storyMusicSheet=document.getElementById("storyMusicSheet");
+const storyMusicPreview=document.getElementById("storyMusicPreview");
+const storyMusicSelection=document.getElementById("storyMusicSelection");
+const storyMusicAttached=document.getElementById("storyMusicAttached");
+const storySongSearchButton=document.getElementById("storySongSearchButton");
+const storySongSearchInput=document.getElementById("storySongSearch");
+const storySongResults=document.getElementById("storySongResults");
+const storyPreviewInput=document.getElementById("storySongPreviewUrl");
+const setStoryMusicPreview=async()=>{
+  if(!storyMusicPreview||!storyPreviewInput?.value)return;
+  storyMusicPreview.src=storyPreviewInput.value;
+  storyMusicPreview.currentTime=Number(document.getElementById("storySongStart").value||0);
+  try{await storyMusicPreview.play();}catch(error){console.warn("Preview playback needs a user tap:",error);}
+};
+const stopStoryMusicPreview=()=>{if(storyMusicPreview){storyMusicPreview.pause();}};
+document.getElementById("openStoryMusic")?.addEventListener("click",()=>{if(storyMusicSheet)storyMusicSheet.hidden=false;});
+document.getElementById("closeStoryMusic")?.addEventListener("click",()=>{stopStoryMusicPreview();if(storyMusicSheet)storyMusicSheet.hidden=true;});
+storySongSearchButton?.addEventListener("click",async()=>{
+  const term=storySongSearchInput?.value.trim();
+  if(!term){storySongResults.textContent="Song ya singer ka naam likhein.";storySongSearchInput?.focus();return;}
+  storySongSearchButton.disabled=true;storySongResults.textContent="Songs search ho rahe hain…";
   try{
-    const response=await fetch("https://itunes.apple.com/search?term="+encodeURIComponent(term)+"&entity=song&limit=12&country=IN");
+    const response=await fetch("https://itunes.apple.com/search?term="+encodeURIComponent(term)+"&entity=song&limit=15&country=IN");
     if(!response.ok)throw new Error("Song search service unavailable");
-    const result=await response.json();songSearchResults.replaceChildren();
-    if(!result.results?.length){songSearchResults.textContent="Koi song nahi mila. Dusra naam try karein.";return;}
+    const result=await response.json();storySongResults.replaceChildren();
+    if(!result.results?.length){storySongResults.textContent="Koi song nahi mila. Dusra naam try karein.";return;}
     result.results.forEach(track=>{
       const option=document.createElement("button");option.type="button";option.className="story-song-result";
+      const cover=document.createElement("img");cover.src=track.artworkUrl100||"";cover.alt="";cover.loading="lazy";
+      const details=document.createElement("span");details.className="gramora-track-details";
       const title=document.createElement("b");title.textContent=track.trackName||"Unknown song";
-      const artist=document.createElement("small");artist.textContent=track.artistName||"Unknown artist";
-      option.append(title,artist);
+      const artist=document.createElement("small");artist.textContent=(track.artistName||"Unknown artist")+" · "+(track.collectionName||"");
+      details.append(title,artist);option.append(cover,details);
       option.addEventListener("click",()=>{
+        if(!track.previewUrl){storySongResults.textContent="Is track ka playable preview available nahi hai. Dusra song chunein.";return;}
         document.getElementById("storySongTitle").value=track.trackName||"";
         document.getElementById("storySongArtist").value=track.artistName||"";
         document.getElementById("storySongUrl").value=track.trackViewUrl||"";
-        selectedPreview.value=track.previewUrl||"";
-        songSearchResults.replaceChildren();
-        const chosen=document.createElement("p");chosen.className="muted tiny";
-        chosen.textContent=(track.trackName||"Song")+" selected · "+(track.previewUrl?"30-second preview will play in your story.":"Is song ka preview available nahi hai.");
-        songSearchResults.append(chosen);
+        document.getElementById("storySongArtwork").value=track.artworkUrl100||"";
+        storyPreviewInput.value=track.previewUrl;
+        document.getElementById("storySongStart").value="0";
+        document.getElementById("storyMusicSelectedArtwork").src=track.artworkUrl100||"";
+        document.getElementById("storyMusicSelectedTitle").textContent=track.trackName||"Unknown song";
+        document.getElementById("storyMusicSelectedArtist").textContent=track.artistName||"";
+        document.getElementById("storyMusicStartSlider").value="0";
+        document.getElementById("storyMusicStartValue").textContent="0:00";
+        storyMusicSelection.hidden=false;
+        storySongResults.querySelectorAll(".story-song-result").forEach(row=>row.classList.toggle("selected",row===option));
+        storyMusicPreview.src=track.previewUrl;
+        storyMusicPreview.currentTime=0;
       });
-      songSearchResults.append(option);
+      storySongResults.append(option);
     });
-  }catch(error){console.error("Song search failed:",error);songSearchResults.textContent="Song search abhi nahi ho payi. Internet connection check karein.";}
-  finally{songSearchButton.disabled=false;}
+  }catch(error){console.error("Song search failed:",error);storySongResults.textContent="Song search abhi nahi ho payi. Internet connection check karein.";}
+  finally{storySongSearchButton.disabled=false;}
+});
+document.getElementById("storyMusicStartSlider")?.addEventListener("input",event=>{
+  const start=Number(event.target.value||0);document.getElementById("storySongStart").value=String(start);
+  document.getElementById("storyMusicStartValue").textContent="0:"+String(start).padStart(2,"0");
+  if(storyMusicPreview&&!storyMusicPreview.paused)storyMusicPreview.currentTime=start;
+});
+document.getElementById("storyMusicPreviewInSheet")?.addEventListener("click",async event=>{
+  if(!storyPreviewInput?.value){storySongResults.textContent="Pehle song select karein.";return;}
+  if(storyMusicPreview.paused){await setStoryMusicPreview();event.currentTarget.textContent="Ⅱ Pause preview";}
+  else{stopStoryMusicPreview();event.currentTarget.textContent="▶ Preview";}
+});
+document.getElementById("storyMusicPreviewToggle")?.addEventListener("click",async event=>{
+  if(!storyPreviewInput?.value)return;
+  if(storyMusicPreview.paused){await setStoryMusicPreview();event.currentTarget.textContent="Ⅱ Pause";}
+  else{stopStoryMusicPreview();event.currentTarget.textContent="▶ Preview";}
+});
+document.getElementById("addStoryMusic")?.addEventListener("click",()=>{
+  if(!storyPreviewInput?.value){storySongResults.textContent="Pehle preview wala song select karein.";return;}
+  const title=document.getElementById("storySongTitle").value,artist=document.getElementById("storySongArtist").value,art=document.getElementById("storySongArtwork").value;
+  document.getElementById("storySongAttachedTitle").textContent=title;
+  document.getElementById("storySongAttachedArtist").textContent=artist;
+  document.getElementById("storySongArtworkPreview").src=art;
+  storyMusicAttached.hidden=false;stopStoryMusicPreview();storyMusicSheet.hidden=true;
+});
+document.getElementById("storyMusicRemove")?.addEventListener("click",()=>{
+  stopStoryMusicPreview();["storySongTitle","storySongArtist","storySongUrl","storySongPreviewUrl","storySongArtwork"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("storySongStart").value="0";storyMusicAttached.hidden=true;storyMusicSelection.hidden=true;
+});
+document.getElementById("storyTextStyleToggle")?.addEventListener("click",()=>{
+  const el=document.getElementById("storyText"),styles=["650 32px Arial,sans-serif","italic 500 32px Georgia,serif","800 32px Impact,sans-serif"];const n=Number(el.dataset.styleIndex||0)%styles.length;el.style.font=styles[n];el.dataset.styleIndex=String(n+1);
+});
+document.getElementById("storyTextColorToggle")?.addEventListener("click",()=>{
+  const el=document.getElementById("storyText");el.style.color=el.style.color==="rgb(255, 230, 130)"?"#fff":"#ffe682";
+});
+document.getElementById("storyTextAlignToggle")?.addEventListener("click",()=>{
+  const el=document.getElementById("storyText");el.style.textAlign=el.style.textAlign==="left"?"center":el.style.textAlign==="center"?"right":"left";
+});
+storyMusicPreview?.addEventListener("ended",()=>{
+  document.getElementById("storyMusicPreviewInSheet").textContent="▶ Preview";
+  document.getElementById("storyMusicPreviewToggle").textContent="▶ Preview";
 });
 const storyForm=document.getElementById("storyForm");
 storyForm?.addEventListener("submit",async event=>{
@@ -790,7 +851,7 @@ storyForm?.addEventListener("submit",async event=>{
   const songTitle=document.getElementById("storySongTitle").value.trim();
   const songArtist=document.getElementById("storySongArtist").value.trim();
   const songUrl=document.getElementById("storySongUrl").value.trim();
-  const previewUrl=selectedPreview?.value.trim()||"";
+  const previewUrl=storyPreviewInput?.value.trim()||"";\n  const songArtwork=document.getElementById("storySongArtwork").value.trim();\n  const songStart=Number(document.getElementById("storySongStart").value||0);
   if(!auth?.currentUser){status.textContent="Story share karne ke liye login karein.";return;}
   if(!text){status.textContent="Pehle apni text story likhein.";return;}
   if(songUrl&&!/^https:\/\/(open\.spotify\.com|music\.apple\.com|music\.youtube\.com|www\.youtube\.com|youtu\.be)\//i.test(songUrl)){
@@ -802,12 +863,12 @@ storyForm?.addEventListener("submit",async event=>{
     const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
     const profile=profileSnap.exists()?profileSnap.data():{};
     if(storyEditingId){
-      await updateDoc(doc(db,"stories",storyEditingId),{text,background});storyEditingId=null;status.textContent="Story update ho gayi!";
+      await updateDoc(doc(db,"stories",storyEditingId),{text,background,songTitle,songArtist,songUrl,previewUrl,songArtwork,songStart});storyEditingId=null;status.textContent="Story update ho gayi!";
     }else{
-      await addDoc(collection(db,"stories"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",text,songTitle,songArtist,songUrl,previewUrl,background,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)});
+      await addDoc(collection(db,"stories"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",text,songTitle,songArtist,songUrl,previewUrl,songArtwork,songStart,background,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)});
       status.textContent="Story share ho gayi!";
     }
-    storyForm.reset();if(selectedPreview)selectedPreview.value="";songSearchResults?.replaceChildren();
+    storyForm.reset();stopStoryMusicPreview();if(storyMusicAttached)storyMusicAttached.hidden=true;if(storyMusicSelection)storyMusicSelection.hidden=true;storySongResults?.replaceChildren();
     document.getElementById("storyCreateDialog").close();document.getElementById("storyCreateDialog").querySelector("h2").textContent="Create a text story";
   }catch(error){
     console.error("Story publish failed:",error);
