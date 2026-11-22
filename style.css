@@ -764,7 +764,6 @@ button.gramora-story-tool{cursor:pointer}
 @media(min-width:700px){.gramora-story-editor{width:min(100vw,480px);min-height:90dvh;height:90dvh;max-height:90dvh;margin:auto;border-radius:24px}.gramora-story-editor form{border-radius:24px;overflow:hidden}}
 
 .gramora-story-sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
-.gramora-story-editor #storyText{background:transparent!important}
 .gramora-story-editor #storyText:focus{outline:none!important}
 .gramora-story-editor #storyCreateStatus{color:#fff!important}
 
@@ -794,3 +793,11 @@ button.gramora-story-tool{cursor:pointer}
 .gramora-story-music-sticker img{width:34px;height:34px;object-fit:cover;border-radius:5px}
 .gramora-story-music-sticker span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #storyViewerSong{text-align:center}
+
+.gramora-music-tabs button{border:0;padding:9px 13px;border-radius:10px;background:#292b33;color:#ddd;font-size:13px;font-weight:700;white-space:nowrap}
+.gramora-music-tabs button.active{background:#fff;color:#17181d}
+.gramora-story-share{flex:0 0 auto;margin:8px 16px 12px;padding:15px 20px;border:0;border-radius:14px;background:linear-gradient(100deg,#6849e8,#a04ff0);color:#fff;font-size:17px;font-weight:800;box-shadow:0 8px 24px #0003}
+.gramora-story-editor #storyCreateStatus{margin:0 16px 8px}
+.gramora-story-editor form{overflow-y:auto}
+.gramora-story-stage{min-height:180px}
+.gramora-story-editor #storyText{background:transparent;color:#fff}
