@@ -1674,7 +1674,6 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
       };
       showComposerNotice(messages[action]||"Coming soon.");
     }));
-    if(!js.includes('const composer=dlg.querySelector(".gramora-chat-compose")')) throw new Error("Composer hook insertion failed");
     input.addEventListener("input",()=>{
       setDoc(doc(db,"conversations",conversationRef.id,"typing",viewer.uid),{uid:viewer.uid,typing:true,updatedAt:serverTimestamp()}).catch(()=>{});
       if(chatTypingStopTimer)clearTimeout(chatTypingStopTimer);chatTypingStopTimer=setTimeout(stopTyping,1800);
