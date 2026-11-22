@@ -484,6 +484,7 @@ function renderStories(docs){
   const openCreator=event=>{
     event?.stopPropagation();
     storyEditingId=null;storyForm?.reset();
+    setStoryEditingMode(true);if(storyCharCount)storyCharCount.textContent="0";
     document.getElementById("storyCreateDialog").querySelector("h2").textContent="Create a text story";
     document.querySelector("#storyForm button[type=submit]").textContent="Share story";
     document.getElementById("storyCreateDialog")?.showModal();
@@ -594,7 +595,7 @@ function openStoryViewer(docs,id){
     editStoryButton.hidden=!!dialog._highlightStories?.length||data.uid!==auth?.currentUser?.uid;
     editStoryButton.onclick=()=>{
       if(data.uid!==auth?.currentUser?.uid)return;
-      storyEditingId=id;document.getElementById("storyText").value=data.text||"";
+      storyEditingId=id;setStoryEditingMode(true);document.getElementById("storyText").value=data.text||"";if(storyCharCount)storyCharCount.textContent=String((data.text||"").length);
       const bg=data.background||POST_BACKGROUNDS[4];document.getElementById("storyBackground").value=bg;document.getElementById("storyText").style.background=bg;
       document.querySelectorAll("#storyBackgroundPicker [data-bg]").forEach(button=>button.classList.toggle("selected",button.dataset.bg===bg));
       document.getElementById("storySongTitle").value=data.songTitle||"";document.getElementById("storySongArtist").value=data.songArtist||"";document.getElementById("storySongUrl").value=data.songUrl||"";document.getElementById("storySongPreviewUrl").value=data.previewUrl||"";document.getElementById("storySongArtwork").value=data.songArtwork||"";document.getElementById("storySongStart").value=String(data.songStart||0);document.getElementById("storyMusicAttached").hidden=!data.songTitle;document.getElementById("storySongAttachedTitle").textContent=data.songTitle||"";document.getElementById("storySongAttachedArtist").textContent=data.songArtist||"";document.getElementById("storySongArtworkPreview").src=data.songArtwork||"";
@@ -759,7 +760,35 @@ const setStoryMusicPreview=async()=>{
   try{await storyMusicPreview.play();}catch(error){console.warn("Preview playback needs a user tap:",error);}
 };
 const stopStoryMusicPreview=()=>{if(storyMusicPreview){storyMusicPreview.pause();}};
-document.getElementById("storyEditorDone")?.addEventListener("click",()=>{if(storyMusicSheet)storyMusicSheet.hidden=true;document.getElementById("storyText")?.blur();const status=document.getElementById("storyCreateStatus");if(status)status.textContent="Editing complete — Share story dabayein.";});
+const storyEditorDone=document.getElementById("storyEditorDone");
+const setStoryEditingMode=editing=>{
+  if(!storyTextArea||!storyEditorDone)return;
+  storyTextArea.readOnly=!editing;
+  storyEditorDone.textContent=editing?"Done":"Edit text";
+  storyEditorDone.setAttribute("aria-pressed",String(!editing));
+  storyEditorDone.setAttribute("aria-label",editing?"Finish editing story text":"Edit story text");
+  storyTextArea.classList.toggle("story-text-locked",!editing);
+};
+storyEditorDone?.addEventListener("click",()=>{
+  const status=document.getElementById("storyCreateStatus");
+  if(storyTextArea?.readOnly){
+    setStoryEditingMode(true);
+    if(status)status.textContent="Text editing mode — apni story update karein.";
+    storyTextArea?.focus();
+    return;
+  }
+  if(!storyTextArea?.value.trim()){
+    if(status)status.textContent="Pehle story text likhein, phir Done dabayein.";
+    storyTextArea?.focus();
+    return;
+  }
+  if(storyMusicSheet)storyMusicSheet.hidden=true;
+  stopStoryMusicPreview();
+  storyTextArea.blur();
+  setStoryEditingMode(false);
+  if(status)status.textContent="Text ready ✓ Ab Share story dabakar publish karein.";
+  document.getElementById("storyShareSubmit")?.scrollIntoView({behavior:"smooth",block:"nearest"});
+});
 document.getElementById("openStoryMusic")?.addEventListener("click",()=>{if(storyMusicSheet)storyMusicSheet.hidden=false;});
 document.getElementById("closeStoryMusic")?.addEventListener("click",()=>{stopStoryMusicPreview();if(storyMusicSheet)storyMusicSheet.hidden=true;});
 storySongSearchButton?.addEventListener("click",async()=>{
@@ -897,7 +926,7 @@ storyForm?.addEventListener("submit",async event=>{
       await addDoc(collection(db,"stories"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",text,songTitle,songArtist,songUrl,previewUrl,songArtwork,songStart,background,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)});
       status.textContent="Story share ho gayi!";
     }
-    storyForm.reset();if(storyCharCount)storyCharCount.textContent="0";if(storyTextArea){storyTextArea.style.font="";storyTextArea.style.color="#fff";storyTextArea.style.textAlign="center";}document.querySelectorAll(".gramora-story-style-strip [data-story-font]").forEach((item,index)=>item.classList.toggle("active",index===0));stopStoryMusicPreview();if(storyMusicAttached)storyMusicAttached.hidden=true;if(storyMusicSelection)storyMusicSelection.hidden=true;storySongResults?.replaceChildren();
+    storyForm.reset();setStoryEditingMode(true);if(storyEditorDone)storyEditorDone.textContent="Done";if(storyCharCount)storyCharCount.textContent="0";if(storyTextArea){storyTextArea.style.font="";storyTextArea.style.color="#fff";storyTextArea.style.textAlign="center";}document.querySelectorAll(".gramora-story-style-strip [data-story-font]").forEach((item,index)=>item.classList.toggle("active",index===0));stopStoryMusicPreview();if(storyMusicAttached)storyMusicAttached.hidden=true;if(storyMusicSelection)storyMusicSelection.hidden=true;storySongResults?.replaceChildren();
     document.getElementById("storyCreateDialog").close();document.getElementById("storyCreateDialog").querySelector("h2").textContent="Create a text story";
   }catch(error){
     console.error("Story publish failed:",error);
@@ -907,6 +936,7 @@ storyForm?.addEventListener("submit",async event=>{
 document.getElementById("closeStoryCreate")?.addEventListener("click",()=>document.getElementById("storyCreateDialog").close());
 document.getElementById("storyCreateDialog")?.addEventListener("close",()=>{
   if(storyEditingId){storyEditingId=null;storyForm?.reset();}
+  setStoryEditingMode(true);
   const heading=document.getElementById("storyCreateDialog").querySelector("h2");
   if(heading)heading.textContent="Create a text story";
   const submit=storyForm?.querySelector('button[type="submit"]');if(submit)submit.textContent="Share story";
