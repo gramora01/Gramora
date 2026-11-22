@@ -788,7 +788,7 @@ function startPostsFeed(user){
     if(cancelled)return;total=uids.length*2;
     if(!total){renderPosts([]);return;}
     uids.forEach(uid=>{
-      offs.push(onSnapshot(query(collection(db,"posts"),where("uid","==",uid),limit(100)),snap=>{posts=posts.filter(item=>item.data().uid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.error("Posts feed error:",error);ready++;if(activeView==="home")showFeedMessage("Could not load posts. Publish the latest Firestore Rules.");}));
+      offs.push(onSnapshot(query(collection(db,"posts"),where("uid","==",uid),limit(100)),snap=>{posts=posts.filter(item=>item.data().uid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.warn("A profile's posts are not visible:",error.code||error);ready++;renderCombined();}));
       offs.push(onSnapshot(query(collection(db,"reposts"),where("originalUid","==",uid),limit(100)),snap=>{reposts=reposts.filter(item=>item.data().originalUid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.warn("Reposts feed unavailable:",error);ready++;renderCombined();}));
     });
   }).catch(error=>{console.error(error);if(activeView==="home")showFeedMessage("Could not prepare your private feed. Check Firestore Rules.");});
