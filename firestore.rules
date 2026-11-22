@@ -13,6 +13,13 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
+    // A relationship is blocked if either member has blocked the other.
+    function noBlockWith(otherUid) {
+      return signedIn()
+        && !exists(/databases/$(database)/documents/userBlocks/$(request.auth.uid + '_' + otherUid))
+        && !exists(/databases/$(database)/documents/userBlocks/$(otherUid + '_' + request.auth.uid));
+    }
+
     // USER PROFILES
     match /userProfiles/{uid} {
 
@@ -52,6 +59,29 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // USER BLOCKS: only the blocker can list, create, or remove their block records.
+    match /userBlocks/{blockId} {
+      allow get: if signedIn()
+        && (blockId.matches(request.auth.uid + '_.*')
+          || blockId.matches('.*_' + request.auth.uid));
+      allow list: if signedIn()
+        && resource.data.blockerUid == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.blockerUid == request.auth.uid
+        && request.resource.data.blockedUid is string
+        && request.resource.data.blockedUid != request.auth.uid
+        && blockId == request.auth.uid + '_' + request.resource.data.blockedUid
+        && request.resource.data.blockedName is string
+        && request.resource.data.blockedName.size() <= 60
+        && request.resource.data.blockedUsername is string
+        && request.resource.data.blockedUsername.size() <= 20
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.keys().hasOnly(['blockerUid','blockedUid','blockedName','blockedUsername','createdAt']);
+      allow delete: if signedIn()
+        && resource.data.blockerUid == request.auth.uid;
+      allow update: if false;
+    }
+
     // USERNAME RESERVATIONS
     match /usernames/{username} {
 
@@ -83,6 +113,7 @@ service cloud.firestore {
         && request.resource.data.followerUid == request.auth.uid
         && request.resource.data.followingUid is string
         && request.resource.data.followingUid != request.auth.uid
+        && noBlockWith(request.resource.data.followingUid)
         && followId == request.auth.uid + '_'
           + request.resource.data.followingUid
         && request.resource.data.keys().hasOnly([
@@ -370,6 +401,7 @@ service cloud.firestore {
         && request.resource.data.participantUids.size() == 2
         && request.auth.uid in request.resource.data.participantUids
         && request.resource.data.participantUids[0] != request.resource.data.participantUids[1]
+        && noBlockWith(request.resource.data.participantUids[0] == request.auth.uid ? request.resource.data.participantUids[1] : request.resource.data.participantUids[0])
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.lastMessage == ''
         && request.resource.data.keys().hasOnly([
@@ -407,6 +439,7 @@ service cloud.firestore {
         allow get, list: if isChatParticipant();
 
         allow create: if isChatParticipant()
+          && noBlockWith(parentConversation().data.participantUids[0] == request.auth.uid ? parentConversation().data.participantUids[1] : parentConversation().data.participantUids[0])
           && request.resource.data.senderUid == request.auth.uid
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0
