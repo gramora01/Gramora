@@ -656,3 +656,24 @@ body.light .post-actions .save.saved{color:#e1306c!important}
 .story-person-link{display:block;width:100%;border:0;background:transparent;color:inherit;text-align:left;padding:10px 12px;border-radius:10px;cursor:pointer;font:inherit}
 .story-person-link:active{opacity:.7}
 .story-like-count{cursor:pointer}
+
+
+/* Top-of-screen live notification popup */
+.gramora-live-toast{
+  position:fixed;z-index:99999;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;
+  width:min( min(94vw,460px), calc(100vw - 24px));box-sizing:border-box;
+  display:flex;align-items:center;gap:11px;padding:12px 14px;
+  border:1px solid color-mix(in srgb,var(--line,#777) 65%,transparent);
+  border-radius:17px;background:color-mix(in srgb,var(--surface,#171920) 94%,transparent);
+  color:var(--text,#fff);box-shadow:0 12px 38px #0005;backdrop-filter:blur(18px);
+  text-align:left;font:inherit;cursor:pointer;opacity:0;transform:translate(-50%,-145%);
+  transition:transform .25s ease,opacity .25s ease;
+}
+.gramora-live-toast.visible{opacity:1;transform:translate(-50%,0)}
+.gramora-live-toast-avatar{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:50%;background:linear-gradient(135deg,#e1306c,#833ab4);color:#fff;font-weight:900}
+.gramora-live-toast-copy{display:grid;gap:2px;min-width:0;flex:1}
+.gramora-live-toast-copy b{font-size:10px;letter-spacing:1.2px;color:#e1306c}
+.gramora-live-toast-copy span{font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+.gramora-live-toast-copy small{font-size:10px;color:var(--muted,#999)}
+.gramora-live-toast-close{font-size:22px;color:var(--muted,#999);padding:0 2px}
+@media(prefers-reduced-motion:reduce){.gramora-live-toast{transition:none}}
