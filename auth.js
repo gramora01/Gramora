@@ -710,6 +710,7 @@ async function renderStoryActivityPreview(storyId,ownerUid){
     const entries=await getStoryViewerPeople(storyId,ownerUid);
     if(document.getElementById("storyViewerDialog")?.dataset.storyId!==storyId)return;
     if(!entries.length){
+      button.classList.remove("has-viewer-avatars");
       button.querySelector(".gramora-activity-avatar-stack")?.remove();
       if(icon)icon.hidden=false;
       label.hidden=false;label.textContent="Activity";button.title="Story activity";return;
@@ -728,6 +729,7 @@ async function renderStoryActivityPreview(storyId,ownerUid){
       else avatar.textContent=(person.name||"G").trim().charAt(0).toUpperCase();
       stack.append(avatar);
     });
+    button.classList.add("has-viewer-avatars");
     if(icon)icon.hidden=true;
     label.hidden=true;button.title=entries.length+" views";
   }catch(error){console.error("Story activity preview failed:",error);}
