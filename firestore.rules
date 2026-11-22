@@ -272,7 +272,8 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly([
-          'uid','displayName','text','songTitle','songArtist','songUrl','previewUrl','background','createdAt','expiresAt'
+          'uid','displayName','text','songTitle','songArtist','songUrl','previewUrl',
+          'songArtwork','songStart','background','createdAt','expiresAt'
         ])
         && request.resource.data.background is string
         && request.resource.data.background.size() <= 200
@@ -285,6 +286,11 @@ service cloud.firestore {
         && request.resource.data.songUrl.size() <= 500
         && request.resource.data.previewUrl is string
         && request.resource.data.previewUrl.size() <= 1000
+        && request.resource.data.songArtwork is string
+        && request.resource.data.songArtwork.size() <= 500
+        && request.resource.data.songStart is int
+        && request.resource.data.songStart >= 0
+        && request.resource.data.songStart <= 15
         && request.resource.data.expiresAt is timestamp
         && request.resource.data.expiresAt > request.time
         && request.resource.data.expiresAt <= request.time + duration.value(25, 'h');
@@ -292,12 +298,25 @@ service cloud.firestore {
       allow update: if signedIn()
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == resource.data.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text','background'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'text','background','songTitle','songArtist','songUrl','previewUrl','songArtwork','songStart'
+        ])
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 500
         && request.resource.data.background is string
-        && request.resource.data.background.size() <= 200;
+        && request.resource.data.background.size() <= 200
+        && request.resource.data.songTitle is string
+        && request.resource.data.songArtist is string
+        && request.resource.data.songUrl is string
+        && request.resource.data.songUrl.size() <= 500
+        && request.resource.data.previewUrl is string
+        && request.resource.data.previewUrl.size() <= 1000
+        && request.resource.data.songArtwork is string
+        && request.resource.data.songArtwork.size() <= 500
+        && request.resource.data.songStart is int
+        && request.resource.data.songStart >= 0
+        && request.resource.data.songStart <= 15;
     }
 
     // STORY HIGHLIGHTS: owner creates and manages saved story collections.
