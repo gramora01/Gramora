@@ -553,9 +553,59 @@ async function loadStoryViewers(storyId,storyData){
     if(!storyViews.length)list.textContent="Abhi kisi ne story nahi dekhi.";
   }catch(error){console.error("Story viewers load failed:",error);button.textContent="Viewers";list.textContent="Viewers load nahi ho paye. Firestore Rules check karein.";}
 }
+let storyViewerTimer=null,storyViewerStartedAt=0,storyViewerDuration=7000,storyViewerSequence=[],storyViewerIndex=0,storyViewerPaused=false;
+function stopStoryViewerTimer(){
+  if(storyViewerTimer){clearInterval(storyViewerTimer);storyViewerTimer=null;}
+}
+function renderStoryViewerProgress(){
+  const wrap=document.getElementById("storyViewerProgress");if(!wrap)return;
+  wrap.replaceChildren();
+  storyViewerSequence.forEach((item,index)=>{
+    const track=document.createElement("span");track.className="gramora-viewer-progress-track";
+    const fill=document.createElement("i");fill.className="gramora-viewer-progress-fill";
+    if(index<storyViewerIndex)fill.style.width="100%";
+    track.append(fill);wrap.append(track);
+  });
+}
+function startStoryViewerTimer(){
+  stopStoryViewerTimer();
+  const audio=document.getElementById("storyViewerAudio");
+  storyViewerDuration=audio&&!audio.hidden&&audio.src?15000:7000;
+  storyViewerStartedAt=Date.now();storyViewerPaused=false;
+  storyViewerTimer=setInterval(()=>{
+    if(storyViewerPaused)return;
+    const elapsed=Date.now()-storyViewerStartedAt;
+    const pct=Math.min(100,elapsed/storyViewerDuration*100);
+    const fill=document.querySelectorAll("#storyViewerProgress .gramora-viewer-progress-fill")[storyViewerIndex];
+    if(fill)fill.style.width=pct+"%";
+    if(pct>=100){stopStoryViewerTimer();navigateStoryViewer(1);}
+  },50);
+}
+function navigateStoryViewer(direction){
+  if(!storyViewerSequence.length)return;
+  const next=storyViewerIndex+direction;
+  if(next<0){storyViewerIndex=0;return;}
+  if(next>=storyViewerSequence.length){stopStoryViewerTimer();document.getElementById("storyViewerDialog")?.close();return;}
+  openStoryViewer(storyViewerSequence,storyViewerSequence[next].id);
+}
+document.getElementById("storyViewerPrevious")?.addEventListener("click",()=>navigateStoryViewer(-1));
+document.getElementById("storyViewerNext")?.addEventListener("click",()=>navigateStoryViewer(1));
+const storyViewerStage=document.getElementById("storyViewerStage");
+let storyViewerTouchX=0,storyViewerTouchY=0;
+storyViewerStage?.addEventListener("touchstart",event=>{
+  const touch=event.changedTouches[0];storyViewerTouchX=touch.clientX;storyViewerTouchY=touch.clientY;
+},{passive:true});
+storyViewerStage?.addEventListener("touchend",event=>{
+  const touch=event.changedTouches[0],dx=touch.clientX-storyViewerTouchX,dy=touch.clientY-storyViewerTouchY;
+  if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)){navigateStoryViewer(dx<0?1:-1);}
+  else if(dy>90){document.getElementById("storyViewerDialog")?.close();}
+},{passive:true});
+document.getElementById("storyViewerDialog")?.addEventListener("close",stopStoryViewerTimer);
 function openStoryViewer(docs,id){
   const storyDoc=docs.find(item=>item.id===id);if(!storyDoc)return;
   const data=storyDoc.data(),dialog=document.getElementById("storyViewerDialog");
+  storyViewerSequence=dialog._highlightStories?.length?dialog._highlightStories:docs.filter(item=>item.data().uid===data.uid).sort((a,b)=>(a.data().createdAt?.toMillis?.()||0)-(b.data().createdAt?.toMillis?.()||0));
+  storyViewerIndex=storyViewerSequence.findIndex(item=>item.id===id);if(storyViewerIndex<0)storyViewerIndex=0;
   dialog.dataset.storyId=id;
   const content=document.getElementById("storyViewerText");
   const byline=document.getElementById("storyViewerByline");
@@ -563,7 +613,10 @@ function openStoryViewer(docs,id){
   const deleteButton=document.getElementById("storyViewerDelete");
   content.textContent=data.text||"";
   content.style.background=data.background||POST_BACKGROUNDS[4];
-  byline.textContent=(data.displayName||"GRAMORA member")+" · "+formatPostDate(data.createdAt);
+  byline.textContent=formatPostDate(data.createdAt);
+  const viewerName=document.getElementById("storyViewerName");if(viewerName)viewerName.textContent=data.displayName||"GRAMORA member";
+  const avatar=document.getElementById("storyViewerAvatar");if(avatar){const profile=storyProfileCache.get(data.uid)||{};avatar.replaceChildren();if(profile.photoURL){const image=document.createElement("img");image.src=profile.photoURL;image.alt="";avatar.append(image);}else avatar.textContent=(data.displayName||"G").trim().charAt(0).toUpperCase();if(!storyProfileCache.has(data.uid))getStoryProfile(data.uid).then(p=>{if(dialog.dataset.storyId===id&&p?.photoURL){const image=document.createElement("img");image.src=p.photoURL;image.alt="";avatar.replaceChildren(image);}});}
+  renderStoryViewerProgress();
   markStorySeen(id);
   recordStoryView(id,data);
   loadStoryViewers(id,data);
@@ -621,6 +674,7 @@ function openStoryViewer(docs,id){
     const playAttempt=audio.play();
     if(playAttempt&&typeof playAttempt.catch==="function")playAttempt.catch(()=>{});
   }
+  startStoryViewerTimer();
 }
 async function showStoryPeopleList(storyId,type){
   const viewer=auth?.currentUser;if(!viewer)return;
