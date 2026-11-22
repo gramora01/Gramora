@@ -14,6 +14,8 @@ let activeAuthUnsubscribe = null;
 const accountInstances = new Map();
 let savedAccounts = [];
 let activeFeedUnsubscribe=null;
+let activeNotificationUnsubscribe=null;
+let notificationToastTimer=null;
 let activeView="home";
 try { savedAccounts = JSON.parse(localStorage.getItem("gramoraAccounts") || "[]"); } catch { savedAccounts = []; }
 function saveAccountList(){ localStorage.setItem("gramoraAccounts", JSON.stringify(savedAccounts)); }
@@ -52,6 +54,7 @@ function updateMobileProfileAvatar(profile,user){
 function activateAccount(instance){
   if(activeAuthUnsubscribe) activeAuthUnsubscribe();
   if(activeFeedUnsubscribe){activeFeedUnsubscribe();activeFeedUnsubscribe=null;}
+  if(activeNotificationUnsubscribe){activeNotificationUnsubscribe();activeNotificationUnsubscribe=null;}
   activeApp=instance.app; auth=instance.auth; db=instance.db;
   const selectedApp=instance.app;
   const selectedAuth=instance.auth;
@@ -73,6 +76,7 @@ function activateAccount(instance){
         startPostsFeed(user);
         startStoriesFeed(user);
         refreshNotificationBadge();
+        startLiveNotificationListener(user,selectedDb);
         // Keep the current screen open, but reload it using the newly active account.
         if(activeView==="profile") await loadProfilePage(user);
         else if(activeView==="explore") await loadExplorePage(user);
@@ -140,6 +144,50 @@ async function createGramoraNotification(toUid,type,message,extra={}){
     });
     refreshNotificationBadge();
   }catch(error){console.warn("Notification could not be saved:",error);}
+}
+function showGramoraNotificationToast(item){
+  const old=document.getElementById("gramoraLiveToast");
+  if(old)old.remove();
+  if(notificationToastTimer)clearTimeout(notificationToastTimer);
+  const toast=document.createElement("button");
+  toast.type="button";toast.id="gramoraLiveToast";toast.className="gramora-live-toast";
+  const avatar=document.createElement("span");avatar.className="gramora-live-toast-avatar";
+  avatar.textContent=(item.fromName||"G").trim().charAt(0).toUpperCase();
+  const copy=document.createElement("span");copy.className="gramora-live-toast-copy";
+  const heading=document.createElement("b");heading.textContent="GRAMORA";
+  const message=document.createElement("span");message.textContent=(item.fromName||"Someone")+" "+(item.message||"interacted with you.");
+  const time=document.createElement("small");time.textContent="now";
+  copy.append(heading,message,time);
+  const close=document.createElement("span");close.className="gramora-live-toast-close";close.textContent="×";close.setAttribute("aria-hidden","true");
+  toast.append(avatar,copy,close);
+  toast.addEventListener("click",async()=>{
+    toast.remove();if(notificationToastTimer)clearTimeout(notificationToastTimer);
+    if(item.postId){
+      try{const postSnap=await getDoc(doc(db,"posts",item.postId));if(postSnap.exists())openPostDetail({id:postSnap.id,...postSnap.data()},false);else await openPersonProfile(item.fromUid);}
+      catch(error){console.warn("Could not open notification target:",error);}
+    }else if(item.storyId){
+      const story=activeStoryDocs.find(x=>x.id===item.storyId);
+      if(story)openStoryViewer(activeStoryDocs,story.id);else await openPersonProfile(item.fromUid);
+    }else if(item.fromUid)await openPersonProfile(item.fromUid);
+  });
+  document.body.append(toast);
+  requestAnimationFrame(()=>toast.classList.add("visible"));
+  notificationToastTimer=setTimeout(()=>{toast.classList.remove("visible");setTimeout(()=>toast.remove(),250);},5200);
+}
+function startLiveNotificationListener(user,selectedDb){
+  if(activeNotificationUnsubscribe)activeNotificationUnsubscribe();
+  let firstSnapshot=true;
+  const liveQuery=query(collection(selectedDb,"notifications"),where("toUid","==",user.uid),limit(100));
+  activeNotificationUnsubscribe=onSnapshot(liveQuery,snapshot=>{
+    if(firstSnapshot){firstSnapshot=false;return;}
+    snapshot.docChanges().forEach(change=>{
+      if(change.type==="added"){
+        const item={id:change.doc.id,...change.doc.data()};
+        if(item.fromUid!==user.uid)showGramoraNotificationToast(item);
+      }
+    });
+    refreshNotificationBadge();
+  },error=>console.warn("Live notifications unavailable:",error));
 }
 async function refreshNotificationBadge(){
   const button=document.getElementById("notificationBtn"),user=auth?.currentUser;
