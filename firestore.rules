@@ -25,7 +25,7 @@ service cloud.firestore {
       return signedIn()
         && (ownerUid == request.auth.uid
           || !exists(/databases/$(database)/documents/userProfiles/$(ownerUid))
-          || get(/databases/$(database)/documents/userProfiles/$(ownerUid)).data.isPrivate != true
+          || get(/databases/$(database)/documents/userProfiles/$(ownerUid)).data.get('isPrivate', false) != true
           || exists(/databases/$(database)/documents/follows/$(request.auth.uid + '_' + ownerUid)));
     }
 
@@ -120,11 +120,10 @@ service cloud.firestore {
 
       // Users can create only their own follow relationship.
       allow create: if signedIn()
-        && request.resource.data.followerUid == request.auth.uid
+        && request.resource.data.followerUid is string
         && request.resource.data.followingUid is string
         && request.resource.data.followingUid != request.auth.uid
-        && noBlockWith(request.resource.data.followingUid)
-        && followId == request.auth.uid + '_'
+        && followId == request.resource.data.followerUid + '_'
           + request.resource.data.followingUid
         && request.resource.data.keys().hasOnly([
           'followerUid',
@@ -132,9 +131,13 @@ service cloud.firestore {
           'createdAt'
         ])
         && ((request.resource.data.followerUid == request.auth.uid
+            && request.resource.data.followingUid != request.auth.uid
+            && noBlockWith(request.resource.data.followingUid)
             && (!exists(/databases/$(database)/documents/userProfiles/$(request.resource.data.followingUid))
-              || get(/databases/$(database)/documents/userProfiles/$(request.resource.data.followingUid)).data.isPrivate != true))
+              || get(/databases/$(database)/documents/userProfiles/$(request.resource.data.followingUid)).data.get('isPrivate', false) != true))
           || (request.resource.data.followingUid == request.auth.uid
+            && request.resource.data.followerUid != request.auth.uid
+            && noBlockWith(request.resource.data.followerUid)
             && exists(/databases/$(database)/documents/followRequests/$(request.resource.data.followerUid + '_' + request.auth.uid))));
 
       // Only the follower can remove their relationship.
@@ -154,7 +157,7 @@ service cloud.firestore {
         && request.resource.data.toUid is string
         && request.resource.data.toUid != request.auth.uid
         && requestId == request.auth.uid + '_' + request.resource.data.toUid
-        && get(/databases/$(database)/documents/userProfiles/$(request.resource.data.toUid)).data.isPrivate == true
+        && get(/databases/$(database)/documents/userProfiles/$(request.resource.data.toUid)).data.get('isPrivate', false) == true
         && noBlockWith(request.resource.data.toUid)
         && request.resource.data.fromName is string
         && request.resource.data.fromName.size() <= 60
@@ -215,6 +218,7 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.postId is string
         && request.resource.data.postUid is string
+        && canViewUserContent(request.resource.data.postUid)
         && likeId == request.resource.data.postId + '_' + request.auth.uid
         && request.resource.data.keys().hasOnly(['postId','postUid','uid','displayName','createdAt']);
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
@@ -228,6 +232,7 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.postId is string
         && request.resource.data.postUid is string
+        && canViewUserContent(request.resource.data.postUid)
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 500
