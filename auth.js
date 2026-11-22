@@ -677,7 +677,7 @@ function openStoryViewer(docs,id){
     editStoryButton.onclick=()=>{
       if(data.uid!==auth?.currentUser?.uid)return;
       storyEditingId=id;setStoryEditingMode(true);document.getElementById("storyText").value=data.text||"";if(storyCharCount)storyCharCount.textContent=String((data.text||"").length);
-      const bg=data.background||POST_BACKGROUNDS[4];document.getElementById("storyBackground").value=bg;document.getElementById("storyText").style.background=bg;
+      const bg=data.background||POST_BACKGROUNDS[4];document.getElementById("storyBackground").value=bg;document.getElementById("storyPreviewCanvas").style.background=bg;
       document.querySelectorAll("#storyBackgroundPicker [data-bg]").forEach(button=>button.classList.toggle("selected",button.dataset.bg===bg));
       document.getElementById("storySongTitle").value=data.songTitle||"";document.getElementById("storySongLyrics").value=data.lyrics||"";document.getElementById("storyLyricsEditor").hidden=!data.songTitle;document.getElementById("storyLyricsPreview").textContent=data.lyrics||"";document.getElementById("storyLyricsPreview").hidden=!(data.lyrics||"").trim();document.getElementById("storySongArtist").value=data.songArtist||"";document.getElementById("storySongUrl").value=data.songUrl||"";document.getElementById("storySongPreviewUrl").value=data.previewUrl||"";document.getElementById("storySongArtwork").value=data.songArtwork||"";document.getElementById("storySongStart").value=String(data.songStart||0);document.getElementById("storyMusicAttached").hidden=!data.songTitle;document.getElementById("storySongAttachedTitle").textContent=data.songTitle||"";document.getElementById("storySongAttachedArtist").textContent=data.songArtist||"";document.getElementById("storySongArtworkPreview").src=data.songArtwork||"";
       document.getElementById("storyCreateDialog").querySelector("h2").textContent="Edit your story";document.querySelector("#storyForm button[type=submit]").textContent="Save story";
@@ -2175,7 +2175,7 @@ function bindBackgroundPicker(selector,inputId,previewId){
   const first=picker.querySelector("[data-bg]");if(first){input.value=first.dataset.bg;first.classList.add("selected");if(preview){preview.style.background=first.dataset.bg;preview.style.color="#fff";}}
 }
 bindBackgroundPicker("#postBackgroundPicker","postBackground","caption");
-bindBackgroundPicker("#storyBackgroundPicker","storyBackground","storyText");
+bindBackgroundPicker("#storyBackgroundPicker","storyBackground","storyPreviewCanvas");
 function openPostEditor(post){
   editingPostId=post?.id||null;const bg=post?.background||POST_BACKGROUNDS[4];
   document.getElementById("caption").value=post?.text||"";document.getElementById("postBackground").value=bg;document.getElementById("caption").style.background=bg;
