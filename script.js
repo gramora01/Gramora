@@ -24,6 +24,29 @@ themeButton?.addEventListener("click",()=>{
 function showPlaceholder(view,title){
   const feed=document.getElementById("feed");
   feed.replaceChildren();
+  if(view==="messages"&&!document.getElementById("gramora-inbox-inline-style")){
+    const inboxStyle=document.createElement("style");
+    inboxStyle.id="gramora-inbox-inline-style";
+    inboxStyle.textContent=`
+      .gramora-inbox{box-sizing:border-box;width:100%;max-width:680px;min-height:65vh;margin:0 auto;padding:22px 18px 30px;color:var(--text,#f5f5f7)}
+      .gramora-inbox-head{display:block;margin:0 0 22px}
+      .gramora-inbox-head .eyebrow{margin:0 0 8px;color:#e879a6;font-size:10px;font-weight:800;letter-spacing:2px}
+      .gramora-inbox-head h2{margin:0 0 7px;font-family:Manrope,sans-serif;font-size:29px;line-height:1.2;font-weight:800;letter-spacing:-.7px;color:var(--text,#f5f5f7)}
+      .gramora-inbox-subtitle{margin:0;color:var(--muted,#9ca3af);font-size:13px;line-height:1.5}
+      .gramora-inbox-search{box-sizing:border-box;display:flex;align-items:center;gap:11px;width:100%;height:48px;margin:0;padding:0 15px;border:1px solid var(--line,#30323b);border-radius:15px;background:var(--surface,#171922);color:var(--muted,#9ca3af)}
+      .gramora-inbox-search span{font-size:25px;line-height:1}
+      .gramora-inbox-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--text,#f5f5f7);font:inherit;font-size:14px}
+      .gramora-inbox-search input::placeholder{color:var(--muted,#9ca3af)}
+      .gramora-inbox-search input:disabled{opacity:1;cursor:default}
+      .gramora-inbox-empty{box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:42vh;padding:30px 20px;text-align:center}
+      .gramora-inbox-empty-icon{box-sizing:border-box;display:grid;place-items:center;width:82px;height:82px;margin-bottom:19px;border:1.5px solid var(--line,#3a3d48);border-radius:50%;background:var(--surface,#171922);font-size:35px;color:#e879a6}
+      .gramora-inbox-empty h3{margin:0 0 9px;color:var(--text,#f5f5f7);font-size:17px;font-weight:700}
+      .gramora-inbox-empty p{max-width:290px;margin:0;color:var(--muted,#9ca3af);font-size:13px;line-height:1.65}
+      body.light .gramora-inbox-search,body.light .gramora-inbox-empty-icon{background:#f3f4f8}
+      @media(max-width:680px){.gramora-inbox{padding:18px 16px 26px}.gramora-inbox-head h2{font-size:27px}.gramora-inbox-empty{min-height:40vh}}
+    `;
+    document.head.append(inboxStyle);
+  }
   if(view==="messages"){
     const page=document.createElement("section");page.className="gramora-inbox";
     const head=document.createElement("div");head.className="gramora-inbox-head";
