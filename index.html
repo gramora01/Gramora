@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=113">
+  <link rel="stylesheet" href="style.css?v=114">
   <link rel="stylesheet" href="auth.css?v=62">
 </head>
 <body>
@@ -79,33 +79,9 @@
         <span class="gramora-story-mode">TEXT STORY</span>
         <button id="storyEditorDone" class="gramora-story-done" type="button">Done</button>
       </div>
-      <div class="gramora-story-stage">
-        <textarea id="storyText" maxlength="500" rows="4" placeholder="Type something..." required aria-label="Your story text"></textarea>
-        <div class="gramora-story-style-strip" role="group" aria-label="Text font style"><button type="button" class="active" data-story-font="classic">Classic</button><button type="button" data-story-font="modern">Modern</button><button type="button" data-story-font="elegant">Elegant</button><button type="button" data-story-font="strong">Strong</button></div><div class="gramora-story-counter"><span id="storyTextHint">Your story</span><span><b id="storyCharCount">0</b>/500</span></div>
-      </div>
+      <div class="gramora-story-stage"><div class="gramora-story-preview"><textarea id="storyText" maxlength="500" rows="4" placeholder="Write something… (optional if you add a song)" aria-label="Your story text"></textarea><div id="storyLyricsPreview" class="gramora-story-lyrics-preview" hidden></div></div><div class="gramora-story-style-strip" role="group" aria-label="Text font style"><button type="button" class="active" data-story-font="classic">Classic</button><button type="button" data-story-font="modern">Modern</button><button type="button" data-story-font="elegant">Elegant</button><button type="button" data-story-font="strong">Strong</button></div><div class="gramora-story-counter"><span id="storyTextHint">Story preview</span><span><b id="storyCharCount">0</b>/500</span></div></div>
       <input id="storyBackground" type="hidden" value="linear-gradient(135deg,#ff9966,#ff5e62)">
-      <div class="gramora-story-tools">
-        <div id="storyBackgroundPicker" class="background-picker" aria-label="Story background colours">
-          <button type="button" data-bg="linear-gradient(135deg,#ff9966,#ff5e62)" style="background:linear-gradient(135deg,#ff9966,#ff5e62)" aria-label="Coral background"></button>
-          <button type="button" data-bg="linear-gradient(135deg,#7f7fd5,#86a8e7,#91eae4)" style="background:linear-gradient(135deg,#7f7fd5,#86a8e7,#91eae4)" aria-label="Blue background"></button>
-          <button type="button" data-bg="linear-gradient(135deg,#654ea3,#eaafc8)" style="background:linear-gradient(135deg,#654ea3,#eaafc8)" aria-label="Purple background"></button>
-          <button type="button" data-bg="linear-gradient(135deg,#11998e,#38ef7d)" style="background:linear-gradient(135deg,#11998e,#38ef7d)" aria-label="Green background"></button>
-          <button type="button" data-bg="linear-gradient(135deg,#232526,#414345)" style="background:linear-gradient(135deg,#232526,#414345)" aria-label="Dark background"></button>
-          <button type="button" data-bg="linear-gradient(135deg,#f7971e,#ffd200)" style="background:linear-gradient(135deg,#f7971e,#ffd200)" aria-label="Yellow background"></button>
-          <button type="button" data-bg="linear-gradient(135deg,#fc466b,#3f5efb)" style="background:linear-gradient(135deg,#fc466b,#3f5efb)" aria-label="Pink blue background"></button>
-          <button type="button" data-bg="linear-gradient(135deg,#eeaeca,#94bbe9)" style="background:linear-gradient(135deg,#eeaeca,#94bbe9)" aria-label="Pastel background"></button>
-        </div>
-        <div id="storyMusicAttached" class="gramora-attached-music" hidden>
-          <div class="gramora-attached-track"><img id="storySongArtworkPreview" alt=""><span><b id="storySongAttachedTitle"></b><small id="storySongAttachedArtist"></small></span></div>
-          <div class="gramora-attached-actions"><button id="storyMusicPreviewToggle" type="button">▶ Preview</button><button id="storyMusicRemove" type="button" aria-label="Remove music">×</button></div>
-        </div>
-        <div class="gramora-story-toolrow">
-          <button id="storyTextStyleToggle" class="gramora-story-tool" type="button" aria-label="Change text style">Aa</button>
-          <button id="storyTextColorToggle" class="gramora-story-tool" type="button" aria-label="Change text colour">◉</button>
-          <button id="openStoryMusic" class="gramora-story-tool gramora-story-music" type="button">♫ <small>Add music</small></button>
-          <button id="storyTextAlignToggle" class="gramora-story-tool" type="button" aria-label="Change text alignment">≡</button>
-        </div>
-      </div>
+      <aside class="gramora-story-tools" aria-label="Story editing tools"><div class="gramora-story-tools-label">EDIT</div><button id="openStoryMusic" class="gramora-story-tool gramora-story-music" type="button" aria-label="Add music">♫<small>Music</small></button><button id="storyTextStyleToggle" class="gramora-story-tool" type="button" aria-label="Change text style">Aa<small>Text</small></button><button id="storyTextColorToggle" class="gramora-story-tool" type="button" aria-label="Change text colour">◉<small>Colour</small></button><button id="storyTextAlignToggle" class="gramora-story-tool" type="button" aria-label="Change text alignment">≡<small>Align</small></button><div class="gramora-story-tools-divider"></div><span class="gramora-story-tools-label">BACKGROUND</span><div id="storyBackgroundPicker" class="background-picker" aria-label="Story background colours"><button type="button" data-bg="linear-gradient(135deg,#ff9966,#ff5e62)" style="background:linear-gradient(135deg,#ff9966,#ff5e62)" aria-label="Coral background"></button><button type="button" data-bg="linear-gradient(135deg,#7f7fd5,#86a8e7,#91eae4)" style="background:linear-gradient(135deg,#7f7fd5,#86a8e7,#91eae4)" aria-label="Blue background"></button><button type="button" data-bg="linear-gradient(135deg,#654ea3,#eaafc8)" style="background:linear-gradient(135deg,#654ea3,#eaafc8)" aria-label="Purple background"></button><button type="button" data-bg="linear-gradient(135deg,#11998e,#38ef7d)" style="background:linear-gradient(135deg,#11998e,#38ef7d)" aria-label="Green background"></button><button type="button" data-bg="linear-gradient(135deg,#232526,#414345)" style="background:linear-gradient(135deg,#232526,#414345)" aria-label="Dark background"></button><button type="button" data-bg="linear-gradient(135deg,#f7971e,#ffd200)" style="background:linear-gradient(135deg,#f7971e,#ffd200)" aria-label="Yellow background"></button><button type="button" data-bg="linear-gradient(135deg,#fc466b,#3f5efb)" style="background:linear-gradient(135deg,#fc466b,#3f5efb)" aria-label="Pink blue background"></button><button type="button" data-bg="linear-gradient(135deg,#eeaeca,#94bbe9)" style="background:linear-gradient(135deg,#eeaeca,#94bbe9)" aria-label="Pastel background"></button></div><div id="storyMusicAttached" class="gramora-attached-music" hidden><div class="gramora-attached-track"><img id="storySongArtworkPreview" alt=""><span><b id="storySongAttachedTitle"></b><small id="storySongAttachedArtist"></small></span></div><div class="gramora-attached-actions"><button id="storyMusicPreviewToggle" type="button">▶ Preview</button><button id="storyMusicRemove" type="button" aria-label="Remove music">×</button></div></div></aside>
       <div class="story-song-fields gramora-music-sheet" id="storyMusicSheet" hidden>
         <div class="gramora-sheet-handle"></div>
         <div class="gramora-music-heading"><strong>Add music</strong><button id="closeStoryMusic" type="button" aria-label="Close music picker">×</button></div>
@@ -115,7 +91,7 @@
         <div id="storySongResults" class="story-song-results" aria-live="polite"></div>
         <div id="storyMusicSelection" class="gramora-music-selection" hidden><div class="gramora-selected-song"><img id="storyMusicSelectedArtwork" alt=""><span><b id="storyMusicSelectedTitle"></b><small id="storyMusicSelectedArtist"></small></span></div><label for="storyMusicStartSlider">Choose song part <output id="storyMusicStartValue">0:00</output></label><input id="storyMusicStartSlider" type="range" min="0" max="15" value="0" step="1"><audio id="storyMusicPreview" preload="none"></audio><div class="gramora-music-preview-actions"><button id="storyMusicPreviewInSheet" type="button">▶ Preview</button><button id="addStoryMusic" type="button">Add to story</button></div></div>
         <input id="storySongTitle" type="hidden"><input id="storySongArtist" type="hidden"><input id="storySongUrl" type="hidden"><input id="storySongPreviewUrl" type="hidden"><input id="storySongArtwork" type="hidden"><input id="storySongStart" type="hidden" value="0">
-        <p class="muted tiny">Choose a song to add its available preview to your story.</p>
+        <div id="storyLyricsEditor" class="gramora-lyrics-editor" hidden><label for="storySongLyrics">Song lyrics</label><textarea id="storySongLyrics" maxlength="1200" rows="4" placeholder="Paste or type the lyrics you want to show…"></textarea><small>Lyrics are added by you; they are not automatically fetched from the song service.</small></div><p class="muted tiny">Choose a song and add lyrics if you want a lyrics-only story.</p>
       </div>
       <button id="storyShareSubmit" class="gramora-story-share" type="submit">Share story</button>
       <p id="storyCreateStatus" class="post-status" role="status"></p>
@@ -129,7 +105,7 @@
     </header>
     <div class="gramora-viewer-stage" id="storyViewerStage">
       <button class="gramora-story-tapzone gramora-story-tapzone-left" id="storyViewerPrevious" type="button" aria-label="Previous story"></button>
-      <div id="storyViewerText" class="story-viewer-text"></div>
+      <div id="storyViewerText" class="story-viewer-text"></div><div id="storyViewerLyrics" class="gramora-viewer-lyrics" hidden></div>
       <button class="gramora-story-tapzone gramora-story-tapzone-right" id="storyViewerNext" type="button" aria-label="Next story"></button>
       <audio id="storyViewerAudio" class="story-viewer-audio" playsinline hidden></audio>
     </div>
@@ -207,7 +183,7 @@
     </section>
   </div>
   <script src="script.js?v=71"></script>
-  <script type="module" src="auth.js?v=162"></script>
+  <script type="module" src="auth.js?v=163"></script>
   <script>
     // Startup failsafe: never leave GRAMORA hidden behind an endless loading state.
     (() => {
