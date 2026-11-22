@@ -908,3 +908,31 @@ body.light .gramora-music-sheet .gramora-attached-actions button{
 body.light .gramora-music-sheet .gramora-music-preview-actions #addStoryMusic{
   color:#fff;background:#6544d8;border-color:#6544d8;
 }
+
+
+/* Story composer finishing state and mobile interaction polish */
+.gramora-story-editor #storyEditorDone{
+  min-width:72px;padding:9px 15px;border-radius:22px;
+  background:linear-gradient(110deg,#fff,#eee8ff);color:#30234d;
+  box-shadow:0 3px 12px #0003;font-weight:800;
+  transition:transform .18s ease,background .18s ease,box-shadow .18s ease;
+}
+.gramora-story-editor #storyEditorDone:active{transform:scale(.94)}
+.gramora-story-editor #storyEditorDone[aria-pressed="true"]{
+  background:linear-gradient(110deg,#b9f5d0,#e3ffe9);color:#12442a;
+  box-shadow:0 0 0 2px #ffffff75,0 4px 16px #0003;
+}
+.gramora-story-editor #storyText.story-text-locked{caret-color:transparent;opacity:.98}
+.gramora-story-editor #storyShareSubmit{scroll-margin:18px}
+body.light .gramora-story-editor #storyEditorDone{
+  background:linear-gradient(110deg,#6849e8,#9a65ec);color:#fff;
+  box-shadow:0 4px 14px #6849e84d;
+}
+body.light .gramora-story-editor #storyEditorDone[aria-pressed="true"]{
+  background:linear-gradient(110deg,#167a45,#25a866);color:#fff;
+}
+@media(max-width:420px){
+  .gramora-story-topbar{height:54px;flex-basis:54px;padding-inline:16px}
+  .gramora-story-editor #storyEditorDone{min-width:76px;padding:9px 16px}
+  .gramora-story-share{margin-bottom:max(12px,env(safe-area-inset-bottom))}
+}
