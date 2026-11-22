@@ -213,7 +213,11 @@ service cloud.firestore {
 
     // POST LIKES: one like per user per post.
     match /postLikes/{likeId} {
-      allow read: if canViewUserContent(resource.data.postUid);
+      // Allow users to check their own deterministic like document even when it does not exist yet.
+      // Other likes remain readable only when the post owner’s content is visible to the viewer.
+      allow read: if signedIn()
+        && (likeId.matches('.*_' + request.auth.uid)
+          || canViewUserContent(resource.data.postUid));
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.postId is string
