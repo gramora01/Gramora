@@ -1071,3 +1071,19 @@ body.light .gramora-story-viewer{color:#fff!important}
  .gramora-story-viewer .gramora-viewer-bottom{padding-left:12px!important;padding-right:12px!important}
  .gramora-story-viewer .story-reply-form{min-height:44px}
 }
+
+
+/* Instagram-style music ticker directly below the story username */
+.gramora-story-viewer .gramora-viewer-meta{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+.gramora-story-viewer .gramora-viewer-meta>b{font-size:13px;font-weight:700;line-height:1.2}
+.gramora-story-track{display:flex;align-items:center;gap:6px;width:min(58vw,270px);max-width:100%;min-width:0;color:#fff}
+.gramora-story-track[hidden]{display:none!important}
+.gramora-story-track-icon{flex:0 0 auto;font-size:14px;line-height:1;text-shadow:0 1px 5px #000}
+.gramora-story-track-details{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.gramora-story-track-title{display:block;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:10px;line-height:1.2;font-weight:650;color:#fff;text-shadow:0 1px 5px #000}
+.gramora-story-track-progress{display:block;width:100%;height:2px;border-radius:4px;background:rgba(255,255,255,.42);overflow:hidden}
+.gramora-story-track-progress-fill{display:block;width:0;height:100%;border-radius:4px;background:#fff;transition:width .12s linear;box-shadow:0 0 5px #fff8}
+.gramora-story-viewer .gramora-viewer-meta>small{font-size:10px;color:#ffffffc9;line-height:1.1}
+.gramora-story-viewer .gramora-viewer-user{gap:9px}
+.gramora-story-viewer .gramora-viewer-header{align-items:flex-start;padding-top:2px}
+@media(max-width:420px){.gramora-story-track{width:min(56vw,235px)}}
