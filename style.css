@@ -677,3 +677,14 @@ body.light .post-actions .save.saved{color:#e1306c!important}
 .gramora-live-toast-copy small{font-size:10px;color:var(--muted,#999)}
 .gramora-live-toast-close{font-size:22px;color:var(--muted,#999);padding:0 2px}
 @media(prefers-reduced-motion:reduce){.gramora-live-toast{transition:none}}
+
+
+/* Full-page Notifications screen with an Instagram-style back control */
+.gramora-notifications-dialog{position:fixed;inset:0;margin:0;width:100vw;max-width:none;height:100dvh;max-height:100dvh;padding:0;border:0;border-radius:0;background:var(--surface);color:var(--text);overflow:hidden}
+.gramora-notifications-dialog::backdrop{background:#080910b8;backdrop-filter:blur(3px)}
+.gramora-notifications-head{height:64px;box-sizing:border-box;justify-content:flex-start;gap:18px;padding:calc(env(safe-area-inset-top) + 8px) 18px 8px}
+.gramora-notifications-head h2{font-size:20px}
+.gramora-notifications-head .notification-back-btn{width:38px;height:38px;flex:0 0 38px;border:0;border-radius:50%;background:transparent;color:var(--text);font-size:36px;line-height:1;display:grid;place-items:center;padding:0}
+.gramora-notifications-list{height:calc(100dvh - 64px);max-height:none;box-sizing:border-box;overflow-y:auto;padding:12px max(16px,calc((100vw - 720px)/2)) calc(20px + env(safe-area-inset-bottom))}
+.gramora-notification{max-width:720px;margin:0 auto}
+@media(max-width:680px){.gramora-notifications-dialog{width:100vw;max-height:100dvh;border-radius:0}.gramora-notifications-list{height:calc(100dvh - 64px);max-height:none}}
