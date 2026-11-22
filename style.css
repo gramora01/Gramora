@@ -990,3 +990,24 @@ body.light .gramora-story-editor #storyEditorDone[aria-pressed="true"]{
  .gramora-viewer-header{top:25px}
 }
 @media(prefers-reduced-motion:reduce){.gramora-viewer-progress-fill{transition:none!important}}
+
+/* Instagram-style owner story actions */
+.gramora-story-owner-actions{display:flex;align-items:center;justify-content:space-between;gap:5px;padding:10px 12px 8px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line,#30333b)}
+.gramora-story-owner-actions[hidden],.gramora-story-more-menu[hidden]{display:none!important}
+.gramora-story-owner-actions button{flex:1 0 auto;min-width:48px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 5px;border:0;border-radius:10px;background:transparent;color:var(--text,#fff);font-size:18px;font-weight:700}
+.gramora-story-owner-actions button span{font-size:10px;font-weight:600;white-space:nowrap}
+.gramora-story-owner-actions button:active{background:rgba(140,120,180,.18);transform:scale(.96)}
+.gramora-story-more-menu{position:absolute;z-index:8;right:12px;top:112px;display:grid;gap:4px;min-width:180px;padding:7px;border:1px solid var(--line,#444);border-radius:13px;background:var(--surface,#242630);box-shadow:0 12px 32px #0006}
+.gramora-story-more-menu button{padding:11px;border:0;border-radius:8px;background:transparent;color:var(--text,#fff);text-align:left}
+.gramora-story-more-menu button:active{background:rgba(140,120,180,.18)}
+body.light .gramora-story-owner-actions button,body.light .gramora-story-more-menu button{color:#20212a}
+@media(max-width:480px){.gramora-story-owner-actions{gap:2px;padding:8px 6px}.gramora-story-owner-actions button{min-width:43px;font-size:17px}.gramora-story-owner-actions button span{font-size:9px}}
+/* Chat composer action row */
+.gramora-chat-compose{gap:5px!important}
+.gramora-chat-compose .gramora-chat-extra{flex:0 0 34px;width:34px;height:38px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--text,#fff);font-size:19px;display:grid;place-items:center}
+.gramora-chat-compose .gramora-chat-extra:active{background:var(--line,#333);transform:scale(.94)}
+.gramora-chat-compose button[type=submit][hidden]{display:none!important}
+.gramora-chat-composer-notice{margin:0;padding:6px 14px 9px;background:var(--bg,#101116);color:var(--muted,#999);font-size:11px;text-align:center}
+.gramora-chat-composer-notice[hidden]{display:none!important}
+body.light .gramora-chat-compose .gramora-chat-extra{color:#20212a}
+@media(max-width:380px){.gramora-chat-compose{gap:2px!important;padding-left:6px!important;padding-right:6px!important}.gramora-chat-compose .gramora-chat-extra{flex-basis:29px;width:29px;font-size:17px}.gramora-chat-compose input{padding:0 10px!important}}
