@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=94">
+  <link rel="stylesheet" href="style.css?v=95">
   <link rel="stylesheet" href="auth.css?v=62">
 </head>
 <body>
@@ -77,7 +77,7 @@
       <div class="gramora-story-topbar">
         <button id="closeStoryCreate" class="gramora-story-cancel" type="button">Cancel</button>
         <span class="gramora-story-mode">TEXT STORY</span>
-        <button class="gramora-story-done" type="submit">Done</button>
+        <button id="storyEditorDone" class="gramora-story-done" type="button">Done</button>
       </div>
       <div class="gramora-story-stage">
         <textarea id="storyText" maxlength="500" rows="4" placeholder="Type something..." required aria-label="Your story text"></textarea>
@@ -109,7 +109,7 @@
       <div class="story-song-fields gramora-music-sheet" id="storyMusicSheet" hidden>
         <div class="gramora-sheet-handle"></div>
         <div class="gramora-music-heading"><strong>Add music</strong><button id="closeStoryMusic" type="button" aria-label="Close music picker">×</button></div>
-        <div class="gramora-music-tabs" aria-hidden="true"><span class="active">For you</span><span>Trending</span><span>Saved</span><span>Original audio</span></div>
+        <div class="gramora-music-tabs"><button type="button" class="active" data-music-tab="for-you">For you</button><button type="button" data-music-tab="trending">Trending</button><button type="button" data-music-tab="saved">Saved</button><button type="button" data-music-tab="original">Original audio</button></div>
         <label for="storySongSearch">Search songs</label>
         <div class="story-song-search-row"><input id="storySongSearch" placeholder="Search..." autocomplete="off"><button id="storySongSearchButton" type="button" class="outline-btn">Search</button></div>
         <div id="storySongResults" class="story-song-results" aria-live="polite"></div>
@@ -117,6 +117,7 @@
         <input id="storySongTitle" type="hidden"><input id="storySongArtist" type="hidden"><input id="storySongUrl" type="hidden"><input id="storySongPreviewUrl" type="hidden"><input id="storySongArtwork" type="hidden"><input id="storySongStart" type="hidden" value="0">
         <p class="muted tiny">Choose a song to add its available preview to your story.</p>
       </div>
+      <button id="storyShareSubmit" class="gramora-story-share" type="submit">Share story</button>
       <p id="storyCreateStatus" class="post-status" role="status"></p>
     </form>
   </dialog>
@@ -180,7 +181,7 @@
     </section>
   </div>
   <script src="script.js?v=70"></script>
-  <script type="module" src="auth.js?v=139"></script>
+  <script type="module" src="auth.js?v=140"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol === "https:") {
       window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js", { scope: "./" }).catch(error => console.warn("GRAMORA offline setup:", error)));
