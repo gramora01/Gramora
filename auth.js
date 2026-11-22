@@ -1096,6 +1096,7 @@ function closeGramoraChat(){
   if(activeChatTypingUnsubscribe){activeChatTypingUnsubscribe();activeChatTypingUnsubscribe=null;}
   if(activeChatPresenceUnsubscribe){activeChatPresenceUnsubscribe();activeChatPresenceUnsubscribe=null;}
   if(chatTypingStopTimer)clearTimeout(chatTypingStopTimer);
+  if(activeChatConversationId&&auth?.currentUser)deleteDoc(doc(db,"conversations",activeChatConversationId,"typing",auth.currentUser.uid)).catch(()=>{});
   activeChatConversationId=null;chatReplyTarget=null;chatEditTarget=null;
   const dlg=document.getElementById("gramoraChatDialog");
   if(dlg?.open)dlg.close();
@@ -1114,6 +1115,7 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
         if(activeChatTypingUnsubscribe){activeChatTypingUnsubscribe();activeChatTypingUnsubscribe=null;}
         if(activeChatPresenceUnsubscribe){activeChatPresenceUnsubscribe();activeChatPresenceUnsubscribe=null;}
         if(chatTypingStopTimer)clearTimeout(chatTypingStopTimer);
+        if(activeChatConversationId&&auth?.currentUser)deleteDoc(doc(db,"conversations",activeChatConversationId,"typing",auth.currentUser.uid)).catch(()=>{});
         activeChatConversationId=null;document.body.classList.remove("gramora-chat-open");
       });
     }
