@@ -957,7 +957,7 @@ async function refreshPostLikeButton(postId,postUid,button,countNode){
     button.classList.toggle("liked",state.liked);button.setAttribute("aria-pressed",String(state.liked));
     button.innerHTML=(state.liked?"♥":"♡")+" <span>"+(state.liked?"Liked":"Like")+"</span>";
     if(countNode)countNode.textContent=state.count+" likes";
-  }catch(error){console.warn("Post likes unavailable:",error);}
+  }catch(error){console.warn("Post likes unavailable:",error);if(countNode?.isConnected)countNode.textContent="Likes unavailable";}
 }
 async function togglePostLike(postId,postUid,button,countNode){
   const user=auth?.currentUser;if(!user)return;
@@ -1034,7 +1034,6 @@ function renderPosts(docs){
     like.addEventListener("click",()=>togglePostLike(originalId,authorUid,like,likeCount));
     comment.addEventListener("click",()=>openPostDetail(postForDetail,false));
     likeCount.addEventListener("click",()=>showPostLikesList(originalId,authorUid));
-    refreshPostLikeButton(originalId,authorUid,like,likeCount);
     if(!isRepost&&auth?.currentUser?.uid!==data.uid)repost.addEventListener("click",()=>createPostRepost(originalId,originalData,repost));
     else if(isRepost){repost.disabled=true;repost.textContent="⟳ Reposted";}
     else repost.hidden=true;
@@ -1045,6 +1044,8 @@ function renderPosts(docs){
       const del=document.createElement("button");del.className="delete-post";del.type="button";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(postDoc.id,del,()=>getDocsForFeed()));actions.append(del);
     }
     feed.append(article);
+    // Load like state only after the card is attached; otherwise a fast cached read can leave “Loading likes…” stuck.
+    refreshPostLikeButton(originalId,authorUid,like,likeCount);
     // Resolve the latest profile details instead of relying on old names saved in post documents.
     const profileUids=[authorUid,isRepost?data.uid:null].filter(Boolean);
     Promise.all(profileUids.map(uid=>getDoc(doc(db,"userProfiles",uid)).then(snap=>({uid,data:snap.exists()?snap.data():null}))))
