@@ -1351,7 +1351,7 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
       reader.onerror=()=>alert("GIF read nahi ho paayi.");
       reader.readAsDataURL(file);
     });
-  }catch(error){console.error("Could not open GRAMORA chat:,error);alert("Chat open nahi ho paayi: "+(error.code||error.message||"Please try again"));}
+  }catch(error){console.error("Could not open GRAMORA chat:",error);alert("Chat open nahi ho paayi: "+(error.code||error.message||"Please try again"));}
 }
 
 
