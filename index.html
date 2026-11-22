@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=93">
+  <link rel="stylesheet" href="style.css?v=94">
   <link rel="stylesheet" href="auth.css?v=62">
 </head>
 <body>
@@ -95,12 +95,15 @@
           <button type="button" data-bg="linear-gradient(135deg,#fc466b,#3f5efb)" style="background:linear-gradient(135deg,#fc466b,#3f5efb)" aria-label="Pink blue background"></button>
           <button type="button" data-bg="linear-gradient(135deg,#eeaeca,#94bbe9)" style="background:linear-gradient(135deg,#eeaeca,#94bbe9)" aria-label="Pastel background"></button>
         </div>
+        <div id="storyMusicAttached" class="gramora-attached-music" hidden>
+          <div class="gramora-attached-track"><img id="storySongArtworkPreview" alt=""><span><b id="storySongAttachedTitle"></b><small id="storySongAttachedArtist"></small></span></div>
+          <div class="gramora-attached-actions"><button id="storyMusicPreviewToggle" type="button">▶ Preview</button><button id="storyMusicRemove" type="button" aria-label="Remove music">×</button></div>
+        </div>
         <div class="gramora-story-toolrow">
-          <span class="gramora-story-tool" aria-hidden="true">Aa</span>
-          <span class="gramora-story-tool" aria-hidden="true">◉</span>
-          <button id="openStoryMusic" class="gramora-story-tool gramora-story-music" type="button">♫ <small>Music</small></button>
-          <span class="gramora-story-tool" aria-hidden="true">▧</span>
-          <span class="gramora-story-tool" aria-hidden="true">⋯</span>
+          <button id="storyTextStyleToggle" class="gramora-story-tool" type="button" aria-label="Change text style">Aa</button>
+          <button id="storyTextColorToggle" class="gramora-story-tool" type="button" aria-label="Change text colour">◉</button>
+          <button id="openStoryMusic" class="gramora-story-tool gramora-story-music" type="button">♫ <small>Add music</small></button>
+          <button id="storyTextAlignToggle" class="gramora-story-tool" type="button" aria-label="Change text alignment">≡</button>
         </div>
       </div>
       <div class="story-song-fields gramora-music-sheet" id="storyMusicSheet" hidden>
@@ -110,7 +113,8 @@
         <label for="storySongSearch">Search songs</label>
         <div class="story-song-search-row"><input id="storySongSearch" placeholder="Search..." autocomplete="off"><button id="storySongSearchButton" type="button" class="outline-btn">Search</button></div>
         <div id="storySongResults" class="story-song-results" aria-live="polite"></div>
-        <input id="storySongTitle" type="hidden"><input id="storySongArtist" type="hidden"><input id="storySongUrl" type="hidden"><input id="storySongPreviewUrl" type="hidden">
+        <div id="storyMusicSelection" class="gramora-music-selection" hidden><div class="gramora-selected-song"><img id="storyMusicSelectedArtwork" alt=""><span><b id="storyMusicSelectedTitle"></b><small id="storyMusicSelectedArtist"></small></span></div><label for="storyMusicStartSlider">Choose song part <output id="storyMusicStartValue">0:00</output></label><input id="storyMusicStartSlider" type="range" min="0" max="15" value="0" step="1"><audio id="storyMusicPreview" preload="none"></audio><div class="gramora-music-preview-actions"><button id="storyMusicPreviewInSheet" type="button">▶ Preview</button><button id="addStoryMusic" type="button">Add to story</button></div></div>
+        <input id="storySongTitle" type="hidden"><input id="storySongArtist" type="hidden"><input id="storySongUrl" type="hidden"><input id="storySongPreviewUrl" type="hidden"><input id="storySongArtwork" type="hidden"><input id="storySongStart" type="hidden" value="0">
         <p class="muted tiny">Choose a song to add its available preview to your story.</p>
       </div>
       <p id="storyCreateStatus" class="post-status" role="status"></p>
@@ -176,7 +180,7 @@
     </section>
   </div>
   <script src="script.js?v=70"></script>
-  <script type="module" src="auth.js?v=138"></script>
+  <script type="module" src="auth.js?v=139"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol === "https:") {
       window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js", { scope: "./" }).catch(error => console.warn("GRAMORA offline setup:", error)));
