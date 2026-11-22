@@ -55,13 +55,18 @@ let activePresenceCleanup=null;
 function startGramoraPresence(user,selectedDb){
   if(activePresenceCleanup)activePresenceCleanup();
   const presenceRef=doc(selectedDb,"userPresence",user.uid);
-  const writePresence=online=>setDoc(presenceRef,{uid:user.uid,online,lastSeen:serverTimestamp()},{merge:true}).catch(error=>console.warn("Presence update failed:",error));
-  const onVisibility=()=>writePresence(!document.hidden);
+  const writePresence=online=>setDoc(presenceRef,{uid:user.uid,online:!!online,lastSeen:serverTimestamp()},{merge:true}).catch(error=>console.warn("Presence update failed:",error));
+  const isAvailable=()=>!document.hidden&&navigator.onLine;
+  const onVisibility=()=>writePresence(isAvailable());
+  const onNetwork=()=>writePresence(isAvailable());
   const onPageHide=()=>writePresence(false);
-  writePresence(!document.hidden);
+  writePresence(isAvailable());
+  const heartbeat=setInterval(()=>writePresence(isAvailable()),30000);
   document.addEventListener("visibilitychange",onVisibility);
+  window.addEventListener("online",onNetwork);
+  window.addEventListener("offline",onNetwork);
   window.addEventListener("pagehide",onPageHide);
-  activePresenceCleanup=()=>{document.removeEventListener("visibilitychange",onVisibility);window.removeEventListener("pagehide",onPageHide);writePresence(false);activePresenceCleanup=null;};
+  activePresenceCleanup=()=>{clearInterval(heartbeat);document.removeEventListener("visibilitychange",onVisibility);window.removeEventListener("online",onNetwork);window.removeEventListener("offline",onNetwork);window.removeEventListener("pagehide",onPageHide);writePresence(false);activePresenceCleanup=null;};
 }
 function activateAccount(instance){
   if(activeAuthUnsubscribe) activeAuthUnsubscribe();
@@ -1133,7 +1138,16 @@ async function loadExplorePage(user){
 let activeChatUnsubscribe=null;
 let activeChatTypingUnsubscribe=null;
 let activeChatPresenceUnsubscribe=null;
+let activeChatPresenceTimer=null;
+let activeChatPresenceData=null;
 let activeChatConversationId=null;
+function renderGramoraChatPresence(status,data){
+  if(!status)return;
+  const stamp=data?.lastSeen?.toDate?.();
+  const fresh=!!(data?.online&&stamp&&(Date.now()-stamp.getTime()<=90000));
+  if(fresh){status.textContent="● Active now";status.style.color="#31c875";}
+  else{status.textContent=stamp?"Last seen "+stamp.toLocaleString():"Offline";status.style.color="";}
+}
 let chatTypingTimer=null;
 let chatTypingStopTimer=null;
 let chatReplyTarget=null;
@@ -1142,6 +1156,8 @@ function closeGramoraChat(){
   if(activeChatUnsubscribe){activeChatUnsubscribe();activeChatUnsubscribe=null;}
   if(activeChatTypingUnsubscribe){activeChatTypingUnsubscribe();activeChatTypingUnsubscribe=null;}
   if(activeChatPresenceUnsubscribe){activeChatPresenceUnsubscribe();activeChatPresenceUnsubscribe=null;}
+  if(activeChatPresenceTimer){clearInterval(activeChatPresenceTimer);activeChatPresenceTimer=null;}
+  activeChatPresenceData=null;
   if(chatTypingStopTimer)clearTimeout(chatTypingStopTimer);
   if(activeChatConversationId&&auth?.currentUser)deleteDoc(doc(db,"conversations",activeChatConversationId,"typing",auth.currentUser.uid)).catch(()=>{});
   activeChatConversationId=null;chatReplyTarget=null;chatEditTarget=null;
@@ -1237,11 +1253,11 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
       dlg.querySelector(".gramora-chat-typing").hidden=!typing;
     },()=>{});
     activeChatPresenceUnsubscribe=onSnapshot(doc(db,"userPresence",targetUid),snap=>{
-      const status=dlg.querySelector(".gramora-chat-status");if(!status)return;
-      const data=snap.exists()?snap.data():{};
-      if(data.online){status.textContent="● Active now";status.style.color="#31c875";}
-      else{const stamp=data.lastSeen?.toDate?.();status.textContent=stamp?"Active "+stamp.toLocaleString():"Offline";status.style.color="";}
+      activeChatPresenceData=snap.exists()?snap.data():{};
+      renderGramoraChatPresence(dlg.querySelector(".gramora-chat-status"),activeChatPresenceData);
     },()=>{dlg.querySelector(".gramora-chat-status").textContent="Status unavailable";});
+    if(activeChatPresenceTimer)clearInterval(activeChatPresenceTimer);
+    activeChatPresenceTimer=setInterval(()=>renderGramoraChatPresence(dlg.querySelector(".gramora-chat-status"),activeChatPresenceData),15000);
     activeChatUnsubscribe=onSnapshot(query(collection(db,"conversations",conversationRef.id,"messages"),orderBy("createdAt","asc"),limit(100)),snapshot=>{
       if(!dlg.open||activeChatConversationId!==conversationRef.id)return;
       messageBox.replaceChildren();
