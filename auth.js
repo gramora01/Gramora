@@ -362,18 +362,17 @@ function storyWasSeen(id){try{return localStorage.getItem(storySeenKey(id))==="1
 function markStorySeen(id){try{localStorage.setItem(storySeenKey(id),"1");}catch(error){}}
 function startStoriesFeed(user){
   if(activeStoriesUnsubscribe)activeStoriesUnsubscribe();
-  const storiesQuery=query(collection(db,"stories"),orderBy("createdAt","desc"),limit(100));
-  activeStoriesUnsubscribe=onSnapshot(storiesQuery,snapshot=>{
-    activeStoryDocs=snapshot.docs.filter(item=>{
-      const expiry=item.data().expiresAt;
-      return expiry?.toMillis ? expiry.toMillis()>Date.now() : false;
-    });
-    renderStories(activeStoryDocs);
-  },error=>{
-    console.error("Stories feed error:",error);
-    const hint=document.getElementById("storyCreateStatus");
-    if(hint)hint.textContent="Stories load nahi hui. Firestore Rules check karein.";
-  });
+  let docs=[],offs=[],cancelled=false;
+  activeStoriesUnsubscribe=()=>{cancelled=true;offs.forEach(off=>off());};
+  getVisibleContentUids(user).then(uids=>{
+    if(cancelled)return;
+    if(!uids.length){activeStoryDocs=[];renderStories([]);return;}
+    uids.forEach(uid=>offs.push(onSnapshot(query(collection(db,"stories"),where("uid","==",uid),orderBy("createdAt","desc"),limit(30)),snapshot=>{
+      docs=docs.filter(item=>item.data().uid!==uid).concat(snapshot.docs);
+      activeStoryDocs=docs.filter(item=>{const expiry=item.data().expiresAt;return expiry?.toMillis?expiry.toMillis()>Date.now():false;});
+      renderStories(activeStoryDocs);
+    },error=>{console.error("Stories feed error:",error);const hint=document.getElementById("storyCreateStatus");if(hint)hint.textContent="Stories load nahi hui. Latest Firestore Rules publish karein.";})));
+  }).catch(error=>console.error("Stories feed setup failed:",error));
 }
 async function getStoryProfile(uid){
   if(storyProfileCache.has(uid))return storyProfileCache.get(uid);
@@ -767,17 +766,31 @@ document.getElementById("createDialog")?.addEventListener("close",()=>{
 });
 document.getElementById("closeStoryViewer")?.addEventListener("click",()=>{const audio=document.getElementById("storyViewerAudio");audio?.pause();document.getElementById("storyViewerDialog").close();});
 document.getElementById("storyViewerDialog")?.addEventListener("close",()=>{const audio=document.getElementById("storyViewerAudio");audio?.pause();});
+async function getVisibleContentUids(user){
+  const [profilesSnap,followsSnap]=await Promise.all([
+    getDocs(query(collection(db,"userProfiles"),limit(100))),
+    getDocs(query(collection(db,"follows"),where("followerUid","==",user.uid),limit(200)))
+  ]);
+  const followed=new Set(followsSnap.docs.map(item=>item.data().followingUid));
+  return [...new Set([user.uid,...profilesSnap.docs.filter(item=>item.id===user.uid||item.data().isPrivate!==true||followed.has(item.id)).map(item=>item.id)])];
+}
 function startPostsFeed(user){
-  if(activeFeedUnsubscribe) activeFeedUnsubscribe();
-  let posts=[],reposts=[],postsReady=false,repostsReady=false;
+  if(activeFeedUnsubscribe)activeFeedUnsubscribe();
+  let posts=[],reposts=[],ready=0,total=0,offs=[],cancelled=false;
   const renderCombined=()=>{
-    if(!postsReady||!repostsReady||activeView!=="home")return;
+    if(cancelled||ready<total||activeView!=="home")return;
     const repostDocs=reposts.map(item=>({id:"repost_"+item.id,data:()=>({...item.data(),_isRepost:true,_repostId:item.id})}));
-    renderPosts([...posts,...repostDocs].sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)));
+    renderPosts([...posts,...repostDocs].sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).slice(0,60));
   };
-  const offPosts=onSnapshot(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40)),snap=>{posts=snap.docs;postsReady=true;renderCombined();},error=>{console.error("Posts feed error:",error);if(activeView==="home")showFeedMessage("Could not load posts ("+(error.code||"unknown")+"): "+(error.message||"Check Firestore Rules."));});
-  const offReposts=onSnapshot(query(collection(db,"reposts"),orderBy("createdAt","desc"),limit(40)),snap=>{reposts=snap.docs;repostsReady=true;renderCombined();},error=>{console.error("Reposts feed error:",error);if(activeView==="home")showFeedMessage("Could not load reposts. Publish the latest Firestore Rules.");});
-  activeFeedUnsubscribe=()=>{offPosts();offReposts();};
+  activeFeedUnsubscribe=()=>{cancelled=true;offs.forEach(off=>off());};
+  getVisibleContentUids(user).then(uids=>{
+    if(cancelled)return;total=uids.length*2;
+    if(!total){renderPosts([]);return;}
+    uids.forEach(uid=>{
+      offs.push(onSnapshot(query(collection(db,"posts"),where("uid","==",uid),orderBy("createdAt","desc"),limit(40)),snap=>{posts=posts.filter(item=>item.data().uid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.error("Posts feed error:",error);ready++;if(activeView==="home")showFeedMessage("Could not load posts. Publish the latest Firestore Rules.");}));
+      offs.push(onSnapshot(query(collection(db,"reposts"),where("originalUid","==",uid),orderBy("createdAt","desc"),limit(40)),snap=>{reposts=reposts.filter(item=>item.data().originalUid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.warn("Reposts feed unavailable:",error);ready++;renderCombined();}));
+    });
+  }).catch(error=>{console.error(error);if(activeView==="home")showFeedMessage("Could not prepare your private feed. Check Firestore Rules.");});
 }
 function showFeedMessage(text){
   const feed=document.getElementById("feed");
@@ -1403,21 +1416,26 @@ async function loadPublicProfile(viewer,targetUid){
     if(!snap.exists()){feed.textContent="Profile unavailable.";return;}
     const p=snap.data();
     p.username=await getUsernameForUid(targetUid,p);
-    let posts=[],followersCount=0,followingCount=0,already=false;
+    let posts=[],followersCount=0,followingCount=0,already=false,requestPending=false;
     const results=await Promise.allSettled([
-      getDocs(query(collection(db,"posts"),where("uid","==",targetUid),limit(60))),
+      (!p.isPrivate||(await getDoc(doc(db,"follows",viewer.uid+"_"+targetUid))).exists())
+        ? getDocs(query(collection(db,"posts"),where("uid","==",targetUid),limit(60)))
+        : Promise.resolve({docs:[]}),
       getDocs(query(collection(db,"follows"),where("followingUid","==",targetUid),limit(100))),
       getDocs(query(collection(db,"follows"),where("followerUid","==",targetUid),limit(100))),
-      getDoc(doc(db,"follows",viewer.uid+"_"+targetUid))
+      getDoc(doc(db,"follows",viewer.uid+"_"+targetUid)),
+      getDoc(doc(db,"followRequests",viewer.uid+"_"+targetUid))
     ]);
     if(results[0].status==="fulfilled")posts=results[0].value.docs;
     if(results[1].status==="fulfilled")followersCount=results[1].value.size;
     if(results[2].status==="fulfilled")followingCount=results[2].value.size;
     if(results[3].status==="fulfilled")already=results[3].value.exists();
+    if(results[4].status==="fulfilled")requestPending=results[4].value.exists();
     const panel=document.createElement("section");panel.className="ig-profile";
     const avatar=p.photoURL?'<img alt="" src="'+escapeHtml(p.photoURL)+'">':escapeHtml((p.displayName||"G").charAt(0).toUpperCase());
-    panel.innerHTML='<div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>@'+escapeHtml(p.username||"member")+'</strong></div><div class="ig-profile-stats"><span class="profile-stat"><b>'+posts.length+'</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>'+followersCount+'</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>'+followingCount+'</b><small>following</small></button></div></div></div><div class="ig-profile-bio"><b>'+escapeHtml(p.displayName||"GRAMORA member")+'</b><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already?"Following":"Follow")+'</button><button class="public-message" type="button" aria-label="Message '+escapeHtml(p.displayName||"user")+'"><span aria-hidden="true">↗</span> Message</button><button class="public-block" type="button" aria-label="Block account">⋯</button></div><div class="ig-profile-grid"></div>';
+    panel.innerHTML='<div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>@'+escapeHtml(p.username||"member")+'</strong></div><div class="ig-profile-stats"><span class="profile-stat"><b>'+((p.isPrivate&&!already)?"—":posts.length)+'</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>'+followersCount+'</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>'+followingCount+'</b><small>following</small></button></div></div></div><div class="ig-profile-bio"><b>'+escapeHtml(p.displayName||"GRAMORA member")+'</b><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already?"Following":(requestPending?"Requested":"Follow"))+'</button><button class="public-message" type="button" aria-label="Message '+escapeHtml(p.displayName||"user")+'"><span aria-hidden="true">↗</span> Message</button><button class="public-block" type="button" aria-label="Block account">⋯</button></div><div class="ig-profile-grid"></div>';
     feed.replaceChildren(panel);
+    if(p.isPrivate&&!already){const lock=document.createElement("div");lock.className="private-profile-notice";lock.innerHTML='<strong>🔒 This account is private</strong><span>Follow this account to see their photos and posts.</span>';panel.querySelector(".ig-profile-grid").append(lock);panel.querySelector(".public-message").disabled=true;}
     bindAvatarLongPress(panel.querySelector(".ig-profile-avatar"),targetUid,p);
     panel.querySelectorAll(".stat-open").forEach(btn=>btn.addEventListener("click",()=>showFollowList(targetUid,btn.dataset.list)));
     panel.querySelector(".public-message").addEventListener("click",()=>{
@@ -1443,7 +1461,16 @@ async function loadPublicProfile(viewer,targetUid){
         if(blockStatus.blockedByMe||blockStatus.blockedMe){alert("Blocked account ke saath follow nahi kar sakte.");return;}
 
         if((await getDoc(doc(db,"follows",viewer.uid+"_"+targetUid))).exists()){
-          await deleteDoc(doc(db,"follows",viewer.uid+"_"+targetUid));btn.textContent="Follow";
+          await deleteDoc(doc(db,"follows",viewer.uid+"_"+targetUid));btn.textContent="Follow";await loadPublicProfile(viewer,targetUid);return;
+        }
+        if(p.isPrivate){
+          const requestRef=doc(db,"followRequests",viewer.uid+"_"+targetUid);
+          if((await getDoc(requestRef)).exists()){await deleteDoc(requestRef);btn.textContent="Follow";}
+          else{
+            const viewerSnap=await getDoc(doc(db,"userProfiles",viewer.uid)),viewerProfile=viewerSnap.exists()?viewerSnap.data():{};
+            await setDoc(requestRef,{fromUid:viewer.uid,toUid:targetUid,fromName:viewerProfile.displayName||viewer.displayName||"GRAMORA member",fromUsername:viewerProfile.username||"",createdAt:serverTimestamp()});
+            btn.textContent="Requested";await createGramoraNotification(targetUid,"follow_request","sent you a follow request.");
+          }
         }else{
           await setDoc(doc(db,"follows",viewer.uid+"_"+targetUid),{followerUid:viewer.uid,followingUid:targetUid,createdAt:serverTimestamp()});btn.textContent="Following";await createGramoraNotification(targetUid,"follow","started following you.");
         }
@@ -1518,10 +1545,15 @@ async function showFollowList(uid,type){
 }
 
 async function getDocsForFeed(){
+  const user=auth?.currentUser;if(!user)return;
   try{
-    const [postsSnap,repostsSnap]=await Promise.all([getDocs(query(collection(db,"posts"),orderBy("createdAt","desc"),limit(40))),getDocs(query(collection(db,"reposts"),orderBy("createdAt","desc"),limit(40)))]);
-    const repostDocs=repostsSnap.docs.map(item=>({id:"repost_"+item.id,data:()=>({...item.data(),_isRepost:true,_repostId:item.id})}));
-    const combined=[...postsSnap.docs,...repostDocs].sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0));
+    const uids=await getVisibleContentUids(user),batches=await Promise.all(uids.flatMap(uid=>[
+      getDocs(query(collection(db,"posts"),where("uid","==",uid),orderBy("createdAt","desc"),limit(40))),
+      getDocs(query(collection(db,"reposts"),where("originalUid","==",uid),orderBy("createdAt","desc"),limit(40)))
+    ]));
+    const posts=[],reposts=[];
+    batches.forEach((snap,index)=>{if(index%2===0)posts.push(...snap.docs);else reposts.push(...snap.docs.map(item=>({id:"repost_"+item.id,data:()=>({...item.data(),_isRepost:true,_repostId:item.id})})));});
+    const combined=[...posts,...reposts].sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).slice(0,60);
     if(activeView==="home")renderPosts(combined);
   }catch(error){console.error(error);showFeedMessage("Could not load posts ("+(error.code||"unknown")+"): "+(error.message||"Check Firestore Rules."));}
 }
@@ -1803,6 +1835,65 @@ function escapeHtml(value){
   return String(value||"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 }
 
+async function renderFollowRequests(){
+  const list=document.getElementById("followRequestsList"),user=auth?.currentUser;
+  if(!list||!user)return;
+  list.textContent="Loading follow requests…";
+  try{
+    const snap=await getDocs(query(collection(db,"followRequests"),where("toUid","==",user.uid),limit(100)));
+    list.replaceChildren();
+    if(snap.empty){list.textContent="No follow requests.";return;}
+    for(const requestDoc of snap.docs){
+      const item=requestDoc.data(),row=document.createElement("div");row.className="settings-row blocked-account-row";
+      const identity=document.createElement("span"),name=document.createElement("b"),handle=document.createElement("small");
+      name.textContent=item.fromName||"GRAMORA member";handle.textContent=item.fromUsername?"@"+item.fromUsername:"Wants to follow you";
+      identity.append(name,handle);
+      const actions=document.createElement("div");actions.className="follow-request-actions";
+      const accept=document.createElement("button");accept.type="button";accept.className="blocked-unblock";accept.textContent="Accept";
+      const decline=document.createElement("button");decline.type="button";decline.className="blocked-refresh";decline.textContent="Delete";
+      accept.addEventListener("click",async()=>{
+        accept.disabled=true;decline.disabled=true;
+        try{
+          const status=await getBlockStatus(user.uid,item.fromUid);
+          if(status.blockedByMe||status.blockedMe)throw new Error("Blocked accounts cannot follow each other.");
+          await setDoc(doc(db,"follows",item.fromUid+"_"+user.uid),{followerUid:item.fromUid,followingUid:user.uid,createdAt:serverTimestamp()});
+          await deleteDoc(doc(db,"followRequests",requestDoc.id));
+          await createGramoraNotification(item.fromUid,"follow_accept","accepted your follow request.");
+          await renderFollowRequests();
+        }catch(error){console.error("Accept follow request failed:",error);accept.disabled=false;decline.disabled=false;alert(error.code==="permission-denied"?"Follow requests ke liye latest Firestore Rules publish karein.":(error.message||"Request accept nahi hui."));}
+      });
+      decline.addEventListener("click",async()=>{
+        decline.disabled=true;
+        try{await deleteDoc(doc(db,"followRequests",requestDoc.id));await renderFollowRequests();}
+        catch(error){console.error(error);decline.disabled=false;alert("Request delete nahi hui. Firestore Rules check karein.");}
+      });
+      actions.append(accept,decline);row.append(identity,actions);list.append(row);
+    }
+  }catch(error){console.error("Follow requests load failed:",error);list.textContent=error.code==="permission-denied"?"Follow requests ke liye latest Firestore Rules publish karein.":"Follow requests load nahi hui.";}
+}
+async function loadPrivacySettings(){
+  const user=auth?.currentUser;if(!user)return;
+  const toggle=document.getElementById("privateAccountToggle");
+  if(toggle){
+    toggle.disabled=true;
+    try{const snap=await getDoc(doc(db,"userProfiles",user.uid));toggle.checked=snap.exists()&&snap.data().isPrivate===true;}
+    catch(error){console.error(error);toggle.checked=false;}
+    finally{toggle.disabled=false;}
+  }
+  await Promise.all([renderBlockedAccounts(),renderFollowRequests()]);
+}
+document.getElementById("privateAccountToggle")?.addEventListener("change",async event=>{
+  const toggle=event.currentTarget,user=auth?.currentUser;if(!user)return;
+  toggle.disabled=true;
+  try{
+    await updateDoc(doc(db,"userProfiles",user.uid),{isPrivate:toggle.checked,updatedAt:serverTimestamp()});
+    const status=document.getElementById("privacyStatus");if(status)status.textContent=toggle.checked?"Your account is now private.":"Your account is now public.";
+  }catch(error){
+    console.error("Private account update failed:",error);toggle.checked=!toggle.checked;
+    const status=document.getElementById("privacyStatus");if(status)status.textContent=error.code==="permission-denied"?"Publish the latest Firestore Rules first.":"Could not update privacy setting.";
+  }finally{toggle.disabled=false;}
+});
+
 async function getBlockStatus(viewerUid,targetUid){
   if(!viewerUid||!targetUid||viewerUid===targetUid)return {blockedByMe:false,blockedMe:false};
   const [mine,theirs]=await Promise.all([
@@ -1930,9 +2021,10 @@ document.getElementById("closeSettings")?.addEventListener("click",()=>settingsD
 document.querySelectorAll(".settings-tab").forEach(tab=>tab.addEventListener("click",()=>{
   document.querySelectorAll(".settings-tab").forEach(x=>x.classList.toggle("active",x===tab));
   document.querySelectorAll(".settings-panel").forEach(panel=>panel.hidden=panel.dataset.panel!==tab.dataset.settings);
-  if(tab.dataset.settings==="privacy")renderBlockedAccounts();
+  if(tab.dataset.settings==="privacy")loadPrivacySettings();
 }));
 document.getElementById("settingsBlockedRefresh")?.addEventListener("click",renderBlockedAccounts);
+document.getElementById("followRequestsRefresh")?.addEventListener("click",renderFollowRequests);
 
 document.getElementById("settingsLogout")?.addEventListener("click",async()=>{
   const currentUid=auth?.currentUser?.uid;
