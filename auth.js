@@ -576,6 +576,8 @@ storyViewerStage?.addEventListener("touchend",event=>{
   else if(dy>90){document.getElementById("storyViewerDialog")?.close();}
 },{passive:true});
 document.getElementById("storyViewerDialog")?.addEventListener("close",stopStoryViewerTimer);
+document.getElementById("storyViewerPrevious")?.addEventListener("click",()=>navigateStoryViewer(-1));
+document.getElementById("storyViewerNext")?.addEventListener("click",()=>navigateStoryViewer(1));
 function openStoryViewer(docs,id){
   const storyDoc=docs.find(item=>item.id===id);if(!storyDoc)return;
   const data=storyDoc.data(),dialog=document.getElementById("storyViewerDialog");
