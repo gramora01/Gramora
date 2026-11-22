@@ -1068,6 +1068,99 @@ async function loadExplorePage(user){
     status.textContent=error.code==="permission-denied"?"Explore needs signed-in profile read permission in Firestore Rules.":"Could not load people. Check your connection.";
   }
 }
+
+let activeChatUnsubscribe=null;
+let activeChatConversationId=null;
+function closeGramoraChat(){
+  if(activeChatUnsubscribe){activeChatUnsubscribe();activeChatUnsubscribe=null;}
+  activeChatConversationId=null;
+  const dlg=document.getElementById("gramoraChatDialog");
+  if(dlg?.open)dlg.close();
+}
+async function openGramoraChat(viewer,targetUid,targetProfile){
+  try{
+    if(!viewer||!targetUid||viewer.uid===targetUid)return;
+    const targetName=targetProfile?.displayName||targetProfile?.username||"GRAMORA member";
+    const targetUsername=targetProfile?.username||"member";
+    const targetPhoto=targetProfile?.photoURL||"";
+    let dlg=document.getElementById("gramoraChatDialog");
+    if(!dlg){
+      dlg=document.createElement("dialog");
+      dlg.id="gramoraChatDialog";
+      dlg.className="gramora-chat-dialog";
+      document.body.append(dlg);
+      dlg.addEventListener("close",()=>{
+        if(activeChatUnsubscribe){activeChatUnsubscribe();activeChatUnsubscribe=null;}
+        activeChatConversationId=null;
+      });
+    }
+    dlg.innerHTML='<div class="gramora-chat-shell"><header class="gramora-chat-header"><button type="button" class="gramora-chat-back" aria-label="Back">‹</button><div class="gramora-chat-person"><div class="gramora-chat-avatar">'+(targetPhoto?'<img src="'+escapeHtml(targetPhoto)+'" alt="">':escapeHtml(targetName.charAt(0).toUpperCase()))+'</div><div><strong>'+escapeHtml(targetName)+'</strong><small>@'+escapeHtml(targetUsername)+'</small></div></div><span class="gramora-chat-spacer"></span></header><div class="gramora-chat-messages"><p class="gramora-chat-loading">Loading conversation…</p></div><form class="gramora-chat-compose"><input type="text" maxlength="2000" autocomplete="off" placeholder="Message…" aria-label="Write a message" required><button type="submit" aria-label="Send message">➤</button></form></div>';
+    if(!document.getElementById("gramora-chat-style")){
+      const style=document.createElement("style");style.id="gramora-chat-style";
+      style.textContent='.gramora-chat-dialog{width:min(100%,560px);height:min(90dvh,760px);max-width:100%;max-height:90dvh;padding:0;border:1px solid var(--line,#333);border-radius:18px;background:var(--bg,#101116);color:var(--text,#fff);overflow:hidden}.gramora-chat-dialog::backdrop{background:rgba(0,0,0,.72)}.gramora-chat-shell{height:100%;display:flex;flex-direction:column}.gramora-chat-header{height:64px;flex-shrink:0;display:flex;align-items:center;gap:12px;padding:0 14px;border-bottom:1px solid var(--line,#333)}.gramora-chat-back{border:0;background:transparent;color:inherit;font-size:32px;width:34px;cursor:pointer}.gramora-chat-person{display:flex;align-items:center;gap:10px;min-width:0}.gramora-chat-avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#d85c9a,#8b68dc);font-weight:800}.gramora-chat-avatar img{width:100%;height:100%;object-fit:cover}.gramora-chat-person strong,.gramora-chat-person small{display:block;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gramora-chat-person small{font-size:11px;color:var(--muted,#999);margin-top:2px}.gramora-chat-spacer{flex:1}.gramora-chat-messages{flex:1;min-height:0;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:9px}.gramora-chat-loading{margin:auto;color:var(--muted,#999);font-size:13px}.gramora-chat-bubble{max-width:78%;padding:10px 13px;border-radius:16px;background:var(--surface,#272a33);font-size:14px;line-height:1.45;overflow-wrap:anywhere;white-space:pre-wrap}.gramora-chat-bubble.mine{align-self:flex-end;background:linear-gradient(120deg,#d85c9a,#8b68dc);color:white;border-bottom-right-radius:5px}.gramora-chat-bubble.theirs{align-self:flex-start;border-bottom-left-radius:5px}.gramora-chat-empty{margin:auto;text-align:center;color:var(--muted,#999);font-size:13px}.gramora-chat-compose{display:flex;gap:9px;padding:12px;border-top:1px solid var(--line,#333);padding-bottom:max(12px,env(safe-area-inset-bottom))}.gramora-chat-compose input{flex:1;min-width:0;border:1px solid var(--line,#444);border-radius:22px;padding:12px 15px;background:var(--surface,#22252d);color:var(--text,#fff);outline:none}.gramora-chat-compose button{width:44px;height:44px;border:0;border-radius:50%;background:linear-gradient(120deg,#d85c9a,#8b68dc);color:white;font-size:19px;cursor:pointer}.gramora-chat-compose button:disabled{opacity:.5}';
+      document.head.append(style);
+    }
+    dlg.querySelector(".gramora-chat-back").addEventListener("click",closeGramoraChat);
+    dlg.addEventListener("click",e=>{if(e.target===dlg)closeGramoraChat();});
+    if(!dlg.open)dlg.showModal();
+    const conversations=await getDocs(query(collection(db,"conversations"),where("participantUids","array-contains",viewer.uid)));
+    const existing=conversations.docs.find(d=>(d.data().participantUids||[]).includes(targetUid));
+    let conversationRef;
+    if(existing)conversationRef=existing.ref;
+    else conversationRef=await addDoc(collection(db,"conversations"),{
+      participantUids:[viewer.uid,targetUid],createdBy:viewer.uid,
+      createdAt:serverTimestamp(),updatedAt:serverTimestamp(),
+      lastMessage:"",lastMessageAt:serverTimestamp(),lastMessageSenderUid:viewer.uid
+    });
+    activeChatConversationId=conversationRef.id;
+    const messageBox=dlg.querySelector(".gramora-chat-messages");
+    const sendForm=dlg.querySelector(".gramora-chat-compose");
+    const input=sendForm.querySelector("input");
+    activeChatUnsubscribe=onSnapshot(query(collection(db,"conversations",conversationRef.id,"messages"),orderBy("createdAt","asc"),limit(100)),snapshot=>{
+      if(!dlg.open||activeChatConversationId!==conversationRef.id)return;
+      messageBox.replaceChildren();
+      if(snapshot.empty){
+        const empty=document.createElement("p");empty.className="gramora-chat-empty";empty.textContent="Start your conversation 👋";messageBox.append(empty);
+      }else{
+        snapshot.forEach(messageDoc=>{
+          const message=messageDoc.data();
+          const bubble=document.createElement("div");
+          bubble.className="gramora-chat-bubble "+(message.senderUid===viewer.uid?"mine":"theirs");
+          bubble.textContent=message.text||"";
+          messageBox.append(bubble);
+        });
+      }
+      messageBox.scrollTop=messageBox.scrollHeight;
+    },error=>{
+      console.error("GRAMORA chat listener:",error);
+      messageBox.textContent="Chat load nahi ho paayi. Firestore Rules check karein.";
+    });
+    sendForm.onsubmit=async event=>{
+      event.preventDefault();
+      const text=input.value.trim();
+      if(!text)return;
+      const sendButton=sendForm.querySelector("button");sendButton.disabled=true;
+      try{
+        await addDoc(collection(db,"conversations",conversationRef.id,"messages"),{
+          senderUid:viewer.uid,text,type:"text",createdAt:serverTimestamp()
+        });
+        await updateDoc(conversationRef,{
+          lastMessage:text,lastMessageAt:serverTimestamp(),
+          lastMessageSenderUid:viewer.uid,updatedAt:serverTimestamp()
+        });
+        input.value="";input.focus();
+      }catch(error){
+        console.error("GRAMORA send message:",error);
+        alert("Message send nahi hua. Firestore Rules publish hone aur internet connection ko check karein.");
+      }finally{sendButton.disabled=false;}
+    };
+    input.focus();
+  }catch(error){
+    console.error("Could not open GRAMORA chat:",error);
+    alert("Chat open nahi ho paayi: "+(error.code||error.message||"Please try again"));
+  }
+}
+
 async function loadPublicProfile(viewer,targetUid){
   const feed=document.getElementById("feed");
   if(targetUid===viewer.uid){loadProfilePage(viewer);return;}
@@ -1095,7 +1188,7 @@ async function loadPublicProfile(viewer,targetUid){
     bindAvatarLongPress(panel.querySelector(".ig-profile-avatar"),targetUid,p);
     panel.querySelectorAll(".stat-open").forEach(btn=>btn.addEventListener("click",()=>showFollowList(targetUid,btn.dataset.list)));
     panel.querySelector(".public-message").addEventListener("click",()=>{
-      alert("Message button is ready. Direct chat opening will be connected in the next step.");
+      openGramoraChat(viewer,targetUid,p);
     });
     panel.querySelector(".public-follow").addEventListener("click",async e=>{
       const btn=e.currentTarget;
