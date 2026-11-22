@@ -583,7 +583,7 @@ function openStoryViewer(docs,id){
   if(data.songTitle){
     const sticker=document.createElement("div");sticker.className="gramora-story-music-sticker";if(data.songArtwork){const cover=document.createElement("img");cover.src=data.songArtwork;cover.alt="";sticker.append(cover);}const title=document.createElement("span");title.textContent="♫ "+data.songTitle+(data.songArtist?" — "+data.songArtist:"");sticker.append(title);song.append(sticker);
     if(data.previewUrl&&audio){
-      audio.src=data.previewUrl;audio.hidden=false;audio.currentTime=Number(data.songStart||0);audio.ontimeupdate=()=>{if(audio.currentTime>=Number(data.songStart||0)+15)audio.pause();};
+      audio.src=data.previewUrl;audio.hidden=false;audio.controls=true;audio.currentTime=Number(data.songStart||0);audio.ontimeupdate=()=>{if(audio.currentTime>=Number(data.songStart||0)+15)audio.pause();};audio.play().catch(()=>{audio.controls=true;});
     }else if(data.songUrl){
       const link=document.createElement("a");link.className="story-song-link";link.textContent="Open song ↗";
       link.href=data.songUrl;link.target="_blank";link.rel="noopener noreferrer";song.append(link);
