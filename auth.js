@@ -530,29 +530,6 @@ async function recordStoryView(storyId,storyData){
     await setDoc(ref,viewData);
   }catch(error){console.error("Story view could not be recorded:",error);}
 }
-async function loadStoryViewers(storyId,storyData){
-  const section=document.getElementById("storyViewerViews");
-  const list=document.getElementById("storyViewerViewList");
-  const button=document.getElementById("storyViewerViewToggle");
-  if(!section||!list||!button)return;
-  const isOwner=storyData.uid===auth?.currentUser?.uid;
-  section.hidden=!isOwner;
-  list.hidden=true;list.replaceChildren();
-  if(!isOwner)return;
-  try{
-    const snap=await getDocs(query(collection(db,"storyViews"),where("storyUid","==",auth.currentUser.uid)));
-    if(document.getElementById("storyViewerDialog")?.dataset.storyId!==storyId)return;
-    const storyViews=snap.docs.filter(item=>item.data().storyId===storyId);
-    button.textContent="Viewers · "+storyViews.length;
-    storyViews.sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(item=>{
-      const person=item.data(),row=document.createElement("button");row.type="button";row.className="story-viewer-person story-person-link";
-      row.textContent=person.displayName||"GRAMORA member";
-      row.addEventListener("click",()=>openPersonProfile(person.uid));
-      list.append(row);
-    });
-    if(!storyViews.length)list.textContent="Abhi kisi ne story nahi dekhi.";
-  }catch(error){console.error("Story viewers load failed:",error);button.textContent="Viewers";list.textContent="Viewers load nahi ho paye. Firestore Rules check karein.";}
-}
 let storyViewerTimer=null,storyViewerStartedAt=0,storyViewerDuration=7000,storyViewerSequence=[],storyViewerIndex=0,storyViewerPaused=false;
 function stopStoryViewerTimer(){
   if(storyViewerTimer){clearInterval(storyViewerTimer);storyViewerTimer=null;}
@@ -588,8 +565,6 @@ function navigateStoryViewer(direction){
   if(next>=storyViewerSequence.length){stopStoryViewerTimer();document.getElementById("storyViewerDialog")?.close();return;}
   openStoryViewer(storyViewerSequence,storyViewerSequence[next].id);
 }
-document.getElementById("storyViewerPrevious")?.addEventListener("click",()=>navigateStoryViewer(-1));
-document.getElementById("storyViewerNext")?.addEventListener("click",()=>navigateStoryViewer(1));
 const storyViewerStage=document.getElementById("storyViewerStage");
 let storyViewerTouchX=0,storyViewerTouchY=0;
 storyViewerStage?.addEventListener("touchstart",event=>{
@@ -620,7 +595,7 @@ function openStoryViewer(docs,id){
     button.onclick=async()=>{
       if(!isOwnStory)return;
       const action=button.dataset.storyOwnerAction;
-      if(action==="activity"){document.getElementById("storyViewerViewToggle")?.click();return;}
+      if(action==="activity"){showStoryPeopleList(id,"views");return;}
       if(action==="highlight"){openHighlightCreator(auth.currentUser);return;}
       if(action==="more"){if(ownerMenu)ownerMenu.hidden=!ownerMenu.hidden;return;}
       if(action==="share"){
@@ -640,18 +615,6 @@ function openStoryViewer(docs,id){
   renderStoryViewerProgress();
   markStorySeen(id);
   recordStoryView(id,data);
-  loadStoryViewers(id,data);
-  const highlightNav=document.getElementById("highlightStoryNav");
-  if(highlightNav){
-    const isHighlight=!!dialog._highlightStories?.length;
-    const sequence=isHighlight?dialog._highlightStories:docs.filter(item=>item.data().uid===data.uid)
-      .sort((a,b)=>(a.data().createdAt?.toMillis?.()||0)-(b.data().createdAt?.toMillis?.()||0));
-    const index=sequence.findIndex(item=>item.id===id);
-    highlightNav.hidden=sequence.length<2;
-    const prev=document.getElementById("highlightStoryPrev"),next=document.getElementById("highlightStoryNext");
-    if(prev){prev.textContent="‹ Previous";prev.disabled=index<=0;prev.onclick=()=>{if(index>0)openStoryViewer(sequence,sequence[index-1].id);};}
-    if(next){next.textContent="Next ›";next.disabled=index<0||index>=sequence.length-1;next.onclick=()=>{if(index>=0&&index<sequence.length-1)openStoryViewer(sequence,sequence[index+1].id);};}
-  }
   song.replaceChildren();
   const audio=document.getElementById("storyViewerAudio");
   if(audio){audio.pause();audio.removeAttribute("src");audio.load();audio.hidden=true;}
@@ -731,15 +694,12 @@ async function showStoryPeopleList(storyId,type){
 }
 async function loadStoryEngagement(storyId,storyData){
   const likeButton=document.getElementById("storyViewerLike");
-  const likeCount=document.getElementById("storyViewerLikeCount");
-  const likeCountWrap=document.querySelector(".story-like-count");
   const replyList=document.getElementById("storyReplyList");
   const replyHeading=document.getElementById("storyRepliesHeading");
   const replyStatus=document.getElementById("storyReplyStatus");
   const currentUid=auth?.currentUser?.uid;
   if(!currentUid)return;
   const isOwner=storyData.uid===currentUid;
-  if(likeCountWrap)likeCountWrap.hidden=!isOwner;
   const replyRow=document.querySelector(".gramora-viewer-reply-row");if(replyRow)replyRow.hidden=isOwner;
   if(replyList)replyList.hidden=!isOwner;
   if(replyHeading)replyHeading.hidden=!isOwner;
@@ -751,9 +711,6 @@ async function loadStoryEngagement(storyId,storyData){
       if(document.getElementById("storyViewerDialog")?.dataset.storyId!==storyId)return;
       const storyLikes=likesSnap.docs.filter(item=>item.data().storyId===storyId);
       liked=storyLikes.some(item=>item.id===ownLikeId);
-      if(likeCount)likeCount.textContent=String(storyLikes.length);
-
-      if(likeCountWrap)likeCountWrap.onclick=()=>showStoryPeopleList(storyId,"likes");
     }else{
       const ownLikeSnap=await getDoc(doc(db,"storyLikes",ownLikeId));
       if(document.getElementById("storyViewerDialog")?.dataset.storyId!==storyId)return;
@@ -762,7 +719,7 @@ async function loadStoryEngagement(storyId,storyData){
     if(likeButton){
       likeButton.classList.toggle("liked",liked);
       likeButton.setAttribute("aria-pressed",String(liked));
-      likeButton.innerHTML=(liked?"♥":"♡")+" <span>Like</span>";
+      likeButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.8c0 5.1-8.8 10.2-8.8 10.2S3.2 13.9 3.2 8.8A4.6 4.6 0 0 1 12 6.5a4.6 4.6 0 0 1 8.8 2.3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
       likeButton.onclick=async()=>{
         likeButton.disabled=true;
         try{
@@ -795,6 +752,12 @@ async function loadStoryEngagement(storyId,storyData){
   }else if(replyList){replyList.replaceChildren();}
 }
 const storyReplyForm=document.getElementById("storyReplyForm");
+const storyReplyInput=document.getElementById("storyReplyInput");
+const storyReplySend=storyReplyForm?.querySelector('button[type="submit"]');
+if(storyReplySend)storyReplySend.hidden=true;
+storyReplyInput?.addEventListener("input",()=>{
+  if(storyReplySend)storyReplySend.hidden=!storyReplyInput.value.trim();
+});
 storyReplyForm?.addEventListener("submit",async event=>{
   event.preventDefault();
   const input=document.getElementById("storyReplyInput");
@@ -815,7 +778,7 @@ storyReplyForm?.addEventListener("submit",async event=>{
       text,createdAt:serverTimestamp()
     });
     await createGramoraNotification(story.data().uid,"story_reply","replied to your story: "+text.slice(0,90),{storyId});
-    input.value="";status.textContent="Reply bhej diya!";
+    input.value="";button.hidden=true;status.textContent="Reply bhej diya!";
     await loadStoryEngagement(storyId,story.data());
   }catch(error){console.error("Story reply failed:",error);status.textContent="Reply nahi bhej paye. Firestore Rules check karein.";}
   finally{button.disabled=false;}
@@ -2172,9 +2135,6 @@ highlightForm?.addEventListener("submit",async event=>{
   finally{button.disabled=false;}
 });
 document.getElementById("closeHighlightCreate")?.addEventListener("click",()=>document.getElementById("highlightCreateDialog").close());
-document.getElementById("storyViewerViewToggle")?.addEventListener("click",()=>{
-  const list=document.getElementById("storyViewerViewList");if(list)list.hidden=!list.hidden;
-});
 document.getElementById("storyViewerDialog")?.addEventListener("close",()=>{
   const dialog=document.getElementById("storyViewerDialog");dialog._highlightStories=[];dialog.dataset.highlightIndex="";
   const nav=document.getElementById("highlightStoryNav");if(nav)nav.hidden=true;
