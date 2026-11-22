@@ -2598,3 +2598,5 @@ function authError(code){
   if(document.body)observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden","open","data-story-id"]});
   scan();
 })();
+
+window.gramoraOpenHighlightCreator=()=>openHighlightCreator(auth.currentUser);
