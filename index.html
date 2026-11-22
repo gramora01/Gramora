@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=95">
+  <link rel="stylesheet" href="style.css?v=96">
   <link rel="stylesheet" href="auth.css?v=62">
 </head>
 <body>
@@ -81,7 +81,7 @@
       </div>
       <div class="gramora-story-stage">
         <textarea id="storyText" maxlength="500" rows="4" placeholder="Type something..." required aria-label="Your story text"></textarea>
-        <div class="gramora-story-style-strip" aria-hidden="true"><span>Classic</span><span>Modern</span><span class="active">Elegant</span><span>Strong</span></div>
+        <div class="gramora-story-style-strip" role="group" aria-label="Text font style"><button type="button" class="active" data-story-font="classic">Classic</button><button type="button" data-story-font="modern">Modern</button><button type="button" data-story-font="elegant">Elegant</button><button type="button" data-story-font="strong">Strong</button></div><div class="gramora-story-counter"><span id="storyTextHint">Your story</span><span><b id="storyCharCount">0</b>/500</span></div>
       </div>
       <input id="storyBackground" type="hidden" value="linear-gradient(135deg,#ff9966,#ff5e62)">
       <div class="gramora-story-tools">
@@ -181,7 +181,7 @@
     </section>
   </div>
   <script src="script.js?v=70"></script>
-  <script type="module" src="auth.js?v=140"></script>
+  <script type="module" src="auth.js?v=141"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol === "https:") {
       window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js", { scope: "./" }).catch(error => console.warn("GRAMORA offline setup:", error)));
