@@ -408,7 +408,7 @@ service cloud.firestore {
         && request.resource.data.fromName.size() <= 60
         && request.resource.data.message is string
         && request.resource.data.message.size() <= 180
-        && request.resource.data.type in ['post_like','post_comment','follow','story_like','story_reply']
+        && request.resource.data.type in ['post_like','post_comment','follow','follow_request','follow_accept','story_like','story_reply']
         && request.resource.data.postId is string
         && request.resource.data.storyId is string
         && request.resource.data.read == false
