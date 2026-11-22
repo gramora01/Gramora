@@ -1104,6 +1104,8 @@ function closeGramoraChat(){
 async function openGramoraChat(viewer,targetUid,targetProfile){
   try{
     if(!viewer||!targetUid||viewer.uid===targetUid)return;
+    const blockStatus=await getBlockStatus(viewer.uid,targetUid);
+    if(blockStatus.blockedByMe||blockStatus.blockedMe){alert("Is account ke saath chat nahi kar sakte. Block setting check karein.");return;}
     const targetName=targetProfile?.displayName||targetProfile?.username||"GRAMORA member";
     const targetUsername=targetProfile?.username||"member";
     const targetPhoto=targetProfile?.photoURL||"";
@@ -1384,6 +1386,19 @@ async function loadPublicProfile(viewer,targetUid){
   if(targetUid===viewer.uid){loadProfilePage(viewer);return;}
   feed.innerHTML='<div class="profile-loading">Loading profile…</div>';
   try{
+    const blockStatus=await getBlockStatus(viewer.uid,targetUid);
+    if(blockStatus.blockedMe){feed.textContent="This profile isn't available.";return;}
+    if(blockStatus.blockedByMe){
+      const blockedPanel=document.createElement("section");blockedPanel.className="ig-profile";
+      blockedPanel.innerHTML='<div class="ig-no-posts"><strong>⊘</strong><b>You blocked this account</b><span>You will not be able to follow or message this account while it is blocked.</span></div><div class="ig-profile-actions"><button type="button" class="public-unblock">Unblock</button></div>';
+      feed.replaceChildren(blockedPanel);
+      blockedPanel.querySelector(".public-unblock").addEventListener("click",async()=>{
+        const button=blockedPanel.querySelector(".public-unblock");button.disabled=true;button.textContent="Unblocking…";
+        try{await deleteDoc(doc(db,"userBlocks",viewer.uid+"_"+targetUid));await loadPublicProfile(viewer,targetUid);}
+        catch(error){console.error("Unblock failed:",error);button.disabled=false;button.textContent="Unblock";alert("Unblock nahi ho paya. Latest Firestore Rules publish karein.");}
+      });
+      return;
+    }
     const snap=await getDoc(doc(db,"userProfiles",targetUid));
     if(!snap.exists()){feed.textContent="Profile unavailable.";return;}
     const p=snap.data();
@@ -1401,16 +1416,32 @@ async function loadPublicProfile(viewer,targetUid){
     if(results[3].status==="fulfilled")already=results[3].value.exists();
     const panel=document.createElement("section");panel.className="ig-profile";
     const avatar=p.photoURL?'<img alt="" src="'+escapeHtml(p.photoURL)+'">':escapeHtml((p.displayName||"G").charAt(0).toUpperCase());
-    panel.innerHTML='<div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>@'+escapeHtml(p.username||"member")+'</strong></div><div class="ig-profile-stats"><span class="profile-stat"><b>'+posts.length+'</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>'+followersCount+'</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>'+followingCount+'</b><small>following</small></button></div></div></div><div class="ig-profile-bio"><b>'+escapeHtml(p.displayName||"GRAMORA member")+'</b><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already?"Following":"Follow")+'</button><button class="public-message" type="button" aria-label="Message '+escapeHtml(p.displayName||"user")+'"><span aria-hidden="true">↗</span> Message</button></div><div class="ig-profile-grid"></div>';
+    panel.innerHTML='<div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>@'+escapeHtml(p.username||"member")+'</strong></div><div class="ig-profile-stats"><span class="profile-stat"><b>'+posts.length+'</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>'+followersCount+'</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>'+followingCount+'</b><small>following</small></button></div></div></div><div class="ig-profile-bio"><b>'+escapeHtml(p.displayName||"GRAMORA member")+'</b><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already?"Following":"Follow")+'</button><button class="public-message" type="button" aria-label="Message '+escapeHtml(p.displayName||"user")+'"><span aria-hidden="true">↗</span> Message</button><button class="public-block" type="button" aria-label="Block account">⋯</button></div><div class="ig-profile-grid"></div>';
     feed.replaceChildren(panel);
     bindAvatarLongPress(panel.querySelector(".ig-profile-avatar"),targetUid,p);
     panel.querySelectorAll(".stat-open").forEach(btn=>btn.addEventListener("click",()=>showFollowList(targetUid,btn.dataset.list)));
     panel.querySelector(".public-message").addEventListener("click",()=>{
       openGramoraChat(viewer,targetUid,p);
     });
+    panel.querySelector(".public-block").addEventListener("click",async()=>{
+      if(!confirm("Block @"+(p.username||"this account")+"? They won't be able to message or follow you."))return;
+      const button=panel.querySelector(".public-block");button.disabled=true;
+      try{
+        await setDoc(doc(db,"userBlocks",viewer.uid+"_"+targetUid),{
+          blockerUid:viewer.uid,blockedUid:targetUid,
+          blockedName:p.displayName||"GRAMORA member",
+          blockedUsername:p.username||"",createdAt:serverTimestamp()
+        });
+        await deleteDoc(doc(db,"follows",viewer.uid+"_"+targetUid)).catch(()=>{});
+        await loadPublicProfile(viewer,targetUid);
+      }catch(error){console.error("Block account failed:",error);button.disabled=false;alert(error.code==="permission-denied"?"Block option ke liye latest Firestore Rules publish karein.":"Account block nahi hua. Dobara try karein.");}
+    });
     panel.querySelector(".public-follow").addEventListener("click",async e=>{
       const btn=e.currentTarget;
       try{
+        const blockStatus=await getBlockStatus(viewer.uid,targetUid);
+        if(blockStatus.blockedByMe||blockStatus.blockedMe){alert("Blocked account ke saath follow nahi kar sakte.");return;}
+
         if((await getDoc(doc(db,"follows",viewer.uid+"_"+targetUid))).exists()){
           await deleteDoc(doc(db,"follows",viewer.uid+"_"+targetUid));btn.textContent="Follow";
         }else{
@@ -1772,6 +1803,37 @@ function escapeHtml(value){
   return String(value||"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 }
 
+async function getBlockStatus(viewerUid,targetUid){
+  if(!viewerUid||!targetUid||viewerUid===targetUid)return {blockedByMe:false,blockedMe:false};
+  const [mine,theirs]=await Promise.all([
+    getDoc(doc(db,"userBlocks",viewerUid+"_"+targetUid)),
+    getDoc(doc(db,"userBlocks",targetUid+"_"+viewerUid))
+  ]);
+  return {blockedByMe:mine.exists(),blockedMe:theirs.exists()};
+}
+async function renderBlockedAccounts(){
+  const list=document.getElementById("blockedAccountsList"),user=auth?.currentUser;
+  if(!list||!user)return;
+  list.textContent="Loading blocked accounts…";
+  try{
+    const snap=await getDocs(query(collection(db,"userBlocks"),where("blockerUid","==",user.uid),limit(100)));
+    list.replaceChildren();
+    if(snap.empty){list.textContent="You haven't blocked anyone.";return;}
+    for(const item of snap.docs){
+      const data=item.data(),row=document.createElement("div");row.className="settings-row blocked-account-row";
+      const identity=document.createElement("span"),name=document.createElement("b"),username=document.createElement("small");
+      name.textContent=data.blockedName||"GRAMORA member";username.textContent=data.blockedUsername?"@"+data.blockedUsername:"Blocked account";
+      identity.append(name,username);
+      const unblock=document.createElement("button");unblock.type="button";unblock.className="blocked-unblock";unblock.textContent="Unblock";
+      unblock.addEventListener("click",async()=>{
+        unblock.disabled=true;unblock.textContent="…";
+        try{await deleteDoc(doc(db,"userBlocks",item.id));await renderBlockedAccounts();}
+        catch(error){console.error("Unblock failed:",error);unblock.disabled=false;unblock.textContent="Unblock";alert("Unblock nahi ho paya. Latest Firestore Rules publish karein.");}
+      });
+      row.append(identity,unblock);list.append(row);
+    }
+  }catch(error){console.error("Blocked accounts load failed:",error);list.textContent=error.code==="permission-denied"?"Blocked accounts ke liye latest Firestore Rules publish karein.":"Blocked accounts load nahi ho paye.";}
+}
 // Settings center
 const settingsDialog=document.getElementById("settingsDialog");
 document.getElementById("closeCreate")?.addEventListener("click",()=>document.getElementById("createDialog").close());
@@ -1868,6 +1930,7 @@ document.getElementById("closeSettings")?.addEventListener("click",()=>settingsD
 document.querySelectorAll(".settings-tab").forEach(tab=>tab.addEventListener("click",()=>{
   document.querySelectorAll(".settings-tab").forEach(x=>x.classList.toggle("active",x===tab));
   document.querySelectorAll(".settings-panel").forEach(panel=>panel.hidden=panel.dataset.panel!==tab.dataset.settings);
+  if(tab.dataset.settings==="privacy")renderBlockedAccounts();
 }));
 document.getElementById("settingsLogout")?.addEventListener("click",async()=>{
   const currentUid=auth?.currentUser?.uid;
