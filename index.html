@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=99">
+  <link rel="stylesheet" href="style.css?v=100">
   <link rel="stylesheet" href="auth.css?v=62">
 </head>
 <body>
@@ -121,9 +121,26 @@
       <p id="storyCreateStatus" class="post-status" role="status"></p>
     </form>
   </dialog>
-  <dialog id="storyViewerDialog" class="story-dialog story-viewer">
-    <div class="dialog-head"><div><p class="eyebrow">GRAMORA STORY</p><p id="storyViewerByline" class="muted tiny"></p></div><button id="closeStoryViewer" class="close-btn" type="button" aria-label="Close">×</button></div>
-    <div id="storyViewerText" class="story-viewer-text"></div><div class="story-viewer-actions"><button id="storyViewerEdit" class="outline-btn" type="button" hidden>Edit story</button><button id="storyViewerDelete" class="settings-danger" type="button" hidden>Delete story</button></div><div id="highlightStoryNav" class="highlight-story-nav" hidden><button id="highlightStoryPrev" type="button">‹ Previous</button><button id="highlightStoryNext" type="button">Next ›</button></div><div id="storyViewerSong"></div><audio id="storyViewerAudio" class="story-viewer-audio" controls playsinline hidden></audio><div class="story-engagement"><button id="storyViewerLike" class="story-like-button" type="button" aria-pressed="false">♡ <span>Like</span></button><span class="story-like-count"><b id="storyViewerLikeCount">0</b> likes</span></div><section id="storyViewerViews" class="story-viewers" hidden><button id="storyViewerViewToggle" type="button">Viewers · 0</button><div id="storyViewerViewList" class="story-viewer-view-list" hidden></div></section><section class="story-replies"><b id="storyRepliesHeading">Replies</b><div id="storyReplyList" class="story-reply-list"></div><form id="storyReplyForm" class="story-reply-form"><input id="storyReplyInput" maxlength="300" placeholder="Reply to this story…" required><button type="submit">Send</button></form><p id="storyReplyStatus" class="muted tiny" role="status"></p></section> 
+  <dialog id="storyViewerDialog" class="story-dialog story-viewer gramora-story-viewer">
+    <div class="gramora-viewer-progress" id="storyViewerProgress" aria-label="Story progress"></div>
+    <header class="gramora-viewer-header">
+      <div class="gramora-viewer-user"><span class="gramora-viewer-avatar" id="storyViewerAvatar">G</span><span class="gramora-viewer-meta"><b id="storyViewerName">GRAMORA member</b><small id="storyViewerByline"></small></span></div>
+      <div class="gramora-viewer-header-actions"><button id="storyViewerEdit" type="button" hidden aria-label="Edit story">Edit</button><button id="storyViewerDelete" type="button" hidden aria-label="Delete story">•••</button><button id="closeStoryViewer" type="button" aria-label="Close story">×</button></div>
+    </header>
+    <div class="gramora-viewer-stage" id="storyViewerStage">
+      <button class="gramora-story-tapzone gramora-story-tapzone-left" id="storyViewerPrevious" type="button" aria-label="Previous story"></button>
+      <div id="storyViewerText" class="story-viewer-text"></div>
+      <button class="gramora-story-tapzone gramora-story-tapzone-right" id="storyViewerNext" type="button" aria-label="Next story"></button>
+      <div id="storyViewerSong" class="gramora-viewer-song"></div>
+      <audio id="storyViewerAudio" class="story-viewer-audio" playsinline hidden></audio>
+    </div>
+    <div class="gramora-viewer-bottom">
+      <section id="storyViewerViews" class="story-viewers" hidden><button id="storyViewerViewToggle" type="button">Viewers · 0</button><div id="storyViewerViewList" class="story-viewer-view-list" hidden></div></section>
+      <div class="gramora-viewer-reply-row"><form id="storyReplyForm" class="story-reply-form"><input id="storyReplyInput" maxlength="300" placeholder="Reply to story…" autocomplete="off" required><button type="submit" aria-label="Send reply">➤</button></form><button id="storyViewerLike" class="story-like-button" type="button" aria-pressed="false" aria-label="Like story">♡</button><span class="story-like-count"><b id="storyViewerLikeCount">0</b></span></div>
+      <p id="storyReplyStatus" class="gramora-viewer-status" role="status"></p>
+      <div id="storyReplyList" class="story-reply-list" hidden></div>
+    </div>
+    <div id="highlightStoryNav" class="highlight-story-nav" hidden><button id="highlightStoryPrev" type="button">‹ Previous</button><button id="highlightStoryNext" type="button">Next ›</button></div>
   </dialog>
 
   <dialog id="highlightCreateDialog" class="story-dialog">
@@ -181,7 +198,7 @@
     </section>
   </div>
   <script src="script.js?v=70"></script>
-  <script type="module" src="auth.js?v=144"></script>
+  <script type="module" src="auth.js?v=145"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol === "https:") {
       window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js", { scope: "./" }).catch(error => console.warn("GRAMORA offline setup:", error)));
