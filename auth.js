@@ -367,9 +367,10 @@ function startStoriesFeed(user){
   getVisibleContentUids(user).then(uids=>{
     if(cancelled)return;
     if(!uids.length){activeStoryDocs=[];renderStories([]);return;}
-    uids.forEach(uid=>offs.push(onSnapshot(query(collection(db,"stories"),where("uid","==",uid),orderBy("createdAt","desc"),limit(30)),snapshot=>{
+    uids.forEach(uid=>offs.push(onSnapshot(query(collection(db,"stories"),where("uid","==",uid),limit(100)),snapshot=>{
       docs=docs.filter(item=>item.data().uid!==uid).concat(snapshot.docs);
       activeStoryDocs=docs.filter(item=>{const expiry=item.data().expiresAt;return expiry?.toMillis?expiry.toMillis()>Date.now():false;});
+      activeStoryDocs.sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0));
       renderStories(activeStoryDocs);
     },error=>{console.error("Stories feed error:",error);const hint=document.getElementById("storyCreateStatus");if(hint)hint.textContent="Stories load nahi hui. Latest Firestore Rules publish karein.";})));
   }).catch(error=>console.error("Stories feed setup failed:",error));
@@ -787,8 +788,8 @@ function startPostsFeed(user){
     if(cancelled)return;total=uids.length*2;
     if(!total){renderPosts([]);return;}
     uids.forEach(uid=>{
-      offs.push(onSnapshot(query(collection(db,"posts"),where("uid","==",uid),orderBy("createdAt","desc"),limit(40)),snap=>{posts=posts.filter(item=>item.data().uid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.error("Posts feed error:",error);ready++;if(activeView==="home")showFeedMessage("Could not load posts. Publish the latest Firestore Rules.");}));
-      offs.push(onSnapshot(query(collection(db,"reposts"),where("originalUid","==",uid),orderBy("createdAt","desc"),limit(40)),snap=>{reposts=reposts.filter(item=>item.data().originalUid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.warn("Reposts feed unavailable:",error);ready++;renderCombined();}));
+      offs.push(onSnapshot(query(collection(db,"posts"),where("uid","==",uid),limit(100)),snap=>{posts=posts.filter(item=>item.data().uid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.error("Posts feed error:",error);ready++;if(activeView==="home")showFeedMessage("Could not load posts. Publish the latest Firestore Rules.");}));
+      offs.push(onSnapshot(query(collection(db,"reposts"),where("originalUid","==",uid),limit(100)),snap=>{reposts=reposts.filter(item=>item.data().originalUid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.warn("Reposts feed unavailable:",error);ready++;renderCombined();}));
     });
   }).catch(error=>{console.error(error);if(activeView==="home")showFeedMessage("Could not prepare your private feed. Check Firestore Rules.");});
 }
@@ -1548,8 +1549,8 @@ async function getDocsForFeed(){
   const user=auth?.currentUser;if(!user)return;
   try{
     const uids=await getVisibleContentUids(user),batches=await Promise.all(uids.flatMap(uid=>[
-      getDocs(query(collection(db,"posts"),where("uid","==",uid),orderBy("createdAt","desc"),limit(40))),
-      getDocs(query(collection(db,"reposts"),where("originalUid","==",uid),orderBy("createdAt","desc"),limit(40)))
+      getDocs(query(collection(db,"posts"),where("uid","==",uid),limit(100))),
+      getDocs(query(collection(db,"reposts"),where("originalUid","==",uid),limit(100)))
     ]));
     const posts=[],reposts=[];
     batches.forEach((snap,index)=>{if(index%2===0)posts.push(...snap.docs);else reposts.push(...snap.docs.map(item=>({id:"repost_"+item.id,data:()=>({...item.data(),_isRepost:true,_repostId:item.id})})));});
