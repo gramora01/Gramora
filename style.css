@@ -1089,7 +1089,7 @@ body.light .gramora-story-viewer{color:#fff!important}
 @media(max-width:420px){.gramora-story-track{width:min(56vw,235px)}}
 
 /* Instagram-style story viewer activity tray */
-.gramora-story-activity-sheet{position:absolute;z-index:20;left:0;right:0;bottom:0;max-height:68%;min-height:42%;padding:9px 16px max(14px,env(safe-area-inset-bottom));border-radius:20px 20px 0 0;background:#fff;color:#17181d;box-shadow:0 -12px 38px #0006;display:flex;flex-direction:column;overflow:hidden}
+.gramora-story-activity-sheet{position:absolute;z-index:20;left:0;right:0;bottom:0;height:58dvh;max-height:68dvh;min-height:42dvh;padding:9px 16px max(14px,env(safe-area-inset-bottom));border-radius:20px 20px 0 0;background:#fff;color:#17181d;box-shadow:0 -12px 38px #0006;display:flex;flex-direction:column;overflow:hidden}
 .gramora-story-activity-sheet[hidden]{display:none!important}
 .gramora-story-sheet-grabber{width:38px;height:4px;flex:0 0 4px;margin:0 auto 13px;border-radius:99px;background:#b8b8be}
 .gramora-story-sheet-head{display:flex;align-items:center;justify-content:space-between;padding:0 1px 12px;border-bottom:1px solid #e9e9ed;font-size:15px}
