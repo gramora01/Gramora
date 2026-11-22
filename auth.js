@@ -204,7 +204,7 @@ async function openGramoraNotifications(){
   const dialog=document.createElement("dialog");dialog.className="gramora-notifications-dialog";
   const header=document.createElement("div");header.className="gramora-notifications-head";
   const title=document.createElement("h2");title.textContent="Notifications";
-  const close=document.createElement("button");close.type="button";close.textContent="×";close.setAttribute("aria-label","Close");close.addEventListener("click",()=>dialog.close());
+  const close=document.createElement("button");close.type="button";close.className="notification-back-btn";close.textContent="‹";close.setAttribute("aria-label","Back");close.title="Back";close.addEventListener("click",()=>dialog.close());
   header.append(title,close);
   const list=document.createElement("div");list.className="gramora-notifications-list";list.textContent="Loading notifications…";
   dialog.append(header,list);document.body.append(dialog);dialog.addEventListener("close",()=>dialog.remove(),{once:true});dialog.showModal();
