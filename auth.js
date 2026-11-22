@@ -591,6 +591,10 @@ storyViewerStage?.addEventListener("touchend",event=>{
   }
 },{passive:true});
 document.getElementById("storyActivityClose")?.addEventListener("click",closeStoryActivitySheet);
+let storyActivityTouchY=0;
+const storyActivitySheet=document.getElementById("storyActivitySheet");
+storyActivitySheet?.addEventListener("touchstart",event=>{storyActivityTouchY=event.changedTouches[0].clientY;},{passive:true});
+storyActivitySheet?.addEventListener("touchend",event=>{if(event.changedTouches[0].clientY-storyActivityTouchY>65)closeStoryActivitySheet();},{passive:true});
 document.getElementById("storyViewerDialog")?.addEventListener("close",stopStoryViewerTimer);
 document.getElementById("storyViewerPrevious")?.addEventListener("click",()=>navigateStoryViewer(-1));
 document.getElementById("storyViewerNext")?.addEventListener("click",()=>navigateStoryViewer(1));
