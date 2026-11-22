@@ -533,7 +533,8 @@ service cloud.firestore {
               && request.resource.data.seenAt is timestamp)
           );
         // Unsend removes the sender's message for both participants.
-        allow delete: if isChatParticipant() && resource.data.senderUid == request.auth.uid;
+        // Either participant may clear the shared conversation history.
+        allow delete: if isChatParticipant();
       }
 
       // Typing state is private to chat participants; each user controls only their own doc.
