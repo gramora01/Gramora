@@ -20,6 +20,15 @@ service cloud.firestore {
         && !exists(/databases/$(database)/documents/userBlocks/$(otherUid + '_' + request.auth.uid));
     }
 
+    // Private content is readable only by its owner, public viewers, or approved followers.
+    function canViewUserContent(ownerUid) {
+      return signedIn()
+        && (ownerUid == request.auth.uid
+          || !exists(/databases/$(database)/documents/userProfiles/$(ownerUid))
+          || get(/databases/$(database)/documents/userProfiles/$(ownerUid)).data.isPrivate != true
+          || exists(/databases/$(database)/documents/follows/$(request.auth.uid + '_' + ownerUid)));
+    }
+
     // USER PROFILES
     match /userProfiles/{uid} {
 
@@ -52,7 +61,8 @@ service cloud.firestore {
             'username',
             'bio',
             'photoURL',
-            'updatedAt'
+            'updatedAt',
+            'isPrivate'
           ]);
 
       // Profile deletion is blocked from the client.
@@ -120,7 +130,12 @@ service cloud.firestore {
           'followerUid',
           'followingUid',
           'createdAt'
-        ]);
+        ])
+        && ((request.resource.data.followerUid == request.auth.uid
+            && (!exists(/databases/$(database)/documents/userProfiles/$(request.resource.data.followingUid))
+              || get(/databases/$(database)/documents/userProfiles/$(request.resource.data.followingUid)).data.isPrivate != true))
+          || (request.resource.data.followingUid == request.auth.uid
+            && exists(/databases/$(database)/documents/followRequests/$(request.resource.data.followerUid + '_' + request.auth.uid))));
 
       // Only the follower can remove their relationship.
       allow delete: if signedIn()
@@ -129,11 +144,34 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // FOLLOW REQUESTS: requester and recipient can check; only recipient can list requests.
+    match /followRequests/{requestId} {
+      allow get: if signedIn()
+        && (requestId.matches(request.auth.uid + '_.*') || requestId.matches('.*_' + request.auth.uid));
+      allow list: if signedIn() && resource.data.toUid == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.toUid is string
+        && request.resource.data.toUid != request.auth.uid
+        && requestId == request.auth.uid + '_' + request.resource.data.toUid
+        && get(/databases/$(database)/documents/userProfiles/$(request.resource.data.toUid)).data.isPrivate == true
+        && noBlockWith(request.resource.data.toUid)
+        && request.resource.data.fromName is string
+        && request.resource.data.fromName.size() <= 60
+        && request.resource.data.fromUsername is string
+        && request.resource.data.fromUsername.size() <= 20
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.keys().hasOnly(['fromUid','toUid','fromName','fromUsername','createdAt']);
+      allow delete: if signedIn()
+        && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      allow update: if false;
+    }
+
     // POSTS
     match /posts/{postId} {
 
-      // Signed-in members can view posts.
-      allow read: if signedIn();
+      // Only owner, public viewers, and approved followers can read posts.
+      allow read: if canViewUserContent(resource.data.uid);
 
       // A user can create only their own post.
       allow create: if signedIn()
@@ -172,7 +210,7 @@ service cloud.firestore {
 
     // POST LIKES: one like per user per post.
     match /postLikes/{likeId} {
-      allow read: if signedIn();
+      allow read: if canViewUserContent(resource.data.postUid);
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.postId is string
@@ -185,7 +223,7 @@ service cloud.firestore {
 
     // POST COMMENTS: signed-in members can read; authors can remove their own comments.
     match /postComments/{commentId} {
-      allow read: if signedIn();
+      allow read: if canViewUserContent(resource.data.postUid);
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.postId is string
@@ -200,7 +238,7 @@ service cloud.firestore {
 
     // REPOSTS
     match /reposts/{repostId} {
-      allow read: if signedIn();
+      allow read: if canViewUserContent(resource.data.originalUid);
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.originalPostId is string
@@ -216,7 +254,7 @@ service cloud.firestore {
 
     // TEXT STORIES (expire in 24 hours; clients hide expired stories)
     match /stories/{storyId} {
-      allow read: if signedIn();
+      allow read: if canViewUserContent(resource.data.uid);
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly([
@@ -250,7 +288,7 @@ service cloud.firestore {
 
     // STORY HIGHLIGHTS: owner creates and manages saved story collections.
     match /storyHighlights/{highlightId} {
-      allow read: if signedIn();
+      allow read: if canViewUserContent(resource.data.uid);
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.title is string
