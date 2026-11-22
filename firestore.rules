@@ -494,8 +494,9 @@ service cloud.firestore {
           && request.resource.data.type in ['text','sticker','gif']
           && request.resource.data.createdAt is timestamp
           && request.resource.data.keys().hasOnly([
-            'senderUid','text','type','createdAt','replyToId','replyToText','gifData','gifUrl'
+            'senderUid','text','type','createdAt','replyToId','replyToText','gifData','gifUrl','status'
           ])
+          && (!('status' in request.resource.data) || request.resource.data.status == 'sent')
           && (!('replyToId' in request.resource.data) || request.resource.data.replyToId is string)
           && (!('replyToText' in request.resource.data) || request.resource.data.replyToText is string)
           && (request.resource.data.type != 'gif'
@@ -525,6 +526,11 @@ service cloud.firestore {
               && request.resource.data.reactions is map
               && request.resource.data.reactions.keys().hasOnly(parentConversation().data.participantUids)
               && request.resource.data.reactions.values().hasOnly(['❤️','😂','😮','😢','🔥','👍','👏','😍']))
+            ||
+            (resource.data.senderUid != request.auth.uid
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','seenAt'])
+              && request.resource.data.status == 'seen'
+              && request.resource.data.seenAt is timestamp)
           );
         // Unsend removes the sender's message for both participants.
         allow delete: if isChatParticipant() && resource.data.senderUid == request.auth.uid;
