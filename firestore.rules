@@ -414,14 +414,15 @@ service cloud.firestore {
           && request.resource.data.type in ['text','sticker','gif']
           && request.resource.data.createdAt is timestamp
           && request.resource.data.keys().hasOnly([
-            'senderUid','text','type','createdAt','replyToId','replyToText','mediaUrl'
+            'senderUid','text','type','createdAt','replyToId','replyToText','gifData'
           ])
           && (!('replyToId' in request.resource.data) || request.resource.data.replyToId is string)
           && (!('replyToText' in request.resource.data) || request.resource.data.replyToText is string)
-          && (!('mediaUrl' in request.resource.data)
-            || (request.resource.data.mediaUrl is string
-              && request.resource.data.mediaUrl.size() <= 2000
-              && request.resource.data.mediaUrl.matches('https://.*')));
+          && (request.resource.data.type != 'gif'
+            || ('gifData' in request.resource.data
+              && request.resource.data.gifData is string
+              && request.resource.data.gifData.size() <= 700000
+              && request.resource.data.gifData.matches('data:image/gif;base64,.*')));
 
         // A sender can edit only their own text message.
         allow update: if isChatParticipant()
