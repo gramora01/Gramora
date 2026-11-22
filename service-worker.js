@@ -2,7 +2,9 @@ const CACHE_NAME = "gramora-shell-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=91",
+  "./style.css?v=101",
+  "./ui-upgrade.css?v=1",
+  "./ui-upgrade.js?v=1",
   "./auth.css?v=62",
   "./icons/gramora.svg",
   "./manifest.json"
