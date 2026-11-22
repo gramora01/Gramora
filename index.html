@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=102">
+  <link rel="stylesheet" href="style.css?v=103">
   <link rel="stylesheet" href="auth.css?v=62">
 </head>
 <body>
@@ -127,6 +127,18 @@
       <div class="gramora-viewer-user"><span class="gramora-viewer-avatar" id="storyViewerAvatar">G</span><span class="gramora-viewer-meta"><b id="storyViewerName">GRAMORA member</b><small id="storyViewerByline"></small></span></div>
       <div class="gramora-viewer-header-actions"><button id="storyViewerEdit" type="button" hidden aria-label="Edit story">Edit</button><button id="storyViewerDelete" type="button" hidden aria-label="Delete story">•••</button><button id="closeStoryViewer" type="button" aria-label="Close story">×</button></div>
     </header>
+    <div class="gramora-story-owner-actions" id="storyOwnerActions" hidden aria-label="Your story actions">
+      <button type="button" data-story-owner-action="activity">◉ <span>Activity</span></button>
+      <button type="button" data-story-owner-action="share">↗ <span>Share to</span></button>
+      <button type="button" data-story-owner-action="facebook">f <span>Facebook</span></button>
+      <button type="button" data-story-owner-action="highlight">◎ <span>Highlight</span></button>
+      <button type="button" data-story-owner-action="mention">@ <span>Mention</span></button>
+      <button type="button" data-story-owner-action="more">••• <span>More</span></button>
+    </div>
+    <div class="gramora-story-more-menu" id="storyOwnerMoreMenu" hidden>
+      <button type="button" data-story-more-action="copy">Copy story link</button>
+      <button type="button" data-story-more-action="close">Close menu</button>
+    </div>
     <div class="gramora-viewer-stage" id="storyViewerStage">
       <button class="gramora-story-tapzone gramora-story-tapzone-left" id="storyViewerPrevious" type="button" aria-label="Previous story"></button>
       <div id="storyViewerText" class="story-viewer-text"></div>
@@ -198,7 +210,7 @@
     </section>
   </div>
   <script src="script.js?v=71"></script>
-  <script type="module" src="auth.js?v=150"></script>
+  <script type="module" src="auth.js?v=151"></script>
   <script>
     // Startup failsafe: never leave GRAMORA hidden behind an endless loading state.
     (() => {
