@@ -1,12 +1,6 @@
 const dialog=document.getElementById("createDialog");
 const form=document.getElementById("postForm");
 function openComposer(){if(dialog&&!dialog.open)dialog.showModal();}
-document.getElementById("notificationBtn")?.addEventListener("click",()=>{
-  let notice=document.getElementById("gramoraNotice");
-  if(!notice){notice=document.createElement("div");notice.id="gramoraNotice";notice.style.cssText="position:fixed;z-index:2000;top:72px;right:14px;background:#20232a;color:#fff;border:1px solid #383b45;border-radius:12px;padding:12px 16px;box-shadow:0 8px 28px #0008;font:13px Arial";document.body.append(notice);}
-  notice.textContent="You're all caught up. Notifications are coming soon.";
-  notice.hidden=false;clearTimeout(window.gramoraNoticeTimer);window.gramoraNoticeTimer=setTimeout(()=>notice.hidden=true,2600);
-});
 ["openCreate","rightCreate","rightCreateDesktop","mobileCreate","topCreate"].forEach(id=>document.getElementById(id)?.addEventListener("click",openComposer));
 // Restore the user's saved theme before wiring the theme toggle.
 const themeButton=document.getElementById("themeBtn");
