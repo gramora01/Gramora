@@ -1932,6 +1932,8 @@ document.querySelectorAll(".settings-tab").forEach(tab=>tab.addEventListener("cl
   document.querySelectorAll(".settings-panel").forEach(panel=>panel.hidden=panel.dataset.panel!==tab.dataset.settings);
   if(tab.dataset.settings==="privacy")renderBlockedAccounts();
 }));
+document.getElementById("settingsBlockedRefresh")?.addEventListener("click",renderBlockedAccounts);
+
 document.getElementById("settingsLogout")?.addEventListener("click",async()=>{
   const currentUid=auth?.currentUser?.uid;
   try{
