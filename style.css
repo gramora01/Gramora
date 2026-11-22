@@ -767,3 +767,30 @@ button.gramora-story-tool{cursor:pointer}
 .gramora-story-editor #storyText{background:transparent!important}
 .gramora-story-editor #storyText:focus{outline:none!important}
 .gramora-story-editor #storyCreateStatus{color:#fff!important}
+
+/* Functional story music picker and attached music sticker */
+.gramora-story-editor .gramora-story-tool{cursor:pointer;flex:0 0 44px}
+.gramora-story-editor .gramora-story-tool:active,.gramora-music-sheet button:active{transform:scale(.96)}
+.gramora-music-sheet .story-song-result{display:flex;flex-direction:row;align-items:center;gap:12px;width:100%;min-height:70px;cursor:pointer}
+.gramora-music-sheet .story-song-result img{width:52px;height:52px;object-fit:cover;border-radius:7px;flex:0 0 52px}
+.gramora-track-details{display:flex;flex-direction:column;gap:4px;min-width:0;text-align:left}
+.gramora-track-details b,.gramora-track-details small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.gramora-music-sheet .story-song-result.selected{background:#ffffff18;border-radius:10px}
+.gramora-music-selection{border-top:1px solid #ffffff20;padding-top:12px;display:flex;flex-direction:column;gap:10px}
+.gramora-music-selection[hidden],.gramora-attached-music[hidden]{display:none!important}
+.gramora-selected-song,.gramora-attached-track{display:flex;align-items:center;gap:10px;min-width:0}
+.gramora-selected-song img,.gramora-attached-track img{width:48px;height:48px;object-fit:cover;border-radius:8px}
+.gramora-selected-song span,.gramora-attached-track span{display:flex;flex-direction:column;gap:3px;min-width:0}
+.gramora-selected-song small,.gramora-attached-track small{color:#b9bbc5}
+.gramora-music-selection input[type=range]{width:100%;accent-color:#b78cff}
+.gramora-music-preview-actions,.gramora-attached-actions{display:flex;gap:9px;align-items:center}
+.gramora-music-preview-actions button,.gramora-attached-actions button{border:0;border-radius:20px;padding:10px 14px;background:#393b46;color:#fff;font-weight:700}
+.gramora-music-preview-actions #addStoryMusic{background:#fff;color:#17181d;flex:1}
+.gramora-attached-music{margin:0 0 12px;padding:10px 12px;border-radius:13px;background:#ffffff18;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.gramora-attached-track{overflow:hidden}
+.gramora-attached-track b,.gramora-attached-track small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
+.gramora-attached-actions button:last-child{font-size:18px;padding:7px 12px}
+.gramora-story-music-sticker{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;margin:8px auto;border-radius:10px;background:#171923e8;color:#fff;font-weight:700;max-width:90%}
+.gramora-story-music-sticker img{width:34px;height:34px;object-fit:cover;border-radius:5px}
+.gramora-story-music-sticker span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#storyViewerSong{text-align:center}
