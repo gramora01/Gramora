@@ -611,6 +611,27 @@ function openStoryViewer(docs,id){
   const byline=document.getElementById("storyViewerByline");
   const song=document.getElementById("storyViewerSong");
   const deleteButton=document.getElementById("storyViewerDelete");
+  const isOwnStory=data.uid===auth?.currentUser?.uid&&!dialog._highlightStories?.length;
+  const ownerActions=document.getElementById("storyOwnerActions");
+  const ownerMenu=document.getElementById("storyOwnerMenu");
+  if(ownerActions)ownerActions.hidden=!isOwnStory;
+  if(ownerMenu)ownerMenu.hidden=true;
+  ownerActions?.querySelectorAll("[data-story-owner-action]").forEach(button=>{
+    button.onclick=async()=>{
+      if(!isOwnStory)return;
+      const action=button.dataset.storyOwnerAction;
+      if(action==="activity"){document.getElementById("storyViewerViewToggle")?.click();return;}
+      if(action==="highlight"){openHighlightCreator(auth.currentUser);return;}
+      if(action==="more"){if(ownerMenu)ownerMenu.hidden=!ownerMenu.hidden;return;}
+      if(action==="share"){
+        const url=location.href.split("#")[0]+"#story-"+encodeURIComponent(id);
+        try{if(navigator.share)await navigator.share({title:"GRAMORA story",text:"Check out my story on GRAMORA",url});else{await navigator.clipboard.writeText(url);if(replyStatus)replyStatus.textContent="Story link copied.";}}
+        catch(error){if(error.name!=="AbortError"&&replyStatus)replyStatus.textContent="Share nahi ho paya. Dobara try karein.";}
+      }
+    };
+  });
+  ownerMenu?.querySelector('[data-story-menu-action="edit"]')?.addEventListener("click",()=>{ownerMenu.hidden=true;editStoryButton?.click();});
+  ownerMenu?.querySelector('[data-story-menu-action="delete"]')?.addEventListener("click",()=>{ownerMenu.hidden=true;deleteButton?.click();});
   content.textContent=data.text||"";
   content.style.background=data.background||POST_BACKGROUNDS[4];
   byline.textContent=formatPostDate(data.createdAt);
@@ -719,6 +740,7 @@ async function loadStoryEngagement(storyId,storyData){
   if(!currentUid)return;
   const isOwner=storyData.uid===currentUid;
   if(likeCountWrap)likeCountWrap.hidden=!isOwner;
+  const replyRow=document.querySelector(".gramora-viewer-reply-row");if(replyRow)replyRow.hidden=isOwner;
   if(replyList)replyList.hidden=!isOwner;
   if(replyHeading)replyHeading.hidden=!isOwner;
   try{
