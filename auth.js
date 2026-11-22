@@ -1301,20 +1301,22 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
     },()=>{dlg.querySelector(".gramora-chat-status").textContent="Status unavailable";});
     if(activeChatPresenceTimer)clearInterval(activeChatPresenceTimer);
     activeChatPresenceTimer=setInterval(()=>renderGramoraChatPresence(dlg.querySelector(".gramora-chat-status"),activeChatPresenceData),15000);
-    activeChatUnsubscribe=onSnapshot(query(collection(db,"conversations",conversationRef.id,"messages"),orderBy("createdAt","asc"),limit(100)),snapshot=>{
+    activeChatUnsubscribe=onSnapshot(query(collection(db,"conversations",conversationRef.id,"messages"),orderBy("createdAt","desc"),limit(100)),snapshot=>{
       if(!dlg.open||activeChatConversationId!==conversationRef.id)return;
       messageBox.replaceChildren();
-      const latestOwnMessageId=[...snapshot.docs].reverse().find(item=>item.data().senderUid===viewer.uid)?.id||null;
+      // Fetch the newest 100 messages, then display them oldest-to-newest.
+      const orderedMessageDocs=[...snapshot.docs].reverse();
+      const latestOwnMessageId=snapshot.docs.find(item=>item.data().senderUid===viewer.uid)?.id||null;
       // Mark incoming messages as seen only while this conversation is open.
-      snapshot.docs.forEach(messageDoc=>{
+      orderedMessageDocs.forEach(messageDoc=>{
         const data=messageDoc.data();
         if(data.senderUid!==viewer.uid&&data.status!=="seen"){
           updateDoc(messageDoc.ref,{status:"seen",seenAt:serverTimestamp()}).catch(error=>console.warn("Message seen status failed:",error));
         }
       });
-      conversationRefSnapshotLastMessage=snapshot.docs.length?snapshot.docs[snapshot.docs.length-1].data().text||"":conversationRefSnapshotLastMessage;
+      conversationRefSnapshotLastMessage=snapshot.docs.length?snapshot.docs[0].data().text||"":conversationRefSnapshotLastMessage;
       if(snapshot.empty){const empty=document.createElement("p");empty.className="gramora-chat-empty";empty.textContent="Start your conversation 👋";messageBox.append(empty);}
-      snapshot.forEach(messageDoc=>{
+      orderedMessageDocs.forEach(messageDoc=>{
         const m={id:messageDoc.id,...messageDoc.data()},mine=m.senderUid===viewer.uid;
         const bubble=document.createElement("div");bubble.className="gramora-chat-bubble "+(mine?"mine":"theirs")+(m.type==="gif"?" gramora-gif-message":"");
         if(m.replyToText){const quoted=document.createElement("span");quoted.className="gramora-chat-quoted";quoted.textContent="↪ "+m.replyToText;bubble.append(quoted);}
