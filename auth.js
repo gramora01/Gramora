@@ -243,14 +243,18 @@ async function openGramoraNotifications(){
         const decline=document.createElement("button");decline.type="button";decline.className="blocked-refresh";decline.textContent="Delete";
         accept.addEventListener("click",async event=>{
           event.stopPropagation();accept.disabled=true;decline.disabled=true;accept.textContent="…";
+          let confirmStep="block check";
           try{
             const status=await getBlockStatus(user.uid,item.fromUid);
             if(status.blockedByMe||status.blockedMe)throw new Error("Blocked accounts cannot follow each other.");
+            confirmStep="follow record create";
             await setDoc(doc(db,"follows",item.fromUid+"_"+user.uid),{followerUid:item.fromUid,followingUid:user.uid,createdAt:serverTimestamp()});
+            confirmStep="follow request delete";
             await deleteDoc(doc(db,"followRequests",item.fromUid+"_"+user.uid));
+            confirmStep="notification mark as read";
             await updateDoc(doc(db,"notifications",item.id),{read:true});
             row.remove();refreshNotificationBadge();if(!list.querySelector(".gramora-notification"))list.textContent="You’re all caught up. No notifications yet.";
-          }catch(error){console.error("Follow request confirmation failed:",error);accept.disabled=false;decline.disabled=false;accept.textContent="Confirm";alert(error.code==="permission-denied"?"Latest Firestore Rules publish karein.":(error.message||"Request accept nahi hui."));}
+          }catch(error){console.error("Follow request confirmation failed at "+confirmStep+":",error);accept.disabled=false;decline.disabled=false;accept.textContent="Confirm";alert("Confirm failed at: "+confirmStep+" ("+(error.code||"error")+"). "+(error.message||"Dobara try karein."));}
         });
         decline.addEventListener("click",async event=>{
           event.stopPropagation();decline.disabled=true;
