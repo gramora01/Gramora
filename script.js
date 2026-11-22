@@ -37,7 +37,8 @@ function showPlaceholder(view,title){
       .gramora-inbox-search span{font-size:25px;line-height:1}
       .gramora-inbox-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--text,#f5f5f7);font:inherit;font-size:14px}
       .gramora-inbox-search input::placeholder{color:var(--muted,#9ca3af)}
-      .gramora-inbox-search input:disabled{opacity:1;cursor:default}
+      .gramora-inbox-search input{cursor:text}
+      .gramora-inbox-search:focus-within{border-color:#e879a6;box-shadow:0 0 0 3px rgba(232,121,166,.12)}
       .gramora-inbox-empty{box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:42vh;padding:30px 20px;text-align:center}
       .gramora-inbox-empty-icon{box-sizing:border-box;display:grid;place-items:center;width:82px;height:82px;margin-bottom:19px;border:1.5px solid var(--line,#3a3d48);border-radius:50%;background:var(--surface,#171922);font-size:35px;color:#e879a6}
       .gramora-inbox-empty h3{margin:0 0 9px;color:var(--text,#f5f5f7);font-size:17px;font-weight:700}
@@ -57,13 +58,29 @@ function showPlaceholder(view,title){
     titleBox.append(eyebrow,heading,subtitle);head.append(titleBox);page.append(head);
     const searchWrap=document.createElement("label");searchWrap.className="gramora-inbox-search";
     const searchIcon=document.createElement("span");searchIcon.textContent="⌕";searchIcon.setAttribute("aria-hidden","true");
-    const search=document.createElement("input");search.type="search";search.placeholder="Search conversations";search.setAttribute("aria-label","Search conversations");search.disabled=true;
+    const search=document.createElement("input");search.type="search";search.placeholder="Search conversations";search.setAttribute("aria-label","Search conversations");
     searchWrap.append(searchIcon,search);page.append(searchWrap);
     const empty=document.createElement("div");empty.className="gramora-inbox-empty";
-    const icon=document.createElement("div");icon.className="gramora-inbox-empty-icon";icon.textContent="✉";
+    const icon=document.createElement("div");icon.className="gramora-inbox-empty-icon";
+    icon.innerHTML='<svg viewBox="0 0 48 48" width="42" height="42" fill="none" aria-hidden="true"><path d="M8 11.5A5.5 5.5 0 0 1 13.5 6h21A5.5 5.5 0 0 1 40 11.5v16a5.5 5.5 0 0 1-5.5 5.5H22l-9.5 7v-7.4A5.5 5.5 0 0 1 8 27.5v-16Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="m17 19 7 5 7-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M36.5 3.5v7M33 7h7" stroke="#e879a6" stroke-width="2.4" stroke-linecap="round"/></svg>';
     const emptyTitle=document.createElement("h3");emptyTitle.textContent="Your messages will appear here";
     const emptyText=document.createElement("p");emptyText.textContent="Your private chats are being set up. Soon you’ll be able to message people directly.";
-    empty.append(icon,emptyTitle,emptyText);page.append(empty);feed.append(page);return;
+    empty.append(icon,emptyTitle,emptyText);page.append(empty);feed.append(page);
+    search.addEventListener("input",()=>{
+      const query=search.value.trim().toLowerCase();
+      const conversations=[...page.querySelectorAll(".gramora-conversation")];
+      let visible=0;
+      conversations.forEach(item=>{const match=item.textContent.toLowerCase().includes(query);item.hidden=!match;if(match)visible++;});
+      if(conversations.length){
+        empty.hidden=visible>0;
+        if(!visible){emptyTitle.textContent="No conversations found";emptyText.textContent=query?"No chats match this search. Try another name or username.":"Your messages will appear here.";}
+      }else{
+        empty.hidden=false;
+        emptyTitle.textContent=query?"No conversations found":"Your messages will appear here";
+        emptyText.textContent=query?"There are no chats to match this search yet.":"Your private chats are being set up. Soon you’ll be able to message people directly.";
+      }
+    });
+    return;
   }
   const card=document.createElement("div");card.className="empty-welcome";
   const mark=document.createElement("div");mark.className="welcome-symbol";mark.textContent="g.";
