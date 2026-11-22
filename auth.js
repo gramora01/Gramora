@@ -581,8 +581,7 @@ function openStoryViewer(docs,id){
   const audio=document.getElementById("storyViewerAudio");
   if(audio){audio.pause();audio.removeAttribute("src");audio.load();audio.hidden=true;}
   if(data.songTitle){
-    const title=document.createElement("p");title.className="story-song-title";title.textContent="♫ "+data.songTitle+(data.songArtist?" — "+data.songArtist:"");
-    song.append(title);
+    const sticker=document.createElement("div");sticker.className="gramora-story-music-sticker";if(data.songArtwork){const cover=document.createElement("img");cover.src=data.songArtwork;cover.alt="";sticker.append(cover);}const title=document.createElement("span");title.textContent="♫ "+data.songTitle+(data.songArtist?" — "+data.songArtist:"");sticker.append(title);song.append(sticker);
     if(data.previewUrl&&audio){
       audio.src=data.previewUrl;audio.hidden=false;audio.currentTime=Number(data.songStart||0);audio.ontimeupdate=()=>{if(audio.currentTime>=Number(data.songStart||0)+15)audio.pause();};
     }else if(data.songUrl){
@@ -760,6 +759,7 @@ const setStoryMusicPreview=async()=>{
   try{await storyMusicPreview.play();}catch(error){console.warn("Preview playback needs a user tap:",error);}
 };
 const stopStoryMusicPreview=()=>{if(storyMusicPreview){storyMusicPreview.pause();}};
+document.getElementById("storyEditorDone")?.addEventListener("click",()=>{if(storyMusicSheet)storyMusicSheet.hidden=true;document.getElementById("storyText")?.blur();});
 document.getElementById("openStoryMusic")?.addEventListener("click",()=>{if(storyMusicSheet)storyMusicSheet.hidden=false;});
 document.getElementById("closeStoryMusic")?.addEventListener("click",()=>{stopStoryMusicPreview();if(storyMusicSheet)storyMusicSheet.hidden=true;});
 storySongSearchButton?.addEventListener("click",async()=>{
@@ -841,6 +841,16 @@ storyMusicPreview?.addEventListener("ended",()=>{
   document.getElementById("storyMusicPreviewInSheet").textContent="▶ Preview";
   document.getElementById("storyMusicPreviewToggle").textContent="▶ Preview";
 });
+
+document.querySelectorAll(".gramora-music-tabs [data-music-tab]").forEach(tab=>tab.addEventListener("click",()=>{
+  document.querySelectorAll(".gramora-music-tabs [data-music-tab]").forEach(item=>item.classList.toggle("active",item===tab));
+  const mode=tab.dataset.musicTab;
+  if(mode==="for-you"){storySongSearchInput.value="popular Hindi songs";storySongResults.textContent="Search dabayein to recommendations dekhein.";}
+  else if(mode==="trending"){storySongSearchInput.value="top hits India";storySongSearchButton.click();}
+  else if(mode==="saved"){storySongResults.textContent="Saved songs abhi empty hain. Song choose karne ke baad use Saved list mein rakhne ka option baad mein add karenge.";}
+  else{storySongResults.textContent="Original audio upload/recording abhi available nahi hai.";}
+}));
+
 const storyForm=document.getElementById("storyForm");
 storyForm?.addEventListener("submit",async event=>{
   event.preventDefault();
