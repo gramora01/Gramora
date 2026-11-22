@@ -853,7 +853,7 @@ async function openPersonProfile(uid){
   const viewer=auth?.currentUser;if(!viewer||!uid)return;
   if(uid===viewer.uid)await loadProfilePage(viewer);else await loadPublicProfile(viewer,uid);
 }
-async function showPostLikesList(postId){
+async function showPostLikesList(postId,postUid){
   const viewer=auth?.currentUser;if(!viewer)return;
   const dialog=document.createElement("dialog");dialog.className="follow-list-dialog post-likes-dialog";
   const head=document.createElement("div");head.className="follow-list-head";
@@ -862,7 +862,7 @@ async function showPostLikesList(postId){
   const body=document.createElement("div");body.className="follow-list-body";body.textContent="Loading…";dialog.append(body);
   document.body.append(dialog);dialog.addEventListener("close",()=>dialog.remove(),{once:true});dialog.showModal();
   try{
-    const likes=await getDocs(query(collection(db,"postLikes"),where("postId","==",postId),limit(500)));
+    const likes=await getDocs(query(collection(db,"postLikes"),where("postId","==",postId),where("postUid","==",postUid),limit(500)));
     body.replaceChildren();
     if(likes.empty){const empty=document.createElement("p");empty.className="follow-list-empty";empty.textContent="No likes yet.";body.append(empty);return;}
     const people=await Promise.all(likes.docs.map(async likeDoc=>{
@@ -888,7 +888,7 @@ async function getPostEngagement(postId,postUid){
   const user=auth?.currentUser;if(!user)return {liked:false,count:0};
   const [own,all]=await Promise.all([
     getDoc(doc(db,"postLikes",postId+"_"+user.uid)),
-    getDocs(query(collection(db,"postLikes"),where("postId","==",postId),limit(500)))
+    getDocs(query(collection(db,"postLikes"),where("postId","==",postId),where("postUid","==",postUid),limit(500)))
   ]);
   return {liked:own.exists(),count:all.size};
 }
@@ -922,11 +922,11 @@ async function loadPostEngagement(post,root){
   list.replaceChildren();status.textContent="Loading likes and comments…";
   try{
     const [likesSnap,commentsSnap,ownLike]=await Promise.all([
-      getDocs(query(collection(db,"postLikes"),where("postId","==",post.id),limit(500))),
-      getDocs(query(collection(db,"postComments"),where("postId","==",post.id),limit(100))),
+      getDocs(query(collection(db,"postLikes"),where("postId","==",post.id),where("postUid","==",post.uid),limit(500))),
+      getDocs(query(collection(db,"postComments"),where("postId","==",post.id),where("postUid","==",post.uid),limit(100))),
       getDoc(doc(db,"postLikes",post.id+"_"+auth.currentUser.uid))
     ]);
-    likeCount.textContent=likesSnap.size+" likes";likeCount.onclick=()=>showPostLikesList(post.id);
+    likeCount.textContent=likesSnap.size+" likes";likeCount.onclick=()=>showPostLikesList(post.id,post.uid);
     likeButton.classList.toggle("liked",ownLike.exists());likeButton.setAttribute("aria-pressed",String(ownLike.exists()));
     likeButton.innerHTML=(ownLike.exists()?"♥":"♡")+" <span>"+(ownLike.exists()?"Liked":"Like")+"</span>";
     list.replaceChildren();
@@ -975,7 +975,7 @@ function renderPosts(docs){
     const postForDetail={id:originalId,...originalData};
     like.addEventListener("click",()=>togglePostLike(originalId,authorUid,like,likeCount));
     comment.addEventListener("click",()=>openPostDetail(postForDetail,false));
-    likeCount.addEventListener("click",()=>showPostLikesList(originalId));
+    likeCount.addEventListener("click",()=>showPostLikesList(originalId,authorUid));
     refreshPostLikeButton(originalId,authorUid,like,likeCount);
     if(!isRepost&&auth?.currentUser?.uid!==data.uid)repost.addEventListener("click",()=>createPostRepost(originalId,originalData,repost));
     else if(isRepost){repost.disabled=true;repost.textContent="⟳ Reposted";}
