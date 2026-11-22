@@ -834,3 +834,5 @@ button.gramora-story-tool{cursor:pointer}
 .gramora-story-editor #storyCreateStatus{position:static;margin:0 16px 8px;min-height:18px;text-align:center;color:#fff}
 @media(max-height:720px){.gramora-story-stage{padding-top:8px;padding-bottom:4px}.gramora-story-editor #storyText{min-height:110px;padding-block:12px}.gramora-story-tools{padding-bottom:10px}.gramora-story-style-strip{padding:5px 0 9px}}
 @media(prefers-reduced-motion:reduce){.gramora-story-editor *, .gramora-music-sheet *{transition:none!important;animation:none!important}}
+
+.gramora-story-editor .story-viewer-audio{width:calc(100% - 32px);margin:10px 16px;border-radius:14px;accent-color:#8d62ed}
