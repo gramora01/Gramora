@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=104">
+  <link rel="stylesheet" href="style.css?v=105">
   <link rel="stylesheet" href="auth.css?v=62">
 </head>
 <body>
@@ -136,7 +136,14 @@
     </div>
     <div class="gramora-viewer-bottom">
       <section id="storyViewerViews" class="story-viewers" hidden><button id="storyViewerViewToggle" type="button">Viewers · 0</button><div id="storyViewerViewList" class="story-viewer-view-list" hidden></div></section>
-      <div class="gramora-viewer-reply-row"><form id="storyReplyForm" class="story-reply-form"><input id="storyReplyInput" maxlength="300" placeholder="Reply to story…" autocomplete="off" required><button type="submit" aria-label="Send reply">➤</button></form><button id="storyViewerLike" class="story-like-button" type="button" aria-pressed="false" aria-label="Like story">♡</button><span class="story-like-count"><b id="storyViewerLikeCount">0</b></span></div>
+      <div id="storyOwnerActions" class="gramora-story-owner-actions" hidden>
+        <button type="button" data-story-owner-action="activity" aria-label="Activity and viewers"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.7" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>Activity</span></button>
+        <button type="button" data-story-owner-action="highlight" aria-label="Add to highlight"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg><span>Highlight</span></button>
+        <button type="button" data-story-owner-action="share" aria-label="Share story"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m0 0L7 8m5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Share</span></button>
+        <button type="button" data-story-owner-action="more" aria-label="More story options"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></svg><span>More</span></button>
+      </div>
+      <div id="storyOwnerMenu" class="gramora-story-owner-menu" hidden><button type="button" data-story-menu-action="edit">Edit story</button><button type="button" data-story-menu-action="delete">Delete story</button></div>
+      <div class="gramora-viewer-reply-row"><form id="storyReplyForm" class="story-reply-form"><input id="storyReplyInput" maxlength="300" placeholder="Reply to story…" autocomplete="off" required><button type="submit" aria-label="Send reply"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 21 3l-7.5 18-3-7.5L3 11.5Zm7.5 2L21 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form><button id="storyViewerLike" class="story-like-button" type="button" aria-pressed="false" aria-label="Like story"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.8c0 5.1-8.8 10.2-8.8 10.2S3.2 13.9 3.2 8.8A4.6 4.6 0 0 1 12 6.5a4.6 4.6 0 0 1 8.8 2.3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button><span class="story-like-count"><b id="storyViewerLikeCount">0</b></span></div>
       <p id="storyReplyStatus" class="gramora-viewer-status" role="status"></p>
       <div id="storyReplyList" class="story-reply-list" hidden></div>
     </div>
@@ -198,7 +205,7 @@
     </section>
   </div>
   <script src="script.js?v=71"></script>
-  <script type="module" src="auth.js?v=152"></script>
+  <script type="module" src="auth.js?v=153"></script>
   <script>
     // Startup failsafe: never leave GRAMORA hidden behind an endless loading state.
     (() => {
