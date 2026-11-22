@@ -851,7 +851,9 @@ storyForm?.addEventListener("submit",async event=>{
   const songTitle=document.getElementById("storySongTitle").value.trim();
   const songArtist=document.getElementById("storySongArtist").value.trim();
   const songUrl=document.getElementById("storySongUrl").value.trim();
-  const previewUrl=storyPreviewInput?.value.trim()||"";\n  const songArtwork=document.getElementById("storySongArtwork").value.trim();\n  const songStart=Number(document.getElementById("storySongStart").value||0);
+  const previewUrl=storyPreviewInput?.value.trim()||"";
+  const songArtwork=document.getElementById("storySongArtwork").value.trim();
+  const songStart=Number(document.getElementById("storySongStart").value||0);
   if(!auth?.currentUser){status.textContent="Story share karne ke liye login karein.";return;}
   if(!text){status.textContent="Pehle apni text story likhein.";return;}
   if(songUrl&&!/^https:\/\/(open\.spotify\.com|music\.apple\.com|music\.youtube\.com|www\.youtube\.com|youtu\.be)\//i.test(songUrl)){
