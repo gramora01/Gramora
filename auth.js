@@ -901,7 +901,31 @@ storyReplyForm?.addEventListener("submit",async event=>{
       text,createdAt:serverTimestamp()
     });
     await createGramoraNotification(story.data().uid,"story_reply","replied to your story: "+text.slice(0,90),{storyId});
-    input.value="";button.hidden=true;status.textContent="Reply bhej diya!";
+    let chatSynced=false;
+    try{
+      const ownerUid=story.data().uid;
+      const blockStatus=await getBlockStatus(user.uid,ownerUid);
+      if(!blockStatus.blockedByMe&&!blockStatus.blockedMe){
+        const conversationsSnap=await getDocs(query(collection(db,"conversations"),where("participantUids","array-contains",user.uid)));
+        const existingConversation=conversationsSnap.docs.find(item=>(item.data().participantUids||[]).includes(ownerUid));
+        let conversationRef;
+        if(existingConversation)conversationRef=existingConversation.ref;
+        else conversationRef=await addDoc(collection(db,"conversations"),{
+          participantUids:[user.uid,ownerUid],createdBy:user.uid,createdAt:serverTimestamp(),
+          updatedAt:serverTimestamp(),lastMessage:"",lastMessageAt:serverTimestamp(),lastMessageSenderUid:user.uid
+        });
+        const chatText="↪ Story reply: "+text;
+        await addDoc(collection(db,"conversations",conversationRef.id,"messages"),{
+          senderUid:user.uid,text:chatText,type:"text",status:"sent",createdAt:serverTimestamp()
+        });
+        await updateDoc(conversationRef,{
+          lastMessage:chatText,lastMessageAt:serverTimestamp(),lastMessageSenderUid:user.uid,updatedAt:serverTimestamp()
+        });
+        chatSynced=true;
+      }
+    }catch(chatError){console.error("Story reply chat sync failed:",chatError);}
+    input.value="";button.hidden=true;
+    status.textContent=chatSynced?"Reply sent! It also appears in your chat.":"Reply sent! Notification delivered; chat could not be synced.";
     await loadStoryEngagement(storyId,story.data());
   }catch(error){console.error("Story reply failed:",error);status.textContent="Reply nahi bhej paye. Firestore Rules check karein.";}
   finally{button.disabled=false;}
