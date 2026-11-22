@@ -35,6 +35,7 @@ function rememberAccount(user, appName){
   if(!user)return;
   const record={uid:user.uid,email:user.email||"",displayName:user.displayName||"",appName};
   savedAccounts=[record,...savedAccounts.filter(x=>x.uid!==user.uid)];
+  try{localStorage.setItem("gramoraActiveAccountUid",user.uid);}catch(error){}
   saveAccountList();
   renderAccountSwitcher();
 }
@@ -126,6 +127,7 @@ function renderAccountSwitcher(){
     button.addEventListener("click",async()=>{
       try{
         const instance=record.appName==="[DEFAULT]"?{app,auth:getAuth(app),db:getFirestore(app)}:getAccountInstance(record.uid);
+        localStorage.setItem("gramoraActiveAccountUid",record.uid);
         activateAccount(instance);
         document.getElementById("settingsDialog")?.close();
       }catch(error){console.error(error);alert("Account switch nahi ho paya. Dobara try karein.");}
@@ -388,8 +390,14 @@ document.getElementById("forgotPassword").addEventListener("click",async()=>{
 });
 
 
-if(auth) activateAccount({app,auth,db});
-else { document.body.classList.remove("auth-pending"); gate.hidden=false; document.body.classList.add("auth-required"); }
+if(auth){
+  const preferredUid=(()=>{try{return localStorage.getItem("gramoraActiveAccountUid")||"";}catch(error){return "";}})();
+  const preferredRecord=savedAccounts.find(record=>record.uid===preferredUid);
+  const startupInstance=preferredRecord
+    ? (preferredRecord.appName==="[DEFAULT]"?{app,auth:getAuth(app),db:getFirestore(app)}:getAccountInstance(preferredRecord.uid))
+    : {app,auth,db};
+  activateAccount(startupInstance);
+}else { document.body.classList.remove("auth-pending"); gate.hidden=false; document.body.classList.add("auth-required"); }
 
 
 let activeStoriesUnsubscribe=null;
@@ -586,7 +594,6 @@ function openStoryViewer(docs,id){
   dialog.dataset.storyId=id;
   const content=document.getElementById("storyViewerText");
   const byline=document.getElementById("storyViewerByline");
-  const song=document.getElementById("storyViewerSong");
   const deleteButton=document.getElementById("storyViewerDelete");
   const isOwnStory=data.uid===auth?.currentUser?.uid&&!dialog._highlightStories?.length;
   const ownerActions=document.getElementById("storyOwnerActions");
@@ -617,16 +624,37 @@ function openStoryViewer(docs,id){
   renderStoryViewerProgress();
   markStorySeen(id);
   recordStoryView(id,data);
-  song.replaceChildren();
   const audio=document.getElementById("storyViewerAudio");
   if(audio){audio.pause();audio.removeAttribute("src");audio.load();audio.hidden=true;}
-  if(data.songTitle){
-    const sticker=document.createElement("div");sticker.className="gramora-story-music-sticker";if(data.songArtwork){const cover=document.createElement("img");cover.src=data.songArtwork;cover.alt="";sticker.append(cover);}const title=document.createElement("span");title.textContent="♫ "+data.songTitle+(data.songArtist?" — "+data.songArtist:"");sticker.append(title);song.append(sticker);
-    if(data.previewUrl&&audio){
-      audio.src=data.previewUrl;audio.hidden=false;audio.controls=true;audio.currentTime=Number(data.songStart||0);audio.ontimeupdate=()=>{if(audio.currentTime>=Number(data.songStart||0)+15)audio.pause();};audio.play().catch(()=>{audio.controls=true;});
-    }else if(data.songUrl){
-      const link=document.createElement("a");link.className="story-song-link";link.textContent="Open song ↗";
-      link.href=data.songUrl;link.target="_blank";link.rel="noopener noreferrer";song.append(link);
+  const track=document.getElementById("storyViewerTrack");
+  if(track){
+    track.replaceChildren();
+    track.hidden=!data.songTitle;
+    if(data.songTitle){
+      const icon=document.createElement("span");icon.className="gramora-story-track-icon";icon.textContent="♫";
+      const details=document.createElement("span");details.className="gramora-story-track-details";
+      const label=document.createElement("span");label.className="gramora-story-track-title";label.textContent=data.songTitle+(data.songArtist?" · "+data.songArtist:"");
+      const progress=document.createElement("span");progress.className="gramora-story-track-progress";
+      const fill=document.createElement("i");fill.className="gramora-story-track-progress-fill";progress.append(fill);
+      details.append(label,progress);track.append(icon,details);
+      if(data.previewUrl&&audio){
+        audio.src=data.previewUrl;audio.hidden=false;audio.controls=false;
+        const startAt=Math.max(0,Number(data.songStart||0));
+        audio.ontimeupdate=()=>{
+          const elapsed=Math.max(0,audio.currentTime-startAt);
+          fill.style.width=Math.min(100,elapsed/15*100)+"%";
+          if(elapsed>=15)audio.pause();
+        };
+        audio.onloadedmetadata=()=>{try{audio.currentTime=startAt;}catch(error){}};
+      }else if(data.songUrl){
+        label.title="Tap to open song";label.style.textDecoration="underline";label.style.cursor="pointer";
+        label.addEventListener("click",()=>window.open(data.songUrl,"_blank","noopener"));
+      }
+      getStoryProfile(data.uid).then(async profile=>{
+        const username=await getUsernameForUid(data.uid,profile);
+        const name=document.getElementById("storyViewerName");
+        if(name&&dialog.dataset.storyId===id&&username)name.textContent="@"+username;
+      });
     }
   }
   const editStoryButton=document.getElementById("storyViewerEdit");
@@ -690,7 +718,11 @@ async function showStoryPeopleList(storyId,type){
       const info=document.createElement("span");info.className="follow-person-info";
       const name=document.createElement("strong");name.textContent=person.name;
       const username=document.createElement("small");username.textContent="@"+(person.username||"username-not-set");
-      info.append(name,username);open.append(avatar,info);open.addEventListener("click",()=>{dialog.close();openPersonProfile(person.uid);});row.append(open);body.append(row);
+      info.append(name,username);open.append(avatar,info);open.addEventListener("click",async()=>{
+        dialog.close();
+        document.getElementById("storyViewerDialog")?.close();
+        await openPersonProfile(person.uid);
+      });row.append(open);body.append(row);
     });
   }catch(error){console.error("Story people list failed:",error);body.textContent="List load nahi hui. Firestore Rules check karein.";}
 }
@@ -2481,9 +2513,13 @@ document.getElementById("settingsLogout")?.addEventListener("click",async()=>{
     saveAccountList();
     const next=savedAccounts[0];
     if(next){
+      localStorage.setItem("gramoraActiveAccountUid",next.uid);
       const instance=next.appName==="[DEFAULT]"?{app,auth:getAuth(app),db:getFirestore(app)}:getAccountInstance(next.uid);
       activateAccount(instance);
-    }else{gate.hidden=false;}
+    }else{
+      localStorage.removeItem("gramoraActiveAccountUid");
+      gate.hidden=false;
+    }
     renderAccountSwitcher();
     settingsDialog.close();
   }catch(error){document.getElementById("settingsStatus").textContent=authError(error.code);}
