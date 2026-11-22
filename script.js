@@ -39,6 +39,7 @@ function showPlaceholder(view,title){
       .gramora-inbox-search input::placeholder{color:var(--muted,#9ca3af)}
       .gramora-inbox-search input{cursor:text}
       .gramora-inbox-search:focus-within{border-color:#e879a6;box-shadow:0 0 0 3px rgba(232,121,166,.12)}
+      .gramora-conversation-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}.gramora-conversation{width:100%;display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line,#30323b);border-radius:14px;background:var(--surface,#171922);color:var(--text,#f5f5f7);text-align:left;cursor:pointer}.gramora-conversation-avatar{width:48px;height:48px;flex:0 0 48px;display:grid;place-items:center;overflow:hidden;border-radius:50%;background:linear-gradient(135deg,#d85c9a,#8b68dc);color:white;font-weight:800}.gramora-conversation-avatar img{width:100%;height:100%;object-fit:cover}.gramora-conversation-details{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}.gramora-conversation-details strong,.gramora-conversation-details small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gramora-conversation-details strong{font-size:14px}.gramora-conversation-details small{font-size:12px;color:var(--muted,#9ca3af)}.gramora-conversation-arrow{font-size:26px;color:var(--muted,#9ca3af)}.gramora-conversation[hidden]{display:none}
       .gramora-inbox-empty{box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:42vh;padding:30px 20px;text-align:center}
       .gramora-inbox-empty-icon{box-sizing:border-box;display:grid;place-items:center;width:82px;height:82px;margin-bottom:19px;border:1.5px solid var(--line,#3a3d48);border-radius:50%;background:var(--surface,#171922);font-size:35px;color:#e879a6}
       .gramora-inbox-empty h3{margin:0 0 9px;color:var(--text,#f5f5f7);font-size:17px;font-weight:700}
@@ -60,11 +61,12 @@ function showPlaceholder(view,title){
     const searchIcon=document.createElement("span");searchIcon.textContent="⌕";searchIcon.setAttribute("aria-hidden","true");
     const search=document.createElement("input");search.type="search";search.placeholder="Search conversations";search.setAttribute("aria-label","Search conversations");
     searchWrap.append(searchIcon,search);page.append(searchWrap);
+    const conversationList=document.createElement("div");conversationList.className="gramora-conversation-list";page.append(conversationList);
     const empty=document.createElement("div");empty.className="gramora-inbox-empty";
     const icon=document.createElement("div");icon.className="gramora-inbox-empty-icon";
     icon.innerHTML='<svg viewBox="0 0 48 48" width="42" height="42" fill="none" aria-hidden="true"><path d="M8 11.5A5.5 5.5 0 0 1 13.5 6h21A5.5 5.5 0 0 1 40 11.5v16a5.5 5.5 0 0 1-5.5 5.5H22l-9.5 7v-7.4A5.5 5.5 0 0 1 8 27.5v-16Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="m17 19 7 5 7-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M36.5 3.5v7M33 7h7" stroke="#e879a6" stroke-width="2.4" stroke-linecap="round"/></svg>';
     const emptyTitle=document.createElement("h3");emptyTitle.textContent="Your messages will appear here";
-    const emptyText=document.createElement("p");emptyText.textContent="Your private chats are being set up. Soon you’ll be able to message people directly.";
+    const emptyText=document.createElement("p");emptyText.textContent="When you message someone, your conversation will appear here.";
     empty.append(icon,emptyTitle,emptyText);page.append(empty);feed.append(page);
     search.addEventListener("input",()=>{
       const query=search.value.trim().toLowerCase();
@@ -77,7 +79,7 @@ function showPlaceholder(view,title){
       }else{
         empty.hidden=false;
         emptyTitle.textContent=query?"No conversations found":"Your messages will appear here";
-        emptyText.textContent=query?"There are no chats to match this search yet.":"Your private chats are being set up. Soon you’ll be able to message people directly.";
+        emptyText.textContent=query?"There are no chats to match this search yet.":"When you message someone, your conversation will appear here.";
       }
     });
     return;
