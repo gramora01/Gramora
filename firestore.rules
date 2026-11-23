@@ -286,8 +286,7 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.originalPostId is string
         && request.resource.data.originalUid is string
-        // Reposting your own post and any post visible to the current user is allowed.
-        && canViewUserContent(request.resource.data.originalUid)
+        // Any signed-in user may create a repost record; read rules still protect private content.
         && repostId == request.resource.data.originalPostId + '_' + request.auth.uid
         && request.resource.data.originalText is string
         && request.resource.data.originalText.size() <= 2000
@@ -308,7 +307,6 @@ service cloud.firestore {
         && request.resource.data.originalPostId is string
         && request.resource.data.originalUid is string
         && request.resource.data.uid is string
-        && canViewUserContent(request.resource.data.originalUid)
         && repostId == request.resource.data.originalPostId + '_' + request.resource.data.uid
         && (
           request.resource.data.uid == request.auth.uid
