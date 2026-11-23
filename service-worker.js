@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v105";
+const CACHE_NAME = "gramora-shell-v105-repost-open-permission";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=146",
   "./script.js?v=74",
-  "./auth.js?v=220",
+  "./auth.js?v=221",
   "./auth.css?v=62",
   "./story-creator.css?v=3",
   "./story-creator.js?v=3",
