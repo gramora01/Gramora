@@ -8,7 +8,7 @@ function applyTheme(theme){
   const useLight=theme==="light";
   document.body.classList.toggle("light",useLight);
   if(themeButton){
-    themeButton.textContent=useLight?"☾":"☼";
+    // Shared SVG icon scanner updates the theme icon from the body class.
     themeButton.setAttribute("aria-label",useLight?"Switch to dark theme":"Switch to light theme");
     themeButton.setAttribute("title",useLight?"Switch to dark theme":"Switch to light theme");
   }
@@ -116,5 +116,5 @@ document.querySelectorAll(".nav").forEach(button=>button.addEventListener("click
 }));
 document.addEventListener("click",event=>{
   const like=event.target.closest(".like");
-  if(like){like.classList.toggle("liked");like.innerHTML=like.classList.contains("liked")?"♥ <span>Liked</span>":"♡ <span>Like</span>";}
+  if(like){like.classList.toggle("liked");like.innerHTML="<span>"+(like.classList.contains("liked")?"Liked":"Like")+"</span>";}
 });
