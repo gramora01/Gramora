@@ -1562,3 +1562,27 @@ body.public-profile-open .feed{
   body.public-profile-open .main-content{top:58px!important;bottom:0!important}
   body.public-profile-open .feed{max-width:none!important;padding-bottom:24px!important}
 }
+
+
+/* Light theme colors for the full-screen notifications panel and live notification popup. */
+body.light .gramora-notifications-dialog{
+  background:#fff!important;color:#202127!important;border-color:#e4e5e9!important;
+}
+body.light .gramora-notifications-head{
+  background:#fff!important;color:#202127!important;border-bottom-color:#e4e5e9!important;
+}
+body.light .gramora-notifications-list{
+  background:#fff!important;color:#202127!important;
+}
+body.light .gramora-notification{
+  color:#292b35!important;background:transparent!important;
+}
+body.light .gramora-notification:hover{background:#f2f3f7!important}
+body.light .gramora-notification.unread{background:#f0efff!important}
+body.light .gramora-notifications-head button{
+  background:#f0f1f5!important;color:#292b35!important;
+}
+body.light .gramora-live-toast{
+  background:rgba(255,255,255,.97)!important;color:#202127!important;
+  border-color:#e1e3e9!important;box-shadow:0 12px 38px rgba(25,35,60,.16)!important;
+}
