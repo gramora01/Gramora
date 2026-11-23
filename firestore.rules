@@ -281,7 +281,12 @@ service cloud.firestore {
         && repostId == request.resource.data.originalPostId + '_' + request.resource.data.uid
         && (
           request.resource.data.uid == request.auth.uid
-          || request.resource.data.originalUid == request.auth.uid
+          || (
+            request.resource.data.originalUid == request.auth.uid
+            && exists(/databases/$(database)/documents/reposts/$(repostId))
+            && get(/databases/$(database)/documents/reposts/$(repostId)).data.originalUid == request.auth.uid
+            && get(/databases/$(database)/documents/reposts/$(repostId)).data.uid == request.resource.data.uid
+          )
         )
         && request.resource.data.keys().hasOnly(['uid','displayName','username','photoURL','originalPostId','originalUid','originalDisplayName','originalUsername','originalPhotoURL','originalText','originalBackground','originalCreatedAt','createdAt']);
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
