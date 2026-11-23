@@ -1320,7 +1320,7 @@ body.public-profile-open .ig-profile-repost-label{display:block;padding:3px 4px 
 
 
 /* Public profile redesign: compact Instagram-style identity, two tabs and portrait media grid. */
-body.public-profile-open .topbar{display:none!important}
+body.public-profile-open .topbar{display:flex!important}
 body.public-profile-open .public-profile-page-head{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:8px;min-height:52px;margin:0;padding:0 12px;border-bottom:1px solid var(--line);color:var(--text)}
 body.public-profile-open .public-profile-page-head strong{min-width:0;text-align:center;font-size:16px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 body.public-profile-open .public-profile-back,
