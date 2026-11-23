@@ -7,8 +7,20 @@
 #settingsBtn .gramora-ui-icon{width:22px;height:22px}
 #themeBtn .gramora-ui-icon{width:21px;height:21px}
 .post-actions .gramora-ui-icon,.post-detail-like .gramora-ui-icon{width:22px;height:22px;vertical-align:-.28em}
-.post-actions button,.post-detail-like{display:inline-flex;align-items:center;gap:6px}
 .post-actions .like.liked .gramora-ui-icon,.post-detail-like.liked .gramora-ui-icon{fill:currentColor;stroke:currentColor}
 .ig-profile-tabs .gramora-ui-icon{width:21px;height:21px;vertical-align:middle}
 .close-btn .gramora-ui-icon,.follow-list-close .gramora-ui-icon{width:21px;height:21px;vertical-align:middle}
 .gramora-chat-back .gramora-ui-icon,.profile-edit-back .gramora-ui-icon{width:23px;height:23px;vertical-align:middle}
+
+/* Layout stability: icons must never resize or reposition their parent controls. */
+.gramora-ui-icon{box-sizing:border-box;display:inline-block;flex:0 0 22px;width:22px;height:22px;max-width:22px;max-height:22px;vertical-align:middle}
+.nav-icon{box-sizing:border-box;display:inline-flex;flex:0 0 24px;width:24px;height:26px;align-items:center;justify-content:center;line-height:1}
+.nav-icon .gramora-ui-icon{display:block;flex:0 0 23px;width:23px;height:23px}
+.mobile-nav .nav-icon{flex:0 0 26px!important;width:26px!important;height:28px!important;display:grid!important;place-items:center!important}
+.mobile-nav .nav-icon .gramora-ui-icon{width:23px;height:23px}
+#topCreate,#notificationBtn,#settingsBtn,#themeBtn{box-sizing:border-box;display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;min-width:40px;min-height:40px}
+.post-actions{display:flex;align-items:center;flex-wrap:nowrap;gap:8px;min-height:38px}
+.post-actions button{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;gap:6px;min-height:34px;white-space:nowrap}
+.post-actions .gramora-ui-icon{flex:0 0 22px;width:22px;height:22px}
+.post-detail-engagement .post-detail-like{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.mobile-nav .nav{box-sizing:border-box}
