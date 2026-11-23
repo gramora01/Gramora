@@ -414,6 +414,20 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // PUBLIC POST SAVE COUNTS: count saves without exposing private saved-post lists.
+    match /postSaves/{saveId} {
+      allow read: if signedIn() && canViewUserContent(resource.data.postUid);
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.postId is string
+        && request.resource.data.postUid is string
+        && canViewUserContent(request.resource.data.postUid)
+        && saveId == request.resource.data.postId + '_' + request.auth.uid
+        && request.resource.data.keys().hasOnly(['postId','postUid','uid','createdAt']);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
     // SAVED POSTS: each user manages only their own saved-post references.
     match /savedPosts/{savedId} {
       // Allow checking the deterministic own-save document, even before it exists.
