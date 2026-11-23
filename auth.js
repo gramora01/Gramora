@@ -3034,10 +3034,9 @@ async function loadProfilePage(user){
         if(!posts.length){grid.innerHTML='<div class="ig-no-posts"><strong>▧</strong><b>Share your first post</b><span>When you share posts, they will appear on your profile.</span></div>';return;}
         posts.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).forEach(post=>{
           const wrap=document.createElement("div");wrap.className="ig-post-wrap";
-          const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.textContent=post.text||"";tile.style.background=post.background||POST_BACKGROUNDS[4];tile.addEventListener("click",()=>openPostDetail(post,true));
-          const edit=document.createElement("button");edit.type="button";edit.className="profile-edit-post";edit.textContent="Edit";edit.addEventListener("click",()=>openPostEditor(post));
-          const del=document.createElement("button");del.type="button";del.className="delete-post profile-delete-post";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(post.id,del,async()=>{const i=posts.findIndex(x=>x.id===post.id);if(i>=0)posts.splice(i,1);showTab("posts");}));
-          wrap.append(tile,edit,del);grid.append(wrap);
+          const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.textContent=post.text||"";tile.style.background=post.background||POST_BACKGROUNDS[4];
+          tile.addEventListener("click",()=>openPostDetail(post,true));
+          wrap.append(tile);grid.append(wrap);
         });
       }else if(tab==="reposts"){
         grid.innerHTML='<div class="ig-no-posts"><strong>⟳</strong><b>Loading reposts…</b></div>';
