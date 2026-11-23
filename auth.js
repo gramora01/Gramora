@@ -1291,21 +1291,33 @@ async function refreshPostSaveButton(postId,button,countNode){
     button.classList.toggle("saved",snap.exists());
     button.setAttribute("aria-pressed",String(snap.exists()));
     button.setAttribute("aria-label",snap.exists()?"Remove saved post":"Save post");
-    if(countNode?.isConnected){try{const all=await getDocs(query(collection(db,"savedPosts"),where("postId","==",postId),limit(500)));countNode.textContent=String(all.size);}catch(error){countNode.textContent="0";}}
+    if(countNode?.isConnected){
+      const all=await getDocs(query(collection(db,"postSaves"),where("postId","==",postId),where("postUid","==",button.dataset.postUid||""),limit(500)));
+      if(countNode.isConnected)countNode.textContent=String(all.size);
+    }
   }catch(error){console.warn("Saved post state unavailable:",error);}
 }
 async function togglePostSave(postId,button,countNode){
   const user=auth?.currentUser;if(!user)return;
+  const wasSaved=button.classList.contains("saved"),oldCount=Number(countNode?.textContent)||0;
+  button.classList.toggle("saved",!wasSaved);button.setAttribute("aria-pressed",String(!wasSaved));
+  button.setAttribute("aria-label",wasSaved?"Save post":"Remove saved post");
+  if(countNode)countNode.textContent=String(Math.max(0,oldCount+(wasSaved?-1:1)));
   button.disabled=true;
   try{
-    const ref=doc(db,"savedPosts",postId+"_"+user.uid),snap=await getDoc(ref);
-    if(snap.exists())await deleteDoc(ref);
-    else await setDoc(ref,{postId,uid:user.uid,createdAt:serverTimestamp()});
-    await refreshPostSaveButton(postId,button,countNode);
-    if(activeView==="saved"&&snap.exists())await loadSavedPosts();
+    const ref=doc(db,"savedPosts",postId+"_"+user.uid),publicRef=doc(db,"postSaves",postId+"_"+user.uid);
+    if(wasSaved){await deleteDoc(ref);await deleteDoc(publicRef);}
+    else{
+      await setDoc(ref,{postId,uid:user.uid,createdAt:serverTimestamp()});
+      await setDoc(publicRef,{postId,postUid:button.dataset.postUid||"",uid:user.uid,createdAt:serverTimestamp()});
+    }
+    if(activeView==="saved"&&wasSaved)await loadSavedPosts();
   }catch(error){
+    button.classList.toggle("saved",wasSaved);button.setAttribute("aria-pressed",String(wasSaved));
+    button.setAttribute("aria-label",wasSaved?"Remove saved post":"Save post");
+    if(countNode)countNode.textContent=String(oldCount);
     console.error("Save post failed:",error);
-    alert(error.code==="permission-denied"?"Saved Posts ke liye latest Firestore Rules publish karein.":"Post save nahi hui. Dobara try karein.");
+    alert(error.code==="permission-denied"?"Post saves count enable karne ke liye latest Firestore Rules publish karein.":"Post save nahi hui. Dobara try karein.");
   }finally{button.disabled=false;}
 }
 async function loadSavedPosts(){
@@ -1389,6 +1401,10 @@ async function refreshPostLikeButton(postId,postUid,button,countNode){
 }
 async function togglePostLike(postId,postUid,button,countNode){
   const user=auth?.currentUser;if(!user)return;
+  const wasLiked=button.classList.contains("liked"),oldCount=Number(countNode?.textContent)||0;
+  button.classList.toggle("liked",!wasLiked);button.setAttribute("aria-pressed",String(!wasLiked));
+  button.setAttribute("aria-label",wasLiked?"Like post":"Unlike post");
+  if(countNode)countNode.textContent=String(Math.max(0,oldCount+(wasLiked?-1:1)));
   button.disabled=true;
   try{
     const ref=doc(db,"postLikes",postId+"_"+user.uid),snap=await getDoc(ref);
@@ -1399,8 +1415,12 @@ async function togglePostLike(postId,postUid,button,countNode){
       await createGramoraNotification(postUid,"post_like","liked your post.",{postId});
     }
     await refreshPostLikeButton(postId,postUid,button,countNode);
-  }catch(error){console.error("Post like failed:",error);alert(error.code==="permission-denied"?"Publish the latest Firestore Rules to enable post likes.":"Could not update like. Please try again.");}
-  finally{button.disabled=false;}
+  }catch(error){
+    button.classList.toggle("liked",wasLiked);button.setAttribute("aria-pressed",String(wasLiked));
+    button.setAttribute("aria-label",wasLiked?"Unlike post":"Like post");
+    if(countNode)countNode.textContent=String(oldCount);
+    console.error("Post like failed:",error);alert(error.code==="permission-denied"?"Publish the latest Firestore Rules to enable post likes.":"Could not update like. Please try again.");
+  }finally{button.disabled=false;}
 }
 async function loadPostEngagement(post,root){
   const likeCount=root.querySelector("#postDetailLikeCount"),likeButton=root.querySelector("#postDetailLike"),list=root.querySelector("#postDetailComments"),status=root.querySelector("#postCommentStatus");
@@ -1459,8 +1479,8 @@ function renderPosts(docs){
     const postForDetail={id:originalId,...originalData};
     const likeCount=like.querySelector(".post-action-count"),commentCount=comment.querySelector(".post-action-count"),repostCount=repost.querySelector(".post-action-count"),saveCount=save.querySelector(".post-action-count");
     like.setAttribute("aria-label","Like post");comment.setAttribute("aria-label","View comments");repost.setAttribute("aria-label","Repost");save.setAttribute("aria-label","Save post");
+    save.dataset.postUid=authorUid;
     save.addEventListener("click",()=>togglePostSave(originalId,save,saveCount));
-    refreshPostSaveButton(originalId,save,saveCount);
     like.addEventListener("click",()=>togglePostLike(originalId,authorUid,like,likeCount));
     comment.addEventListener("click",()=>openPostDetail(postForDetail,false));
     if(!isRepost&&auth?.currentUser?.uid!==data.uid)repost.addEventListener("click",()=>createPostRepost(originalId,originalData,repost));
@@ -1475,6 +1495,7 @@ function renderPosts(docs){
     feed.append(article);
     // Load like state only after the card is attached; otherwise a fast cached read can leave “Loading likes…” stuck.
     refreshPostLikeButton(originalId,authorUid,like,likeCount);
+    refreshPostSaveButton(originalId,save,saveCount);
     refreshPostActionCounts(originalId,authorUid,{comment:commentCount,repost:repostCount,save:saveCount});
     // Resolve the latest profile details instead of relying on old names saved in post documents.
     const profileUids=[authorUid,isRepost?data.uid:null].filter(Boolean);
@@ -1505,7 +1526,7 @@ async function refreshPostActionCounts(postId,postUid,nodes){
   const jobs=[
     ["comment",query(collection(db,"postComments"),where("postId","==",postId),where("postUid","==",postUid),limit(500))],
     ["repost",query(collection(db,"reposts"),where("originalPostId","==",postId),limit(500))],
-    ["save",query(collection(db,"savedPosts"),where("postId","==",postId),limit(500))]
+    ["save",query(collection(db,"postSaves"),where("postId","==",postId),where("postUid","==",postUid),limit(500))]
   ];
   const results=await Promise.allSettled(jobs.map(([,q])=>getDocs(q)));
   results.forEach((result,index)=>{
