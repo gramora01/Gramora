@@ -1,4 +1,4 @@
-const CACHE_NAME = "gramora-shell-v46";
+const CACHE_NAME = "gramora-shell-v47";
 const APP_SHELL = [
   "./",
   "./index.html",
