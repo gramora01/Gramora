@@ -1242,7 +1242,18 @@ async function getVisibleContentUids(user){
   const followed=new Set(followsSnap.docs.map(item=>item.data().followingUid));
   return [...new Set([user.uid,...profilesSnap.docs.filter(item=>item.id===user.uid||item.data().isPrivate!==true||followed.has(item.id)).map(item=>item.id)])];
 }
+async function migrateOwnedRepostsToFeed(user){
+  if(!user?.uid)return;
+  try{
+    const owned=await getDocs(query(collection(db,"reposts"),where("originalUid","==",user.uid),limit(500)));
+    for(const item of owned.docs){
+      const target=doc(db,"repostFeed",item.id);
+      await setDoc(target,item.data());
+    }
+  }catch(error){console.warn("Legacy repost feed migration is waiting for the latest Firestore Rules:",error.code||error);}
+}
 function startPostsFeed(user){
+  migrateOwnedRepostsToFeed(user);
   if(activeFeedUnsubscribe)activeFeedUnsubscribe();
   let posts=[],reposts=[],ready=0,total=0,offs=[],cancelled=false,completed=false;
   const feedLoadTimer=setTimeout(()=>{
@@ -1263,7 +1274,7 @@ function startPostsFeed(user){
     if(!total){completed=true;clearTimeout(feedLoadTimer);renderPosts([]);return;}
     uids.forEach(uid=>{
       offs.push(onSnapshot(query(collection(db,"posts"),where("uid","==",uid),limit(100)),snap=>{posts=posts.filter(item=>item.data().uid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.warn("A profile's posts are not visible:",error.code||error);ready++;renderCombined();}));
-      offs.push(onSnapshot(query(collection(db,"reposts"),where("originalUid","==",uid),limit(100)),snap=>{reposts=reposts.filter(item=>item.data().originalUid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.warn("Reposts feed unavailable:",error);ready++;renderCombined();}));
+      offs.push(onSnapshot(query(collection(db,"repostFeed"),where("originalUid","==",uid),limit(100)),snap=>{reposts=reposts.filter(item=>item.data().originalUid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.warn("Reposts feed unavailable:",error);ready++;renderCombined();}));
     });
   }).catch(error=>{console.error(error);completed=true;clearTimeout(feedLoadTimer);if(activeView==="home")showFeedRetryMessage("Could not prepare your feed ("+(error.code||"network error")+"). Check your connection or Firestore Rules, then retry.",user);});
 }
@@ -1410,7 +1421,7 @@ async function showPostRepostsList(postId,postUid){
   const body=document.createElement("div");body.className="follow-list-body";body.textContent="Loading…";dialog.append(body);
   document.body.append(dialog);dialog.addEventListener("close",()=>dialog.remove(),{once:true});dialog.showModal();
   try{
-    const reposts=await getDocs(query(collection(db,"repostLists"),where("originalPostId","==",postId),where("originalUid","==",viewer.uid),limit(500)));
+    const reposts=await getDocs(query(collection(db,"reposts"),where("originalPostId","==",postId),where("originalUid","==",viewer.uid),limit(500)));
     body.replaceChildren();
     if(reposts.empty){const empty=document.createElement("p");empty.className="follow-list-empty";empty.textContent="No reposts yet.";body.append(empty);return;}
     const people=await Promise.all(reposts.docs.map(async repostDoc=>{
@@ -1680,7 +1691,7 @@ function renderPosts(docs){
 async function refreshPostActionCounts(postId,postUid,nodes){
   const jobs=[
     ["comment",query(collection(db,"postComments"),where("postId","==",postId),where("postUid","==",postUid),limit(500))],
-    ["repost",query(collection(db,"reposts"),where("originalPostId","==",postId),where("originalUid","==",postUid),limit(500))],
+    ["repost",query(collection(db,"repostFeed"),where("originalPostId","==",postId),where("originalUid","==",postUid),limit(500))],
     ["save",query(collection(db,"postSaves"),where("postId","==",postId),where("postUid","==",postUid),limit(500))]
   ];
   const results=await Promise.allSettled(jobs.map(([,q])=>getDocs(q)));
@@ -1695,7 +1706,7 @@ async function refreshPostRepostButton(postId,postUid,button,countNode){
   try{
     const [own,all]=await Promise.all([
       getDoc(doc(db,"reposts",postId+"_"+user.uid)),
-      getDocs(query(collection(db,"reposts"),where("originalPostId","==",postId),where("originalUid","==",postUid),limit(500)))
+      getDocs(query(collection(db,"repostFeed"),where("originalPostId","==",postId),where("originalUid","==",postUid),limit(500)))
     ]);
     if(!button.isConnected)return;
     button.classList.toggle("reposted",own.exists());
@@ -1716,7 +1727,7 @@ function updateVisibleRepostButtons(postId,active,count){
 }
 async function createPostRepost(postId,original,button){
   const user=auth?.currentUser;if(!user||!button)return;
-  const repostId=postId+"_"+user.uid,ref=doc(db,"reposts",repostId),privateRef=doc(db,"repostLists",repostId);
+  const repostId=postId+"_"+user.uid,ref=doc(db,"reposts",repostId),feedRef=doc(db,"repostFeed",repostId);
   const countNode=button.querySelector(".post-action-count");
   const wasReposted=button.classList.contains("reposted");
   const oldCount=Number(countNode?.textContent)||0;
@@ -1731,10 +1742,10 @@ async function createPostRepost(postId,original,button){
     if(existing.exists()){
       if(wasReposted){
         await deleteDoc(ref);
-        await deleteDoc(privateRef).catch(error=>{if(error.code!=="not-found")throw error;});
+        await deleteDoc(feedRef).catch(error=>{if(error.code!=="not-found")throw error;});
       }else{
         const saved=existing.data();
-        await setDoc(privateRef,{...saved,createdAt:saved.createdAt||serverTimestamp()});
+        await setDoc(feedRef,saved);
       }
     }else{
       const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};
@@ -1754,9 +1765,9 @@ async function createPostRepost(postId,original,button){
         createdAt:serverTimestamp()
       };
       await setDoc(ref,repostData);
-      await setDoc(privateRef,repostData);
+      await setDoc(feedRef,repostData);
     }
-    const latest=await getDocs(query(collection(db,"reposts"),where("originalPostId","==",postId),where("originalUid","==",original.uid),limit(500)));
+    const latest=await getDocs(query(collection(db,"repostFeed"),where("originalPostId","==",postId),where("originalUid","==",original.uid),limit(500)));
     const ownNow=(await getDoc(ref)).exists();
     updateVisibleRepostButtons(postId,ownNow,latest.size);
   }catch(error){
@@ -2545,7 +2556,7 @@ async function getDocsForFeed(){
   try{
     const uids=await getVisibleContentUids(user),batches=await Promise.all(uids.flatMap(uid=>[
       getDocs(query(collection(db,"posts"),where("uid","==",uid),limit(100))),
-      getDocs(query(collection(db,"reposts"),where("originalUid","==",uid),limit(100)))
+      getDocs(query(collection(db,"repostFeed"),where("originalUid","==",uid),limit(100)))
     ]));
     const posts=[],reposts=[];
     batches.forEach((snap,index)=>{if(index%2===0)posts.push(...snap.docs);else reposts.push(...snap.docs.map(item=>({id:"repost_"+item.id,data:()=>({...item.data(),_isRepost:true,_repostId:item.id})})));});
