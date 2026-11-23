@@ -1228,3 +1228,14 @@ body.public-profile-open .feed{margin-top:0;padding:0 12px 90px}
 .public-profile-back:active{transform:scale(.94)}
 body.light .public-profile-back{background:#f0f1f6;color:#20212a}
 @media(max-width:680px){body.public-profile-open .main-content{padding:0 0 78px!important}body.public-profile-open .feed{padding:0 14px 90px}}
+
+
+/* Instagram-style compact post engagement row: icon + one count, no text labels */
+.post-actions{display:flex;align-items:center;gap:14px;flex-wrap:nowrap}
+.post-actions button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:0;padding:6px 2px!important;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.post-actions .gramora-ui-icon{width:21px;height:21px;flex:0 0 21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.post-actions .post-action-count{font-size:12px;line-height:1;font-weight:600;font-variant-numeric:tabular-nums}
+.post-actions button.reposted{color:#e1306c}
+.post-actions button:disabled{opacity:.65}
+.post-like-count{display:none!important}
+@media(max-width:680px){.post-actions{gap:15px}.post-actions button{padding:7px 1px!important}}
