@@ -286,7 +286,7 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.originalPostId is string
         && request.resource.data.originalUid is string
-        && request.resource.data.originalUid != request.auth.uid
+        // Reposting your own post and any post visible to the current user is allowed.
         && canViewUserContent(request.resource.data.originalUid)
         && repostId == request.resource.data.originalPostId + '_' + request.auth.uid
         && request.resource.data.originalText is string
