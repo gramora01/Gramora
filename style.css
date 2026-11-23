@@ -1586,3 +1586,50 @@ body.light .gramora-live-toast{
   background:rgba(255,255,255,.97)!important;color:#202127!important;
   border-color:#e1e3e9!important;box-shadow:0 12px 38px rgba(25,35,60,.16)!important;
 }
+
+
+/* Explore page — complete light-theme surfaces, search field and people results. */
+body.light .explore-page{
+  color:var(--text)!important;background:transparent!important;
+}
+body.light .explore-page h2,
+body.light .explore-recent-head b,
+body.light .explore-history-person .person-info b,
+body.light .people-results .person-info b{
+  color:#202127!important;
+}
+body.light .explore-page>p,
+body.light .explore-page .muted,
+body.light .explore-history-person .person-info small,
+body.light .people-results .person-info small{
+  color:#737782!important;
+}
+body.light .people-search-wrap{
+  background:#fff!important;border-color:#dfe1e8!important;
+  box-shadow:0 2px 9px rgba(25,35,60,.05);
+}
+body.light .people-search-wrap>span{color:#737782!important}
+body.light .explore-page .people-search-wrap input{
+  color:#202127!important;-webkit-text-fill-color:#202127!important;
+  caret-color:#5146d8!important;
+}
+body.light .explore-page .people-search-wrap input::placeholder{
+  color:#9296a1!important;-webkit-text-fill-color:#9296a1!important;
+}
+body.light .explore-recent-head button{color:#5146d8!important}
+body.light .explore-history-person{color:#292b35!important}
+body.light .explore-history-person .avatar,
+body.light .explore-page .person-result .avatar{
+  background:#e9eaf0!important;color:#424653!important;
+}
+body.light .explore-history-remove{color:#777c88!important}
+body.light .explore-history-remove:active{background:#eceef3!important}
+body.light .explore-page .person-result,
+body.light .people-results .person-result{
+  color:#292b35!important;background:#fff!important;border-color:#e4e5eb!important;
+}
+body.light .people-results .person-result:hover,
+body.light .people-results .person-result:active{
+  background:#f5f5fa!important;
+}
+body.light .explore-history-row{border-color:#e4e5eb!important}
