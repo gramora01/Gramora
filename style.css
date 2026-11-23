@@ -1247,3 +1247,8 @@ body.light .public-profile-back{background:#f0f1f6;color:#20212a}
 .post-actions .save.saved .gramora-ui-icon path{fill:#e1306c;stroke:#e1306c}
 body.light .post-actions .like.liked .gramora-ui-icon path,
 body.light .post-actions .save.saved .gramora-ui-icon path{fill:#e1306c;stroke:#e1306c}
+
+/* Keep post-like controls icon + numeric count only (never legacy Like/Liked text). */
+.post-actions .like,.post-detail-like{font-size:0!important}
+.post-actions .like .gramora-ui-icon,.post-detail-like .gramora-ui-icon{font-size:initial!important}
+.post-actions .like .post-action-count,.post-detail-like .post-action-count{display:inline-block!important;visibility:visible!important;font-size:13px!important;line-height:1!important}
