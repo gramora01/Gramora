@@ -2496,6 +2496,7 @@ async function loadPublicProfile(viewer,targetUid){
         }
       }catch(err){console.error("Follow action:",err);alert("Follow action failed. Check that the latest Firestore Rules are published.");}
     });
+    panel.querySelector(".public-add-person").addEventListener("click",()=>panel.querySelector(".public-follow")?.click());
     const grid=panel.querySelector(".ig-profile-grid");
     const publicTabs=panel.querySelectorAll("[data-public-profile-tab]");
     function renderPublicProfileItems(items,isRepostTab){
@@ -2509,29 +2510,17 @@ async function loadPublicProfile(viewer,targetUid){
         const raw=d.data(),isRepost=!!isRepostTab;
         const authorUid=isRepost?raw.originalUid:raw.uid;
         const originalId=isRepost?raw.originalPostId:d.id;
-        const post=isRepost?{id:originalId,uid:raw.originalUid,displayName:raw.originalDisplayName,username:raw.originalUsername,photoURL:raw.originalPhotoURL,text:raw.originalText,background:raw.originalBackground,createdAt:raw.originalCreatedAt}: {id:d.id,...raw};
+        const post=isRepost?{id:originalId,uid:raw.originalUid,displayName:raw.originalDisplayName,username:raw.originalUsername,photoURL:raw.originalPhotoURL,text:raw.originalText,background:raw.originalBackground,createdAt:raw.originalCreatedAt,views:raw.originalViews??raw.views??0,pinned:raw.originalPinned===true}:{id:d.id,...raw};
         const wrap=document.createElement("div");wrap.className="ig-post-wrap";
-        if(isRepost){const label=document.createElement("small");label.className="ig-profile-repost-label";label.textContent="↻ Reposted";wrap.append(label);}
-        const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.textContent=post.text||"";tile.style.background=post.background||POST_BACKGROUNDS[4];tile.addEventListener("click",()=>openPostDetail(post,false));wrap.append(tile);
-        const actions=document.createElement("div");actions.className="post-actions ig-profile-post-actions";
-        const like=document.createElement("button");like.className="like";like.type="button";like.dataset.likeCount="";like.dataset.postId=originalId;like.dataset.postUid=authorUid;
-        const comment=document.createElement("button");comment.className="post-comment-open";comment.type="button";comment.dataset.postId=originalId;comment.dataset.postUid=authorUid;comment.innerHTML='<span class="post-action-count"></span>';
-        const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.dataset.postId=originalId;repost.dataset.postUid=authorUid;repost.innerHTML='<span class="post-action-count"></span>';
-        const save=document.createElement("button");save.className="save";save.type="button";save.dataset.postUid=authorUid;save.innerHTML='<span class="post-action-count"></span>';
-        const likeCount=like.querySelector(".post-action-count"),commentCount=comment.querySelector(".post-action-count"),repostCount=repost.querySelector(".post-action-count"),saveCount=save.querySelector(".post-action-count");
-        like.setAttribute("aria-label","Like post");comment.setAttribute("aria-label","View comments");repost.setAttribute("aria-label","Repost");save.setAttribute("aria-label","Save post");
-        const likeHold=bindPostActionLongPress(like,()=>showPostLikesList(originalId,authorUid));
-        like.addEventListener("click",()=>{if(likeHold())return;togglePostLike(originalId,authorUid,like,likeCount);});
-        comment.addEventListener("click",()=>openPostDetail(post,false));
-        const repostHold=auth?.currentUser?.uid===authorUid?bindPostActionLongPress(repost,()=>showPostRepostsList(originalId,authorUid)):()=>false;
-        if(auth?.currentUser?.uid!==authorUid)repost.addEventListener("click",()=>{if(repostHold())return;createPostRepost(originalId,post,repost);});
-        else repost.setAttribute("aria-label","View reposts");
-        save.addEventListener("click",()=>togglePostSave(originalId,save,saveCount));
-        actions.append(like,comment,repost,save);wrap.append(actions);grid.append(wrap);
-        refreshPostLikeButton(originalId,authorUid,like,likeCount);
-        refreshPostSaveButton(originalId,save,saveCount);
-        refreshPostActionCounts(originalId,authorUid,{comment:commentCount,repost:repostCount,save:saveCount});
-        refreshPostRepostButton(originalId,authorUid,repost,repostCount);
+        const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.dataset.postId=originalId;tile.style.background=post.background||POST_BACKGROUNDS[4];
+        const copy=document.createElement("span");copy.className="ig-post-tile-copy";copy.textContent=post.text||"";
+        const viewBadge=document.createElement("span");viewBadge.className="ig-post-view-badge";
+        const eye=document.createElement("span");eye.className="ig-post-view-eye";
+        const viewCount=document.createElement("span");viewCount.className="ig-post-view-count";viewCount.dataset.postId=originalId;viewCount.textContent=formatPostViews(post.views);
+        viewBadge.append(eye,viewCount);tile.append(copy,viewBadge);
+        if(post.pinned===true||raw.pinned===true||raw.isPinned===true){const pin=document.createElement("span");pin.className="ig-post-pinned";pin.setAttribute("aria-label","Pinned post");tile.append(pin);}
+        tile.addEventListener("click",()=>openPostDetail(post,false));wrap.append(tile);grid.append(wrap);
+        if(isRepost&&raw.originalViews==null&&raw.views==null){getDoc(doc(db,"posts",originalId)).then(postSnap=>{if(postSnap.exists()&&viewCount.isConnected)viewCount.textContent=formatPostViews(postSnap.data().views||0);}).catch(error=>console.warn("Reposted post view count unavailable:",error));}
       });
     }
     function showPublicProfileTab(tab){
