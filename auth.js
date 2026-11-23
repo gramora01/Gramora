@@ -129,7 +129,7 @@ function renderAccountSwitcher(){
         const instance=record.appName==="[DEFAULT]"?{app,auth:getAuth(app),db:getFirestore(app)}:getAccountInstance(record.uid);
         localStorage.setItem("gramoraActiveAccountUid",record.uid);
         activateAccount(instance);
-        document.getElementById("settingsDialog")?.close();
+        closeSettingsDrawer();
       }catch(error){console.error(error);alert("Account switch nahi ho paya. Dobara try karein.");}
     });
     row.append(info,button);list.append(row);
@@ -2419,7 +2419,7 @@ async function loadProfilePage(user){
       <div class="ig-profile-top">
         <div class="ig-avatar-wrap"><div class="ig-profile-avatar">${data.photoURL?'<img alt="Profile photo" src="'+escapeHtml(data.photoURL)+'">':escapeHtml(name.charAt(0).toUpperCase())}</div></div>
         <div class="ig-profile-summary">
-          <div class="ig-profile-username"><strong>${escapeHtml(username)}</strong></div>
+          <div class="ig-profile-username"><strong>${escapeHtml(username)}</strong><button class="profile-menu-trigger" type="button" aria-label="Open menu" title="Menu">☰</button></div>
           <div class="ig-profile-stats"><span class="profile-stat"><b>${posts.length}</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>${followersCount}</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>${followingCount}</b><small>following</small></button></div>
         </div>
       </div>
@@ -2431,6 +2431,7 @@ async function loadProfilePage(user){
       <form class="ig-edit-form" hidden><h3>Edit profile</h3><label>Display name<input name="displayName" maxlength="60"></label><label>Username<input name="username" value="${escapeHtml(username)}" minlength="3" maxlength="20" pattern="[a-zA-Z0-9_.]{3,20}" autocomplete="username" required><small>3–20 characters: letters, numbers, dot or underscore.</small></label><label>Bio<textarea name="bio" maxlength="160" rows="3"></textarea></label><button class="ig-save-profile" type="submit">Save changes</button><p class="ig-edit-status" role="status"></p></form>
     `;
     feed.replaceChildren(panel);
+    panel.querySelector(".profile-menu-trigger")?.addEventListener("click",openProfileMenu);
     bindAvatarLongPress(panel.querySelector(".ig-profile-avatar"),user.uid,{...data,displayName:name});
     const avatarWrap=panel.querySelector(".ig-avatar-wrap");
     const photoButton=document.createElement("label");photoButton.className="dp-add";photoButton.textContent="＋";photoButton.title="Add profile photo";
@@ -2618,8 +2619,11 @@ async function renderBlockedAccounts(){
 }
 // Settings center
 const settingsDialog=document.getElementById("settingsDialog");
+function openProfileMenu(){if(!settingsDialog)return;settingsDialog.classList.remove("drawer-closing");settingsDialog.showModal();}
+function closeSettingsDrawer(){if(!settingsDialog?.open)return;settingsDialog.classList.add("drawer-closing");window.setTimeout(()=>{settingsDialog.classList.remove("drawer-closing");if(settingsDialog.open)closeSettingsDrawer();},260);}
+document.getElementById("settingsBtn")?.addEventListener("click",openProfileMenu);
 document.getElementById("closeCreate")?.addEventListener("click",()=>document.getElementById("createDialog").close());
-document.getElementById("settingsBtn")?.addEventListener("click",()=>settingsDialog.showModal());
+
 document.getElementById("addAccountBtn")?.addEventListener("click",()=>{
   document.getElementById("addAccountStatus").textContent="";
   document.getElementById("addAccountDialog")?.showModal();
@@ -2708,7 +2712,8 @@ document.getElementById("createAddedAccountForm")?.addEventListener("submit",asy
   }finally{button.disabled=false;button.innerHTML='Create account and add <span>↗</span>';}
 });
 
-document.getElementById("closeSettings")?.addEventListener("click",()=>settingsDialog.close());
+document.getElementById("closeSettings")?.addEventListener("click",closeSettingsDrawer);
+settingsDialog?.addEventListener("click",event=>{if(event.target===settingsDialog)closeSettingsDrawer();});
 document.querySelectorAll(".settings-tab").forEach(tab=>tab.addEventListener("click",()=>{
   document.querySelectorAll(".settings-tab").forEach(x=>x.classList.toggle("active",x===tab));
   document.querySelectorAll(".settings-panel").forEach(panel=>panel.hidden=panel.dataset.panel!==tab.dataset.settings);
