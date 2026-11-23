@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=122">
+  <link rel="stylesheet" href="style.css?v=123">
   <link rel="stylesheet" href="auth.css?v=62">
   <link rel="stylesheet" href="story-creator.css?v=3">
 </head>
@@ -129,13 +129,17 @@
     </div>
     </dialog>
 
-  <dialog id="highlightCreateDialog" class="story-dialog">
-    <div class="dialog-head"><div><p class="eyebrow">GRAMORA</p><h3>Create Highlight</h3></div><button id="closeHighlightCreate" class="close-btn" type="button" aria-label="Close">×</button></div>
+  <dialog id="highlightCreateDialog" class="story-dialog highlight-wizard-dialog">
+    <div class="dialog-head"><div><p class="eyebrow">GRAMORA</p><h3 id="highlightWizardTitle">New highlight</h3></div><button id="closeHighlightCreate" class="close-btn" type="button" aria-label="Close">×</button></div>
     <form id="highlightCreateForm">
-      <label>Highlight name<input name="title" maxlength="24" placeholder="e.g. Memories" required></label>
-      <b>Select stories</b><div id="highlightStoryChoices" class="highlight-story-choices"></div>
+      <section id="highlightStoryStep"><div class="highlight-step-head"><b>Choose stories</b><small id="highlightSelectedCount">0 selected</small></div><div id="highlightStoryChoices" class="highlight-story-choices"></div></section>
+      <section id="highlightDetailsStep" hidden><label class="highlight-name-label">Name<input name="title" maxlength="24" placeholder="e.g. Memories" required></label>
+        <div class="highlight-cover-row"><div><b>Edit cover</b><small>Choose a story cover or upload a photo</small></div><div id="highlightCoverPreview" class="highlight-cover-preview">G</div></div>
+        <button id="highlightEditCoverBtn" type="button" class="highlight-edit-cover">Edit cover</button>
+        <div id="highlightCoverEditor" class="highlight-cover-editor" hidden><div id="highlightCoverChoices" class="highlight-cover-choices"></div><label class="highlight-upload-cover">＋ Choose from gallery<input id="highlightCoverUpload" type="file" accept="image/*"></label></div>
+      </section>
       <p id="highlightCreateStatus" class="muted tiny" role="status"></p>
-      <button type="submit" class="publish">Save Highlight</button>
+      <div class="highlight-wizard-actions"><button id="highlightBackBtn" type="button" hidden>Back</button><button id="highlightNextBtn" type="button">Next</button><button id="highlightSaveBtn" type="submit" hidden>Add</button></div>
     </form>
   </dialog>
 
@@ -184,7 +188,7 @@
     </section>
   </div>
   <script src="script.js?v=72"></script>
-  <script type="module" src="auth.js?v=175"></script>
+  <script type="module" src="auth.js?v=176"></script>
   <script src="story-creator.js?v=3" defer></script>
   <script>
     // Startup failsafe: never leave GRAMORA hidden behind an endless loading state.
