@@ -1,8 +1,8 @@
-const CACHE_NAME = "gramora-shell-v114-fullscreen-repost-profile";
+const CACHE_NAME = "gramora-shell-v115-light-notifications";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=152",
+  "./style.css?v=153",
   "./script.js?v=74",
   "./auth.js?v=227",
   "./auth.css?v=62",
