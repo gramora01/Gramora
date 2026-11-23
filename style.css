@@ -1342,6 +1342,7 @@ body.public-profile-open .ig-profile-bio p{margin:0;display:-webkit-box;-webkit-
 body.public-profile-open .ig-profile-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 42px;gap:8px;padding:4px 14px 12px}
 body.public-profile-open .ig-profile-actions button{min-height:38px;border-radius:9px;font-size:13px;font-weight:800}
 body.public-profile-open .ig-profile-actions .public-follow{background:#1877f2;color:#fff}
+body.public-profile-open .ig-profile-actions .public-follow.is-requested{background:#30333b!important;color:#f7f7f8!important;border-color:#454954!important}
 body.public-profile-open .ig-profile-actions .public-message{background:#30333b;color:#f7f7f8}
 body.public-profile-open .ig-profile-actions .public-add-person{display:grid;place-items:center;padding:0;background:#30333b;color:#fff}
 body.public-profile-open .public-add-person .gramora-ui-icon{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
