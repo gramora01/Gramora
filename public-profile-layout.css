@@ -1,20 +1,29 @@
-/* Searched public profile: no divider above or below Highlights. */
-body.public-profile-open .public-profile-highlights,
-body.public-profile-open .ig-profile .public-profile-highlights,
-body.public-profile-open #feed .public-profile-highlights{
+/* Public profile: remove every divider/border around the Highlights row. */
+body.public-profile-open #feed .ig-profile > .ig-profile-actions,
+body.public-profile-open #feed .ig-profile > .ig-highlights.public-profile-highlights,
+body.public-profile-open #feed .ig-profile > .ig-profile-tabs.public-profile-tabs{
   border:0!important;
   border-top:0!important;
   border-bottom:0!important;
   box-shadow:none!important;
-  background:#0e1016!important;
+  outline:0!important;
 }
-body.public-profile-open .public-profile-highlights::before,
-body.public-profile-open .public-profile-highlights::after{
+body.public-profile-open #feed .ig-profile > .ig-highlights.public-profile-highlights{
+  display:flex!important;
+  align-items:flex-start!important;
+  gap:14px!important;
+  min-height:88px!important;
+  margin:0!important;
+  padding:12px 14px 14px!important;
+  background:#0e1016!important;
+  overflow-x:auto!important;
+  scrollbar-width:none!important;
+}
+body.public-profile-open #feed .ig-profile > .ig-highlights.public-profile-highlights::before,
+body.public-profile-open #feed .ig-profile > .ig-highlights.public-profile-highlights::after{
   content:none!important;
   display:none!important;
   border:0!important;
 }
-body.public-profile-open .public-profile-tabs,
-body.public-profile-open .ig-profile-tabs.public-profile-tabs{
-  border-top:0!important;
-}
+body.public-profile-open #feed .ig-profile > .ig-profile-tabs.public-profile-tabs{border-top:0!important}
+body.public-profile-open #feed .ig-profile > .ig-profile-tabs.public-profile-tabs button{border-top:0!important}
