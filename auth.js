@@ -1315,7 +1315,7 @@ async function togglePostSave(postId,button,countNode){
   }catch(error){
     button.classList.toggle("saved",wasSaved);button.setAttribute("aria-pressed",String(wasSaved));
     button.setAttribute("aria-label",wasSaved?"Remove saved post":"Save post");
-    if(countNode)countNode.textContent=String(oldCount);
+    if(countNode)countNode.textContent=displayPostActionCount(oldCount);
     console.error("Save post failed:",error);
     alert(error.code==="permission-denied"?"Post saves count enable karne ke liye latest Firestore Rules publish karein.":"Post save nahi hui. Dobara try karein.");
   }finally{button.disabled=false;}
@@ -1390,6 +1390,10 @@ async function getPostEngagement(postId,postUid){
   ]);
   return {liked:own.exists(),count:all.size};
 }
+function displayPostActionCount(count){
+  const value=Math.max(0,Number(count)||0);
+  return value>0?String(value):"";
+}
 function ensurePostLikeCountNode(button,fallback=0){
   if(!button)return null;
   // Feed likes render their live count from data-like-count via CSS, avoiding
@@ -1399,14 +1403,14 @@ function ensurePostLikeCountNode(button,fallback=0){
   if(!node){
     node=document.createElement("span");
     node.className="post-action-count";
-    node.textContent=String(button.dataset.likeCount??fallback??0);
+    node.textContent=displayPostActionCount(button.dataset.likeCount??fallback??0);
     button.append(node);
   }
   return node;
 }
 function setPostLikeCount(button,count){
   if(!button)return;
-  const value=String(Math.max(0,Number(count)||0));
+  const value=displayPostActionCount(count);
   button.dataset.likeCount=value;
   if(button.matches(".post-actions .like"))return;
   const node=ensurePostLikeCountNode(button,value);
@@ -1497,7 +1501,7 @@ async function refreshVisiblePostCommentCount(post){
     const snap=await getDocs(query(collection(db,"postComments"),where("postId","==",post.id),where("postUid","==",post.uid),limit(500)));
     document.querySelectorAll(".post-comment-open").forEach(button=>{
       if(button.dataset.postId===post.id&&button.dataset.postUid===post.uid){
-        const count=button.querySelector(".post-action-count");if(count)count.textContent=String(snap.size);
+        const count=button.querySelector(".post-action-count");if(count)count.textContent=displayPostActionCount(snap.size);
       }
     });
   }catch(error){console.warn("Post comment count unavailable:",error);}
@@ -1550,10 +1554,10 @@ function renderPosts(docs){
     identity.append(name,meta);head.append(avatar,identity);head.addEventListener("click",()=>{const viewer=auth?.currentUser;if(viewer&&authorUid)loadPublicProfile(viewer,authorUid);});
     const content=document.createElement("p");content.className="post-text post-text-card";content.textContent=isRepost?(data.originalText||""):(data.text||"");content.style.background=isRepost?(data.originalBackground||POST_BACKGROUNDS[4]):(data.background||POST_BACKGROUNDS[4]);
     const actions=document.createElement("div");actions.className="post-actions";
-    const like=document.createElement("button");like.className="like";like.type="button";like.dataset.likeCount="0";
-    const comment=document.createElement("button");comment.className="post-comment-open";comment.type="button";comment.innerHTML='<span class="post-action-count">0</span>';
-    const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.innerHTML='<span class="post-action-count">0</span>';
-    const save=document.createElement("button");save.className="save";save.type="button";save.innerHTML='<span class="post-action-count">0</span>';
+    const like=document.createElement("button");like.className="like";like.type="button";like.dataset.likeCount="";
+    const comment=document.createElement("button");comment.className="post-comment-open";comment.type="button";comment.innerHTML='<span class="post-action-count"></span>';
+    const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.innerHTML='<span class="post-action-count"></span>';
+    const save=document.createElement("button");save.className="save";save.type="button";save.innerHTML='<span class="post-action-count"></span>';
     const originalId=isRepost?data.originalPostId:postDoc.id;
     const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,background:data.originalBackground,createdAt:data.originalCreatedAt}:data;
     const postForDetail={id:originalId,...originalData};
@@ -1615,7 +1619,7 @@ async function refreshPostActionCounts(postId,postUid,nodes){
   results.forEach((result,index)=>{
     const node=nodes[jobs[index][0]];
     if(!node?.isConnected)return;
-    node.textContent=result.status==="fulfilled"?String(result.value.size):"0";
+    node.textContent=result.status==="fulfilled"?displayPostActionCount(result.value.size):"";
   });
 }
 async function createPostRepost(postId,original,button){
@@ -1626,7 +1630,7 @@ async function createPostRepost(postId,original,button){
     const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};
     await setDoc(ref,{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",originalPostId:postId,originalUid:original.uid,originalDisplayName:original.displayName||"GRAMORA member",originalUsername:original.username||"",originalPhotoURL:original.photoURL||"",originalText:original.text||"",originalBackground:original.background||POST_BACKGROUNDS[4],originalCreatedAt:original.createdAt||null,createdAt:serverTimestamp()});
     button.classList.add("reposted");button.setAttribute("aria-label","Already reposted");
-    const count=button.querySelector(".post-action-count");if(count)count.textContent=String((await getDocs(query(collection(db,"reposts"),where("originalPostId","==",postId),limit(500)))).size);
+    const count=button.querySelector(".post-action-count");if(count)count.textContent=displayPostActionCount((await getDocs(query(collection(db,"reposts"),where("originalPostId","==",postId),limit(500)))).size);
   }catch(error){console.error("Repost failed:",error);alert(error.code==="permission-denied"?"Publish the latest Firestore Rules to enable reposts.":"Could not repost this post. Please try again.");button.disabled=false;}
 }
 async function deleteOwnPost(postId,button,afterDelete){
