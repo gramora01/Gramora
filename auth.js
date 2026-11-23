@@ -1390,6 +1390,24 @@ async function getPostEngagement(postId,postUid){
   ]);
   return {liked:own.exists(),count:all.size};
 }
+function ensurePostLikeCountNode(button,fallback=0){
+  if(!button)return null;
+  let node=button.querySelector(".post-action-count");
+  if(!node){
+    node=document.createElement("span");
+    node.className="post-action-count";
+    node.textContent=String(button.dataset.likeCount??fallback??0);
+    button.append(node);
+  }
+  return node;
+}
+function setPostLikeCount(button,count){
+  if(!button)return;
+  const value=String(Math.max(0,Number(count)||0));
+  button.dataset.likeCount=value;
+  const node=ensurePostLikeCountNode(button,value);
+  if(node)node.textContent=value;
+}
 async function refreshPostLikeButton(postId,postUid,button,countNode){
   const version=Number(button.dataset.likeVersion)||0;
   try{
@@ -1397,8 +1415,14 @@ async function refreshPostLikeButton(postId,postUid,button,countNode){
     if(!button.isConnected||(Number(button.dataset.likeVersion)||0)!==version)return;
     button.classList.toggle("liked",state.liked);button.setAttribute("aria-pressed",String(state.liked));
     button.setAttribute("aria-label",state.liked?"Unlike post":"Like post");
-    if(countNode)countNode.textContent=String(state.count);
-  }catch(error){console.warn("Post likes unavailable:",error);if(countNode?.isConnected&&(Number(button.dataset.likeVersion)||0)===version)countNode.textContent="0";}
+    setPostLikeCount(button,state.count);
+  }catch(error){
+    console.warn("Post likes unavailable:",error);
+    if(button.isConnected&&(Number(button.dataset.likeVersion)||0)===version){
+      const current=button.dataset.likeCount??countNode?.textContent??"0";
+      setPostLikeCount(button,current);
+    }
+  }
 }
 async function togglePostLike(postId,postUid,button,countNode){
   const user=auth?.currentUser;if(!user||button.disabled)return;
@@ -1406,21 +1430,21 @@ async function togglePostLike(postId,postUid,button,countNode){
   const version=(Number(button.dataset.likeVersion)||0)+1;
   const matching=Array.from(document.querySelectorAll(".post-actions .like")).filter(other=>other.dataset.postId===postId&&other.dataset.postUid===postUid);
   if(!matching.includes(button))matching.push(button);
-  const visibleCounts=matching.map(other=>Number(other.querySelector(".post-action-count")?.textContent)||0);
-  const oldCount=Math.max(0,...visibleCounts,Number(countNode?.textContent)||0);
+  const visibleCounts=matching.map(other=>Number(other.dataset.likeCount??other.querySelector(".post-action-count")?.textContent)||0);
+  const oldCount=Math.max(0,...visibleCounts,Number(button.dataset.likeCount??countNode?.textContent)||0);
   const nextCount=Math.max(0,oldCount+(wasLiked?-1:1));
   const applyVisibleState=(liked,count)=>{
     matching.forEach(other=>{
       other.classList.toggle("liked",liked);
       other.setAttribute("aria-pressed",String(liked));
       other.setAttribute("aria-label",liked?"Unlike post":"Like post");
-      const node=other.querySelector(".post-action-count");if(node)node.textContent=String(count);
+      setPostLikeCount(other,count);
     });
     const detail=document.getElementById("postDetailLike");
     if(detail&&currentViewedPost?.id===postId&&currentViewedPost?.uid===postUid){
       detail.classList.toggle("liked",liked);detail.setAttribute("aria-pressed",String(liked));
       detail.setAttribute("aria-label",liked?"Unlike post":"Like post");
-      const node=detail.querySelector(".post-action-count");if(node)node.textContent=String(count);
+      setPostLikeCount(detail,count);
       const total=document.getElementById("postDetailLikeCount");if(total)total.textContent=String(count);
     }
   };
@@ -1443,14 +1467,14 @@ async function togglePostLike(postId,postUid,button,countNode){
       if(other.isConnected&&(Number(other.dataset.likeVersion)||0)===operationVersion){
         other.classList.toggle("liked",finalLiked);other.setAttribute("aria-pressed",String(finalLiked));
         other.setAttribute("aria-label",finalLiked?"Unlike post":"Like post");
-        const node=other.querySelector(".post-action-count");if(node)node.textContent=String(finalCount);
+        setPostLikeCount(other,finalCount);
       }
     });
     const detail=document.getElementById("postDetailLike");
     if(detail&&currentViewedPost?.id===postId&&currentViewedPost?.uid===postUid){
       detail.classList.toggle("liked",finalLiked);detail.setAttribute("aria-pressed",String(finalLiked));
       detail.setAttribute("aria-label",finalLiked?"Unlike post":"Like post");
-      const node=detail.querySelector(".post-action-count");if(node)node.textContent=String(finalCount);
+      setPostLikeCount(detail,finalCount);
       const total=document.getElementById("postDetailLikeCount");if(total)total.textContent=String(finalCount);
     }
   }catch(error){
@@ -1458,7 +1482,7 @@ async function togglePostLike(postId,postUid,button,countNode){
       if((Number(other.dataset.likeVersion)||0)===operationVersion){
         other.classList.toggle("liked",wasLiked);other.setAttribute("aria-pressed",String(wasLiked));
         other.setAttribute("aria-label",wasLiked?"Unlike post":"Like post");
-        const node=other.querySelector(".post-action-count");if(node)node.textContent=String(oldCount);
+        setPostLikeCount(other,oldCount);
       }
     });
     console.error("Post like failed:",error);alert(error.code==="permission-denied"?"Publish the latest Firestore Rules to enable post likes.":"Could not update like. Please try again.");
