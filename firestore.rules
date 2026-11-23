@@ -274,6 +274,7 @@ service cloud.firestore {
     }
 
     // PRIVATE REPOST RECORDS: only the reposter and original post owner can read them.
+    // PRIVATE REPOST RECORDS: only the reposter and original post owner can read them.
     match /reposts/{repostId} {
       allow get: if signedIn()
         && (repostId.matches('.*_' + request.auth.uid)
@@ -282,17 +283,12 @@ service cloud.firestore {
       allow list: if signedIn()
         && (resource.data.originalUid == request.auth.uid
           || resource.data.uid == request.auth.uid);
+      // The signed-in user can create only their own repost document.
+      // Keep validation minimal so self-reposts and reposts of other users' posts work.
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.originalPostId is string
-        && request.resource.data.originalUid is string
-        // Any signed-in user may create a repost record; read rules still protect private content.
-        && repostId == request.resource.data.originalPostId + '_' + request.auth.uid
-        && request.resource.data.originalText is string
-        && request.resource.data.originalText.size() <= 2000
-        && request.resource.data.keys().hasOnly(['uid','displayName','username','photoURL','originalPostId','originalUid','originalDisplayName','originalUsername','originalPhotoURL','originalText','originalBackground','originalCreatedAt','createdAt'])
-        && (!('username' in request.resource.data) || request.resource.data.username is string)
-        && (!('photoURL' in request.resource.data) || (request.resource.data.photoURL is string && request.resource.data.photoURL.size() <= 2000));
+        && repostId == request.resource.data.originalPostId + '_' + request.auth.uid;
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
       allow update: if false;
     }
