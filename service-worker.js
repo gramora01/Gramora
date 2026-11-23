@@ -1,8 +1,8 @@
-const CACHE_NAME = "gramora-shell-v115-light-notifications";
+const CACHE_NAME = "gramora-shell-v116-light-explore";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=153",
+  "./style.css?v=154",
   "./script.js?v=74",
   "./auth.js?v=227",
   "./auth.css?v=62",
