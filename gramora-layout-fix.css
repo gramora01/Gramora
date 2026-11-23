@@ -29,3 +29,12 @@ body{position:relative}
 .stories,.highlight-cover-choices,.settings-menu,.gramora-story-style-strip{
   overscroll-behavior-x:contain;
 }
+
+/* Stable mobile viewport: browser chrome changes must not resize the app shell. */
+html{min-height:100%;min-height:100svh;overscroll-behavior-x:none}
+body{min-height:100%;min-height:100svh;min-height:100dvh;overflow-x:clip!important;overscroll-behavior-x:none}
+@media(max-width:900px){
+ .app-shell{min-height:calc(100svh - 58px);min-height:calc(100dvh - 58px);height:auto!important}
+ .main-content{min-height:0;height:auto!important}
+ body{overscroll-behavior-y:contain}
+}
