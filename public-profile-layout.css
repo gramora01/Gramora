@@ -1,15 +1,20 @@
-/* Searched public profile: Highlights sits between Follow actions and Posts/Reposts without divider lines. */
-body.public-profile-open #feed .ig-profile .public-profile-highlights{
-  display:flex!important;
-  align-items:flex-start!important;
-  gap:14px!important;
-  min-height:88px!important;
-  margin:0!important;
-  padding:12px 14px 14px!important;
+/* Searched public profile: no divider above or below Highlights. */
+body.public-profile-open .public-profile-highlights,
+body.public-profile-open .ig-profile .public-profile-highlights,
+body.public-profile-open #feed .public-profile-highlights{
   border:0!important;
+  border-top:0!important;
+  border-bottom:0!important;
+  box-shadow:none!important;
   background:#0e1016!important;
-  overflow-x:auto!important;
-  scrollbar-width:none!important;
 }
-body.public-profile-open #feed .ig-profile .public-profile-highlights::-webkit-scrollbar{display:none!important}
-body.public-profile-open #feed .ig-profile .public-profile-tabs{border-top:0!important}
+body.public-profile-open .public-profile-highlights::before,
+body.public-profile-open .public-profile-highlights::after{
+  content:none!important;
+  display:none!important;
+  border:0!important;
+}
+body.public-profile-open .public-profile-tabs,
+body.public-profile-open .ig-profile-tabs.public-profile-tabs{
+  border-top:0!important;
+}
