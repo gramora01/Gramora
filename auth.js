@@ -1619,7 +1619,7 @@ function renderPosts(docs){
       if(data.photoURL){const img=document.createElement("img");img.src=data.photoURL;img.alt="";repostAvatar.append(img);}
       else repostAvatar.textContent=(data.displayName||"G").trim().charAt(0).toUpperCase();
       repostText=document.createElement("span");repostText.textContent=(data.displayName||"GRAMORA member")+" reposted";
-      by.append(repostAvatar,repostText);by.addEventListener("click",()=>openPersonProfile(data.uid));article.append(by);
+      by.append(repostAvatar,repostText);by.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();openPersonProfile(data.uid);});article.append(by);
     }
     const head=document.createElement("button");head.className="post-head post-author-link";head.type="button";
     const avatar=document.createElement("div");avatar.className="avatar";avatar.textContent=(authorName||"G").trim().charAt(0).toUpperCase();
