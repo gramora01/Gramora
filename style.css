@@ -1102,6 +1102,15 @@ body.light .gramora-story-viewer{color:#fff!important}
 .gramora-story-viewer-info{min-width:0;display:flex;flex-direction:column;gap:3px}
 .gramora-story-viewer-info strong{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gramora-story-viewer-info small{font-size:12px;color:#777}
+.gramora-story-viewer-row{position:relative}
+.gramora-story-viewer-like-heart{margin-left:auto;flex:0 0 auto;color:#ff3040;font-size:21px;line-height:1;text-shadow:0 1px 3px #ff304055;animation:gramoraViewerHeartPop .32s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes gramoraViewerHeartPop{from{opacity:0;transform:scale(.25)}to{opacity:1;transform:scale(1)}}
+.gramora-viewer-stage{position:relative;isolation:isolate}
+.gramora-story-like-float-layer{position:absolute;inset:0;z-index:12;overflow:hidden;pointer-events:none}
+.gramora-story-like-float{position:absolute;left:var(--heart-x);bottom:-12%;color:#ff3040;font-size:var(--heart-size);line-height:1;text-shadow:0 3px 12px #ff304066;opacity:0;animation:gramoraStoryHeartRise 2.7s cubic-bezier(.18,.65,.3,1) var(--heart-delay) both;filter:drop-shadow(0 2px 5px #0005)}
+@keyframes gramoraStoryHeartRise{0%{opacity:0;transform:translate3d(0,0,0) scale(.45) rotate(-12deg)}12%{opacity:1}72%{opacity:.95}100%{opacity:0;transform:translate3d(-18px,-115vh,0) scale(1.35) rotate(18deg)}}
+@media(prefers-reduced-motion:reduce){.gramora-story-viewer-like-heart,.gramora-story-like-float{animation:none!important}}
+
 .gramora-story-no-viewers{padding:22px 8px;text-align:center;color:#777;font-size:13px}
 .gramora-story-owner-actions [data-story-owner-action="activity"] span{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
 .gramora-story-owner-actions [data-story-owner-action="activity"]{min-width:72px}
