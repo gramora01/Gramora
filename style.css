@@ -1359,9 +1359,13 @@ body.public-profile-open .ig-post-pinned{position:absolute;top:7px;right:7px;dis
 body.public-profile-open .ig-post-pinned .gramora-ui-icon{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
 body.public-profile-open .ig-profile-post-actions,
 body.public-profile-open .ig-profile-repost-label{display:none!important}
-body.light.public-profile-open .public-profile-tabs button.active{border-bottom-color:#20212a;color:#20212a}
-body.light.public-profile-open .ig-profile-actions .public-message,
-body.light.public-profile-open .ig-profile-actions .public-add-person{background:#e8e9ee;color:#242630}
+body.public-profile-open,
+body.public-profile-open .main-content,
+body.public-profile-open .feed,
+body.public-profile-open .ig-profile{background:#090a0e!important;color:#f5f5f7!important}
+body.public-profile-open .public-profile-tabs button.active{border-bottom-color:#f5f5f7;color:#f5f5f7}
+body.public-profile-open .ig-profile-actions .public-message,
+body.public-profile-open .ig-profile-actions .public-add-person{background:#30333b!important;color:#f7f7f8!important}
 @media(max-width:380px){
  body.public-profile-open .ig-profile-top{grid-template-columns:78px minmax(0,1fr);gap:11px;padding-left:11px;padding-right:11px}
  body.public-profile-open .ig-avatar-wrap,body.public-profile-open .ig-profile-avatar{width:74px;height:74px}
