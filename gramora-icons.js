@@ -18,7 +18,10 @@ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m
 moon:'<path d="M20.8 14.2A8.5 8.5 0 0 1 9.8 3.2 8.8 8.8 0 1 0 20.8 14.2Z"/>',
 close:'<path d="m6 6 12 12M18 6 6 18"/>',
 back:'<path d="m15 18-6-6 6-6"/>',
-grid:'<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/>'
+grid:'<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/>',
+userPlus:'<circle cx="9" cy="8" r="4"/><path d="M2.5 21a6.5 6.5 0 0 1 13 0M19 8v6m-3-3h6"/>',
+eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+pin:'<path d="m16 3 5 5-4 1-4 4-1 5-2-2-4-4-2-2 5-1 4-4Z"/><path d="m5 19-2 2"/>'
 };
 const svg=n=>'<svg class="gramora-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(p[n]||p.plus)+'</svg>';
 function set(node,name,label=false){
@@ -78,6 +81,13 @@ root.querySelectorAll?.(".post-actions .repost").forEach(n=>set(n,"repeat",true)
 root.querySelectorAll?.(".post-comment-open").forEach(n=>set(n,"comment",true));
 root.querySelectorAll?.(".ig-profile-tabs [data-profile-tab='posts']").forEach(n=>set(n,"grid"));
 root.querySelectorAll?.(".ig-profile-tabs [data-profile-tab='reposts']").forEach(n=>set(n,"repeat"));
+root.querySelectorAll?.(".public-profile-back").forEach(n=>set(n,"back"));
+root.querySelectorAll?.(".public-profile-more").forEach(n=>set(n,"menu"));
+root.querySelectorAll?.(".public-add-person").forEach(n=>set(n,"userPlus"));
+root.querySelectorAll?.(".public-profile-tabs [data-public-profile-tab='posts']").forEach(n=>set(n,"grid"));
+root.querySelectorAll?.(".public-profile-tabs [data-public-profile-tab='reposts']").forEach(n=>set(n,"repeat"));
+root.querySelectorAll?.(".ig-post-view-eye").forEach(n=>set(n,"eye"));
+root.querySelectorAll?.(".ig-post-pinned").forEach(n=>set(n,"pin"));
 root.querySelectorAll?.(".close-btn,.follow-list-close").forEach(n=>set(n,"close"));
 root.querySelectorAll?.(".gramora-chat-back,.profile-edit-back").forEach(n=>set(n,"back"));
 root.querySelectorAll?.(".gramora-chat-find-head button").forEach(n=>set(n,"close"));
