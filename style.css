@@ -1520,3 +1520,23 @@ body.light.public-profile-open .ig-profile > .public-profile-highlights:empty{
 body.light.public-profile-open .ig-profile > .public-profile-highlights[hidden]{
   display:none!important;background-color:#fff!important;padding:0!important;margin:0!important;border:0!important;min-height:0!important;
 }
+
+
+/* Strong light-theme fallback for the public profile highlight-circles row. */
+body.light.public-profile-open .ig-profile > .ig-profile-bio,
+body.light.public-profile-open .ig-profile > .ig-profile-actions,
+body.light.public-profile-open .ig-profile > .public-profile-highlights{
+  background:#fff!important;
+  background-color:#fff!important;
+  background-image:none!important;
+  color:#202127!important;
+}
+body.light.public-profile-open .ig-profile > .public-profile-highlights::before,
+body.light.public-profile-open .ig-profile > .public-profile-highlights::after{
+  background:#fff!important;
+  background-color:#fff!important;
+}
+body.light.public-profile-open .ig-profile > .public-profile-highlights:not([hidden]){
+  border-top-color:#e5e6eb!important;
+  border-bottom-color:#e5e6eb!important;
+}
