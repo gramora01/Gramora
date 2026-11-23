@@ -1220,14 +1220,15 @@ body.light .gramora-conversation .gramora-inbox-unread{
 
 /* Dedicated public profile page opened from feed author/avatar */
 body.public-profile-open .stories-section,body.public-profile-open .section-head,body.public-profile-open .mobile-welcome{display:none!important}
-body.public-profile-open .main-content{max-width:760px;margin:0 auto;padding-top:8px}
-body.public-profile-open .feed{margin-top:0;padding:0 12px 90px}
+body.public-profile-open .main-content{width:100%;max-width:935px;margin:0 auto;padding-top:8px}
+body.public-profile-open .feed{width:100%;max-width:none;margin-top:0;padding:0 0 90px}
+body.public-profile-open .ig-profile{width:100%;max-width:none}
 .public-profile-page-head{display:flex;align-items:center;gap:14px;min-height:52px;margin:0 auto 12px;padding:0 2px;border-bottom:1px solid var(--line);color:var(--text)}
 .public-profile-page-head strong{font-size:17px;font-weight:800}
 .public-profile-back{width:38px;height:38px;display:grid;place-items:center;border:0;border-radius:50%;background:var(--surface,#171922);color:var(--text);font-size:27px;line-height:1;cursor:pointer}
 .public-profile-back:active{transform:scale(.94)}
 body.light .public-profile-back{background:#f0f1f6;color:#20212a}
-@media(max-width:680px){body.public-profile-open .main-content{padding:0 0 78px!important}body.public-profile-open .feed{padding:0 14px 90px}}
+@media(max-width:680px){body.public-profile-open .main-content{width:100%;max-width:none;padding:0 0 78px!important}body.public-profile-open .feed{width:100%;padding:0 0 90px!important}body.public-profile-open .ig-profile{max-width:none}body.public-profile-open .ig-profile-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:2px}}
 
 
 /* Instagram-style compact post engagement row: icon + one count, no text labels */
