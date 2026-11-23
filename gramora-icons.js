@@ -55,8 +55,8 @@ const keep=oldChildren.filter(child=>{
  if(child.nodeType===1&&child.matches("svg.gramora-ui-icon"))return false;
  if(child.nodeType===3){
    const raw=child.textContent||"";
-   if(/^[\s＋▣⟳◻▢♡♥☼☾◉✦≡✉⌂⌕♧☰×•·]*$/.test(raw))return false;
-   child.textContent=raw.replace(/^\s*[＋▣⟳◻▢♡♥☼☾◉✦≡✉⌂⌕♧☰×•·]+\s*/,"");
+   if(/^[\s＋▣⟳◻▢♡♥☼☾◉✦≡✉⌂⌕♧☰×•·‹←]*$/.test(raw))return false;
+   child.textContent=raw.replace(/^\s*[＋▣⟳◻▢♡♥☼☾◉✦≡✉⌂⌕♧☰×•·‹←]+\s*/,"");
    return !!child.textContent;
  }
  return true;
