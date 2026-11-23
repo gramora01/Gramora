@@ -2892,7 +2892,7 @@ async function loadProfileHighlights(user,panel,canManage=true){
   try{
     const snap=await getDocs(query(collection(db,"storyHighlights"),where("uid","==",user.uid)));
     if(snap.empty){
-      if(!canManage){strip.replaceChildren();strip.hidden=true;}
+      if(!canManage){strip.remove();}
       return;
     }
     if(!canManage)strip.hidden=false;
@@ -2913,7 +2913,7 @@ async function loadProfileHighlights(user,panel,canManage=true){
     });
   }catch(error){
     console.error("Highlights load failed:",error);
-    if(!canManage){strip.replaceChildren();strip.hidden=true;return;}
+    if(!canManage){strip.remove();return;}
     const note=document.createElement("small");note.className="highlight-load-note";
     note.textContent="Highlights load nahi hui ("+(error.code||"error")+").";
     strip.append(note);
