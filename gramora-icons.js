@@ -1,6 +1,7 @@
 /* GRAMORA unified Instagram-inspired outline icon system. Original app SVG artwork. */
 (() => {
 "use strict";
+if(!document.querySelector('link[data-gramora-layout-fix]')){const l=document.createElement("link");l.rel="stylesheet";l.href="./gramora-layout-fix.css?v=1";l.dataset.gramoraLayoutFix="1";document.head.append(l);}
 const p={
 home:'<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z"/>',
 search:'<circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/>',
@@ -20,7 +21,25 @@ back:'<path d="m15 18-6-6 6-6"/>',
 grid:'<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/>'
 };
 const svg=n=>'<svg class="gramora-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(p[n]||p.plus)+'</svg>';
-function set(node,name,label=false){if(!node)return;if(node.dataset.gramoraIcon===name&&node.querySelector(":scope > svg.gramora-ui-icon"))return;const s=label?node.querySelector("span"):null;if(s)s.remove();node.replaceChildren();node.insertAdjacentHTML("afterbegin",svg(name));if(s)node.append(s);node.dataset.gramoraIcon=name;}
+function set(node,name,label=false){
+if(!node)return;
+if(node.dataset.gramoraIcon===name&&node.querySelector(":scope > svg.gramora-ui-icon"))return;
+const oldChildren=Array.from(node.childNodes);
+const keep=oldChildren.filter(child=>{
+ if(child.nodeType===1&&child.matches("svg.gramora-ui-icon"))return false;
+ if(child.nodeType===3){
+   const raw=child.textContent||"";
+   if(/^[\\s＋♡♥⌂⌕✉◉☰☼×•·]*$/.test(raw))return false;
+   child.textContent=raw.replace(/^\\s*[＋♡♥⌂⌕✉◉☰☼×•·]+\\s*/,"");
+   return !!child.textContent;
+ }
+ return true;
+});
+node.replaceChildren();
+node.insertAdjacentHTML("afterbegin",svg(name));
+keep.forEach(child=>node.append(child));
+node.dataset.gramoraIcon=name;
+}
 function scan(root=document){
 root.querySelectorAll?.(".nav-icon:not(.mobile-profile-avatar)").forEach(n=>{const v=n.closest(".nav")?.dataset.view;const m={home:"home",explore:"search",messages:"messages",saved:"bookmark",profile:"profile"}[v];if(m)set(n,m);});
 root.querySelectorAll?.("#topCreate,.mobile-create > span,.sidebar-create > span:first-child").forEach(n=>set(n,"plus"));
