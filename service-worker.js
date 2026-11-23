@@ -1,8 +1,8 @@
-const CACHE_NAME = "gramora-shell-v108-profile-repost-grid-size";
+const CACHE_NAME = "gramora-shell-v109-public-profile-light-theme";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=147",
+  "./style.css?v=148",
   "./script.js?v=74",
   "./auth.js?v=224",
   "./auth.css?v=62",
