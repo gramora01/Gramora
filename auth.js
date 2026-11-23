@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, Timestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs, where, deleteDoc, updateDoc, startAfter, increment } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, Timestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs, where, deleteDoc, updateDoc, startAfter, increment, getCountFromServer } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
@@ -2433,7 +2433,7 @@ async function loadPublicProfile(viewer,targetUid){
     if(!snap.exists()){feed.textContent="Profile unavailable.";return;}
     const p=snap.data();
     p.username=await getUsernameForUid(targetUid,p);
-    let posts=[],followersCount=0,followingCount=0,already=false,requestPending=false;
+    let posts=[],postsCount=0,followersCount=0,followingCount=0,already=false,requestPending=false;
     const canViewProfilePosts=!p.isPrivate||(await getDoc(doc(db,"follows",viewer.uid+"_"+targetUid))).exists();
     const results=await Promise.allSettled([
       canViewProfilePosts?getDocs(query(collection(db,"posts"),where("uid","==",targetUid),limit(60))):Promise.resolve({docs:[]}),
@@ -2441,7 +2441,10 @@ async function loadPublicProfile(viewer,targetUid){
       getDocs(query(collection(db,"follows"),where("followingUid","==",targetUid),limit(100))),
       getDocs(query(collection(db,"follows"),where("followerUid","==",targetUid),limit(100))),
       getDoc(doc(db,"follows",viewer.uid+"_"+targetUid)),
-      getDoc(doc(db,"followRequests",viewer.uid+"_"+targetUid))
+      getDoc(doc(db,"followRequests",viewer.uid+"_"+targetUid)),
+      canViewProfilePosts?getCountFromServer(query(collection(db,"posts"),where("uid","==",targetUid))):Promise.resolve({data:()=>({count:0})}),
+      getCountFromServer(query(collection(db,"follows"),where("followingUid","==",targetUid))),
+      getCountFromServer(query(collection(db,"follows"),where("followerUid","==",targetUid)))
     ]);
     if(profileLoadToken!==publicProfileLoadToken||!document.body.classList.contains("public-profile-open"))return;
     if(results[0].status==="fulfilled")posts=results[0].value.docs;
@@ -2449,9 +2452,12 @@ async function loadPublicProfile(viewer,targetUid){
     if(results[3].status==="fulfilled")followingCount=results[3].value.size;
     if(results[4].status==="fulfilled")already=results[4].value.exists();
     if(results[5].status==="fulfilled")requestPending=results[5].value.exists();
+    if(results[6].status==="fulfilled")postsCount=results[6].value.data().count;
+    if(results[7].status==="fulfilled")followersCount=results[7].value.data().count;
+    if(results[8].status==="fulfilled")followingCount=results[8].value.data().count;
     const panel=document.createElement("section");panel.className="ig-profile";
     const avatar=p.photoURL?'<img alt="" src="'+escapeHtml(p.photoURL)+'">':escapeHtml((p.displayName||"G").charAt(0).toUpperCase());
-    panel.innerHTML='<header class="public-profile-page-head"><button class="public-profile-back" type="button" aria-label="Back">‹</button><strong>@'+escapeHtml(p.username||"member")+'</strong><button class="public-profile-more public-block" type="button" aria-label="More options">⋯</button></header><div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>'+escapeHtml(p.displayName||"GRAMORA member")+'</strong></div><div class="ig-profile-stats"><span class="profile-stat"><b>'+((p.isPrivate&&!already)?"—":posts.length)+'</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>'+followersCount+'</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>'+followingCount+'</b><small>following</small></button></div></div></div><div class="ig-profile-bio"><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already?"Following":(requestPending?"Requested":"Follow"))+'</button><button class="public-message" type="button" aria-label="Message '+escapeHtml(p.displayName||"user")+'">Message</button><button class="public-add-person" type="button" aria-label="Add person"></button></div><div class="ig-profile-tabs public-profile-tabs" role="tablist"><button class="active" data-public-profile-tab="posts" type="button" aria-label="Posts" title="Posts"></button><button data-public-profile-tab="reposts" type="button" aria-label="Reposts" title="Reposts"></button></div><div class="ig-profile-grid"></div>';
+    panel.innerHTML='<header class="public-profile-page-head"><button class="public-profile-back" type="button" aria-label="Back">‹</button><strong>@'+escapeHtml(p.username||"member")+'</strong><button class="public-profile-more public-block" type="button" aria-label="More options">⋯</button></header><div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>'+escapeHtml(p.displayName||"GRAMORA member")+'</strong></div><div class="ig-profile-stats"><span class="profile-stat"><b>'+((p.isPrivate&&!already)?"—":postsCount)+'</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>'+followersCount+'</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>'+followingCount+'</b><small>following</small></button></div></div></div><div class="ig-profile-bio"><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already?"Following":(requestPending?"Requested":"Follow"))+'</button><button class="public-message" type="button" aria-label="Message '+escapeHtml(p.displayName||"user")+'">Message</button><button class="public-add-person" type="button" aria-label="Add person"></button></div><div class="ig-profile-tabs public-profile-tabs" role="tablist"><button class="active" data-public-profile-tab="posts" type="button" aria-label="Posts" title="Posts"></button><button data-public-profile-tab="reposts" type="button" aria-label="Reposts" title="Reposts"></button></div><div class="ig-profile-grid"></div>';
     feed.replaceChildren(panel);
     panel.querySelector(".public-profile-back").addEventListener("click",exitPublicProfilePage);
     if(title)title.textContent="@"+(p.username||"member");
