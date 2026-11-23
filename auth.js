@@ -1796,6 +1796,7 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
     activeChatConversationId=conversationRef.id;
     let conversationRefSnapshotLastMessage="";
     const conversationMeta=await getDoc(conversationRef);conversationRefSnapshotLastMessage=conversationMeta.exists()?conversationMeta.data().lastMessage||"":"";
+    clearGramoraInboxUnread(conversationRef.id,conversationRefSnapshotLastMessage);
     const messageBox=dlg.querySelector(".gramora-chat-messages"),sendForm=dlg.querySelector(".gramora-chat-compose"),input=sendForm.querySelector("input");
     input.blur();
     input.addEventListener("click",()=>input.focus());
@@ -2001,6 +2002,17 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
 
 let activeInboxUnsubscribe=null;
 let inboxRenderToken=0;
+function clearGramoraInboxUnread(conversationId,lastMessage){
+  const list=document.querySelector(".gramora-inbox .gramora-conversation-list");
+  if(!list)return;
+  const row=[...list.querySelectorAll(".gramora-conversation")].find(item=>item.dataset.conversationId===conversationId);
+  if(!row)return;
+  row.classList.remove("has-unread");
+  row.querySelector(".gramora-inbox-unread")?.remove();
+  const preview=row.querySelector(".gramora-conversation-details small");
+  if(preview)preview.textContent=lastMessage||"Start a conversation";
+}
+
 function stopGramoraInbox(){
   if(activeInboxUnsubscribe){activeInboxUnsubscribe();activeInboxUnsubscribe=null;}
   inboxRenderToken++;
@@ -2048,7 +2060,7 @@ async function renderGramoraInbox(user){
       const sorted=rows.filter(Boolean).sort((a,b)=>b.lastMessageAt-a.lastMessageAt);
       list.replaceChildren();
       sorted.forEach(item=>{
-        const row=document.createElement("button");row.type="button";row.className="gramora-conversation";
+        const row=document.createElement("button");row.type="button";row.className="gramora-conversation";row.dataset.conversationId=item.id;
         const avatar=document.createElement("span");avatar.className="gramora-conversation-avatar";
         if(item.photoURL){const img=document.createElement("img");img.src=item.photoURL;img.alt="";avatar.append(img);}
         else avatar.textContent=item.displayName.charAt(0).toUpperCase();
