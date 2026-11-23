@@ -1421,6 +1421,13 @@ async function togglePostLike(postId,postUid,button,countNode){
       if(countNode)countNode.textContent=String(latest.size);
       button.classList.toggle("liked",!snap.exists());button.setAttribute("aria-pressed",String(!snap.exists()));
       button.setAttribute("aria-label",snap.exists()?"Like post":"Unlike post");
+      document.querySelectorAll(".post-actions .like").forEach(other=>{
+        if(other.dataset.postId===postId&&other.dataset.postUid===postUid){
+          const count=other.querySelector(".post-action-count");if(count)count.textContent=String(latest.size);
+          other.classList.toggle("liked",!snap.exists());other.setAttribute("aria-pressed",String(!snap.exists()));
+          other.setAttribute("aria-label",snap.exists()?"Like post":"Unlike post");
+        }
+      });
     }
   }catch(error){
     if((Number(button.dataset.likeVersion)||0)===version){
