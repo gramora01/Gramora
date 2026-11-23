@@ -1302,3 +1302,6 @@ body.light .post-actions .save.saved .gramora-ui-icon path{fill:#e1306c;stroke:#
 
 body.light .profile-menu-trigger{background:#fff!important;color:#292b35!important;border-color:#d9dce5!important;box-shadow:0 2px 8px rgba(25,35,60,.08)!important}
 body.light .profile-menu-trigger:active{background:#f0f1f7!important}
+
+/* Keep the topbar theme control hidden; Settings still triggers it programmatically. */
+#themeBtn{display:none!important}
