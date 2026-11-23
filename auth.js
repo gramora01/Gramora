@@ -723,9 +723,11 @@ async function renderStoryActivityPreview(storyId,ownerUid){
       if(icon)icon.hidden=false;
       label.hidden=false;label.textContent="Activity";button.title="Story activity";return;
     }
+    const likesSnap=await getDocs(query(collection(db,"storyLikes"),where("storyUid","==",ownerUid)));
+    const likedViewerUids=new Set(likesSnap.docs.filter(item=>item.data().storyId===storyId).map(item=>item.data().uid));
     const viewers=await Promise.all(entries.slice(0,3).map(async item=>{
       const data=item.data(),profileSnap=await getDoc(doc(db,"userProfiles",data.uid)),profile=profileSnap.exists()?profileSnap.data():{};
-      return {uid:data.uid,photoURL:profile.photoURL||profile.photoUrl||profile.avatarUrl||"",name:profile.displayName||data.displayName||"Viewer"};
+      return {uid:data.uid,photoURL:profile.photoURL||profile.photoUrl||profile.avatarUrl||"",name:profile.displayName||data.displayName||"Viewer",liked:likedViewerUids.has(data.uid)};
     }));
     if(document.getElementById("storyViewerDialog")?.dataset.storyId!==storyId)return;
     let stack=button.querySelector(".gramora-activity-avatar-stack");
@@ -735,6 +737,7 @@ async function renderStoryActivityPreview(storyId,ownerUid){
       const avatar=document.createElement("span");avatar.className="gramora-activity-avatar";avatar.style.setProperty("--avatar-order",String(index));avatar.title=person.name;
       if(person.photoURL){const img=document.createElement("img");img.src=person.photoURL;img.alt="";img.loading="lazy";avatar.append(img);}
       else avatar.textContent=(person.name||"G").trim().charAt(0).toUpperCase();
+      if(person.liked){const heart=document.createElement("span");heart.className="gramora-activity-liked-heart";heart.textContent="♥";heart.setAttribute("aria-label","Liked your story");avatar.append(heart);}
       stack.append(avatar);
     });
     button.classList.add("has-viewer-avatars");
