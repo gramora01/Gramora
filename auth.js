@@ -1962,8 +1962,12 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
       document.head.append(themeStyle);
     }
     function applyChatTheme(theme){
-      const palette=chatThemeStyles[theme]||chatThemeStyles.default;
       const safeTheme=Object.prototype.hasOwnProperty.call(chatThemeStyles,theme)?theme:"default";
+      const palette={...(chatThemeStyles[safeTheme]||chatThemeStyles.default)};
+      // The default incoming bubble must stay light with dark text in light mode.
+      if(safeTheme==="default"&&document.body.classList.contains("light")){
+        palette.page="#f7f8fc";palette.incoming="#e9ebf2";palette.text="#20212a";palette.input="#f1f2f7";
+      }
       chatShell.dataset.chatTheme=safeTheme;
       chatShell.style.setProperty("--gramora-theme-page",palette.page);
       chatShell.style.setProperty("--gramora-theme-incoming",palette.incoming);
