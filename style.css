@@ -1119,10 +1119,9 @@ body.light .gramora-story-viewer{color:#fff!important}
 .gramora-story-owner-actions button[data-story-owner-action="activity"]{position:relative;flex-direction:row;gap:0;min-width:58px;padding:7px 9px}
 .gramora-story-owner-actions button[data-story-owner-action="activity"]>svg[hidden],.gramora-story-owner-actions button[data-story-owner-action="activity"]>span[hidden]{display:none!important}
 .gramora-activity-avatar-stack{display:flex;align-items:center;justify-content:center;flex-direction:row;padding-left:0;min-width:0;height:34px}
-.gramora-activity-avatar{position:relative;z-index:calc(3 - var(--avatar-order));display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;margin-left:-9px;overflow:visible;border:2px solid #fff;border-radius:50%;background:#dedee5;color:#34343a;font-size:11px;font-weight:800;box-shadow:0 1px 4px #0003}
+.gramora-activity-avatar{position:relative;z-index:calc(3 - var(--avatar-order));display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;margin-left:-9px;overflow:hidden;border:2px solid #fff;border-radius:50%;background:#dedee5;color:#34343a;font-size:11px;font-weight:800;box-shadow:0 1px 4px #0003}
 .gramora-activity-avatar:first-child{margin-left:0}
 .gramora-activity-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.gramora-activity-liked-heart{position:absolute;right:-2px;bottom:-2px;z-index:5;display:grid;place-items:center;width:15px;height:15px;border:1.5px solid #fff;border-radius:50%;background:#ff3040;color:#fff;font-size:10px;line-height:1;box-shadow:0 1px 3px #0005}
 
 .gramora-story-owner-actions button[data-story-owner-action="activity"].has-viewer-avatars>svg{display:none!important}
 
