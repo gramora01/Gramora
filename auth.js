@@ -1634,7 +1634,7 @@ function renderPosts(docs){
     repost.dataset.postId=originalId;repost.dataset.postUid=authorUid;
     const repostHoldState=bindPostActionLongPress(repost,()=>showPostRepostsList(originalId,authorUid));
     if(auth?.currentUser?.uid!==authorUid)repost.addEventListener("click",()=>{if(repostHoldState())return;createPostRepost(originalId,originalData,repost);});
-    else repost.hidden=true;
+    else repost.setAttribute("aria-label","View reposts");
     actions.append(like,comment,repost,save);
     article.append(head,content,actions);
     if(!isRepost&&auth?.currentUser?.uid===data.uid){
