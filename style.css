@@ -1506,3 +1506,17 @@ body.light.public-profile-open .ig-no-posts b,
 body.light.public-profile-open .private-profile-notice strong{
   color:#202127!important;
 }
+
+
+/* Light theme: keep the public profile's empty highlights slot clean and light. */
+body.light.public-profile-open .ig-profile,
+body.light.public-profile-open .ig-profile > .public-profile-highlights,
+body.light.public-profile-open .ig-profile > .public-profile-tabs{
+  background-color:#fff!important;
+}
+body.light.public-profile-open .ig-profile > .public-profile-highlights:empty{
+  background-color:#fff!important;border-top-color:#e5e6eb!important;border-bottom-color:#e5e6eb!important;
+}
+body.light.public-profile-open .ig-profile > .public-profile-highlights[hidden]{
+  display:none!important;background-color:#fff!important;padding:0!important;margin:0!important;border:0!important;min-height:0!important;
+}
