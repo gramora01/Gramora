@@ -597,8 +597,7 @@ storyActivitySheet?.addEventListener("touchstart",event=>{storyActivityTouchY=ev
 storyActivitySheet?.addEventListener("touchend",event=>{if(event.changedTouches[0].clientY-storyActivityTouchY>65)closeStoryActivitySheet();},{passive:true});
 document.getElementById("storyViewerDialog")?.addEventListener("close",()=>{
   stopStoryViewerTimer();
-  const audio=document.getElementById("storyViewerAudio");
-  if(audio)audio.pause();
+  stopGramoraStoryAudio(true);
   closeStoryActivitySheet();
 });
 document.getElementById("storyViewerPrevious")?.addEventListener("click",()=>navigateStoryViewer(-1));
@@ -948,11 +947,33 @@ const setStoryMusicPreview=async()=>{
   storyMusicPreview.currentTime=Number(document.getElementById("storySongStart").value||0);
   try{await storyMusicPreview.play();}catch(error){console.warn("Preview playback needs a user tap:",error);}
 };
-const stopStoryMusicPreview=()=>{if(storyMusicPreview){storyMusicPreview.pause();}};
-function stopGramoraStoryAudio(){
-  if(storyMusicPreview)storyMusicPreview.pause();
+const stopStoryMusicPreview=()=>{
+  if(storyMusicPreview){
+    storyMusicPreview.pause();
+    storyMusicPreview.removeAttribute("src");
+    storyMusicPreview.load();
+  }
+  clearGramoraMediaSession();
+};
+function clearGramoraMediaSession(){
+  try{
+    if("mediaSession" in navigator){
+      navigator.mediaSession.playbackState="none";
+      navigator.mediaSession.metadata=null;
+    }
+  }catch(error){}
+}
+function stopGramoraStoryAudio(releaseSource=false){
+  if(storyMusicPreview){
+    storyMusicPreview.pause();
+    if(releaseSource){storyMusicPreview.removeAttribute("src");storyMusicPreview.load();}
+  }
   const viewerAudio=document.getElementById("storyViewerAudio");
-  if(viewerAudio)viewerAudio.pause();
+  if(viewerAudio){
+    viewerAudio.pause();
+    if(releaseSource){viewerAudio.removeAttribute("src");viewerAudio.load();}
+  }
+  clearGramoraMediaSession();
 }
 document.addEventListener("visibilitychange",()=>{
   const viewerAudio=document.getElementById("storyViewerAudio");
@@ -972,7 +993,9 @@ document.addEventListener("visibilitychange",()=>{
     }
   }
 });
-window.addEventListener("pagehide",stopGramoraStoryAudio);
+window.addEventListener("pagehide",()=>stopGramoraStoryAudio(true));
+window.addEventListener("beforeunload",()=>stopGramoraStoryAudio(true));
+window.addEventListener("freeze",()=>stopGramoraStoryAudio(true));
 const storyEditorDone=document.getElementById("storyEditorDone");
 const setStoryEditingMode=editing=>{
   if(!storyTextArea||!storyEditorDone)return;
