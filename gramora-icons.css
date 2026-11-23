@@ -1,0 +1,14 @@
+/* Unified icon artwork */
+.gramora-ui-icon{display:inline-block;width:1.22em;height:1.22em;flex:0 0 auto;vertical-align:-.22em;fill:none;stroke:currentColor;stroke-width:1.85;stroke-linecap:round;stroke-linejoin:round}
+.nav-icon .gramora-ui-icon{width:23px;height:23px;vertical-align:middle}
+.mobile-nav .nav-icon .gramora-ui-icon{width:25px;height:25px}
+#topCreate .gramora-ui-icon,.mobile-create .gramora-ui-icon,.sidebar-create .gramora-ui-icon{width:23px;height:23px}
+#notificationBtn .gramora-ui-icon{width:26px;height:26px}
+#settingsBtn .gramora-ui-icon{width:22px;height:22px}
+#themeBtn .gramora-ui-icon{width:21px;height:21px}
+.post-actions .gramora-ui-icon,.post-detail-like .gramora-ui-icon{width:22px;height:22px;vertical-align:-.28em}
+.post-actions button,.post-detail-like{display:inline-flex;align-items:center;gap:6px}
+.post-actions .like.liked .gramora-ui-icon,.post-detail-like.liked .gramora-ui-icon{fill:currentColor;stroke:currentColor}
+.ig-profile-tabs .gramora-ui-icon{width:21px;height:21px;vertical-align:middle}
+.close-btn .gramora-ui-icon,.follow-list-close .gramora-ui-icon{width:21px;height:21px;vertical-align:middle}
+.gramora-chat-back .gramora-ui-icon,.profile-edit-back .gramora-ui-icon{width:23px;height:23px;vertical-align:middle}
