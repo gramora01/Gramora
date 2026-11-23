@@ -1391,17 +1391,19 @@ async function getPostEngagement(postId,postUid){
   return {liked:own.exists(),count:all.size};
 }
 async function refreshPostLikeButton(postId,postUid,button,countNode){
+  const version=Number(button.dataset.likeVersion)||0;
   try{
     const state=await getPostEngagement(postId,postUid);
-    if(!button.isConnected)return;
+    if(!button.isConnected||(Number(button.dataset.likeVersion)||0)!==version)return;
     button.classList.toggle("liked",state.liked);button.setAttribute("aria-pressed",String(state.liked));
     button.setAttribute("aria-label",state.liked?"Unlike post":"Like post");
     if(countNode)countNode.textContent=String(state.count);
-  }catch(error){console.warn("Post likes unavailable:",error);if(countNode?.isConnected)countNode.textContent="0";}
+  }catch(error){console.warn("Post likes unavailable:",error);if(countNode?.isConnected&&(Number(button.dataset.likeVersion)||0)===version)countNode.textContent="0";}
 }
 async function togglePostLike(postId,postUid,button,countNode){
-  const user=auth?.currentUser;if(!user)return;
+  const user=auth?.currentUser;if(!user||button.disabled)return;
   const wasLiked=button.classList.contains("liked"),oldCount=Number(countNode?.textContent)||0;
+  const version=(Number(button.dataset.likeVersion)||0)+1;button.dataset.likeVersion=String(version);
   button.classList.toggle("liked",!wasLiked);button.setAttribute("aria-pressed",String(!wasLiked));
   button.setAttribute("aria-label",wasLiked?"Like post":"Unlike post");
   if(countNode)countNode.textContent=String(Math.max(0,oldCount+(wasLiked?-1:1)));
@@ -1414,13 +1416,30 @@ async function togglePostLike(postId,postUid,button,countNode){
       await setDoc(ref,{postId,postUid,uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",createdAt:serverTimestamp()});
       await createGramoraNotification(postUid,"post_like","liked your post.",{postId});
     }
-    await refreshPostLikeButton(postId,postUid,button,countNode);
+    const latest=await getDocs(query(collection(db,"postLikes"),where("postId","==",postId),where("postUid","==",postUid),limit(500)));
+    if(button.isConnected&&(Number(button.dataset.likeVersion)||0)===version){
+      if(countNode)countNode.textContent=String(latest.size);
+      button.classList.toggle("liked",!snap.exists());button.setAttribute("aria-pressed",String(!snap.exists()));
+      button.setAttribute("aria-label",snap.exists()?"Like post":"Unlike post");
+    }
   }catch(error){
-    button.classList.toggle("liked",wasLiked);button.setAttribute("aria-pressed",String(wasLiked));
-    button.setAttribute("aria-label",wasLiked?"Unlike post":"Like post");
-    if(countNode)countNode.textContent=String(oldCount);
+    if((Number(button.dataset.likeVersion)||0)===version){
+      button.classList.toggle("liked",wasLiked);button.setAttribute("aria-pressed",String(wasLiked));
+      button.setAttribute("aria-label",wasLiked?"Unlike post":"Like post");
+      if(countNode)countNode.textContent=String(oldCount);
+    }
     console.error("Post like failed:",error);alert(error.code==="permission-denied"?"Publish the latest Firestore Rules to enable post likes.":"Could not update like. Please try again.");
   }finally{button.disabled=false;}
+}
+async function refreshVisiblePostCommentCount(post){
+  try{
+    const snap=await getDocs(query(collection(db,"postComments"),where("postId","==",post.id),where("postUid","==",post.uid),limit(500)));
+    document.querySelectorAll(".post-comment-open").forEach(button=>{
+      if(button.dataset.postId===post.id&&button.dataset.postUid===post.uid){
+        const count=button.querySelector(".post-action-count");if(count)count.textContent=String(snap.size);
+      }
+    });
+  }catch(error){console.warn("Post comment count unavailable:",error);}
 }
 async function loadPostEngagement(post,root){
   const likeCount=root.querySelector("#postDetailLikeCount"),likeButton=root.querySelector("#postDetailLike"),list=root.querySelector("#postDetailComments"),status=root.querySelector("#postCommentStatus");
@@ -1443,7 +1462,7 @@ async function loadPostEngagement(post,root){
       const author=document.createElement("button");author.type="button";author.className="post-comment-author";author.textContent=d.displayName||"GRAMORA member";author.addEventListener("click",()=>openPersonProfile(d.uid));
       const message=document.createElement("span");message.textContent=d.text||"";row.append(author,message);
       if(d.uid){getDoc(doc(db,"userProfiles",d.uid)).then(profileSnap=>{if(!author.isConnected)return;const profile=profileSnap.exists()?profileSnap.data():{};const username=profile.username||"";author.title=username?"@"+username:"Open profile";}).catch(()=>{});}
-      if(d.uid===auth.currentUser.uid){const del=document.createElement("button");del.type="button";del.textContent="×";del.setAttribute("aria-label","Delete comment");del.addEventListener("click",async()=>{del.disabled=true;try{await deleteDoc(doc(db,"postComments",item.id));await loadPostEngagement(post,root);}catch(error){alert("Comment delete nahi hua. Firestore Rules check karein.");del.disabled=false;}});row.append(del);}
+      if(d.uid===auth.currentUser.uid){const del=document.createElement("button");del.type="button";del.textContent="×";del.setAttribute("aria-label","Delete comment");del.addEventListener("click",async()=>{del.disabled=true;try{await deleteDoc(doc(db,"postComments",item.id));await refreshVisiblePostCommentCount(post);await loadPostEngagement(post,root);}catch(error){alert("Comment delete nahi hua. Firestore Rules check karein.");del.disabled=false;}});row.append(del);}
       list.append(row);
     });
     status.textContent="";
@@ -1479,6 +1498,9 @@ function renderPosts(docs){
     const postForDetail={id:originalId,...originalData};
     const likeCount=like.querySelector(".post-action-count"),commentCount=comment.querySelector(".post-action-count"),repostCount=repost.querySelector(".post-action-count"),saveCount=save.querySelector(".post-action-count");
     like.setAttribute("aria-label","Like post");comment.setAttribute("aria-label","View comments");repost.setAttribute("aria-label","Repost");save.setAttribute("aria-label","Save post");
+    article.dataset.postId=originalId;article.dataset.postUid=authorUid;
+    like.dataset.postId=originalId;like.dataset.postUid=authorUid;
+    comment.dataset.postId=originalId;comment.dataset.postUid=authorUid;
     save.dataset.postUid=authorUid;
     save.addEventListener("click",()=>togglePostSave(originalId,save,saveCount));
     like.addEventListener("click",()=>togglePostLike(originalId,authorUid,like,likeCount));
@@ -2371,7 +2393,7 @@ document.getElementById("postDetailLike")?.addEventListener("click",()=>{if(curr
 document.getElementById("postCommentForm")?.addEventListener("submit",async event=>{
   event.preventDefault();const post=currentViewedPost,user=auth?.currentUser,input=document.getElementById("postCommentInput"),status=document.getElementById("postCommentStatus"),button=event.currentTarget.querySelector("button[type=submit]"),text=input.value.trim();
   if(!post||!user||!text)return;button.disabled=true;status.textContent="Comment post ho raha hai…";
-  try{const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};await addDoc(collection(db,"postComments"),{postId:post.id,postUid:post.uid,uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",text,createdAt:serverTimestamp()});await createGramoraNotification(post.uid,"post_comment","commented on your post: "+text.slice(0,90),{postId:post.id});input.value="";await loadPostEngagement(post,document.getElementById("postDetailDialog"));}
+  try{const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};await addDoc(collection(db,"postComments"),{postId:post.id,postUid:post.uid,uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",text,createdAt:serverTimestamp()});await refreshVisiblePostCommentCount(post);await createGramoraNotification(post.uid,"post_comment","commented on your post: "+text.slice(0,90),{postId:post.id});input.value="";await loadPostEngagement(post,document.getElementById("postDetailDialog"));}
   catch(error){console.error("Post comment failed:",error);status.textContent=error.code==="permission-denied"?"Latest Firestore Rules publish karein.":"Comment post nahi hua. Dobara try karein.";}finally{button.disabled=false;}
 });
 document.getElementById("closePostDetail")?.addEventListener("click",()=>document.getElementById("postDetailDialog").close());
