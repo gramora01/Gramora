@@ -1270,7 +1270,7 @@ body.light .post-actions .save.saved .gramora-ui-icon path{fill:#e1306c;stroke:#
 }
 .post-actions .like::after{
   position:absolute!important;
-  left:28px!important;
+  left:32px!important;
   top:50%!important;
   transform:translateY(-50%)!important;
   margin:0!important;
