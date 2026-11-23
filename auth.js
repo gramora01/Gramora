@@ -1742,7 +1742,7 @@ async function createPostRepost(postId,original,button){
     if(existing.exists()){
       if(wasReposted){
         await deleteDoc(ref);
-        await deleteDoc(feedRef).catch(error=>{if(error.code!=="not-found")throw error;});
+        if((await getDoc(feedRef)).exists())await deleteDoc(feedRef);
       }else{
         const saved=existing.data();
         if(!(await getDoc(feedRef)).exists())await setDoc(feedRef,saved);
