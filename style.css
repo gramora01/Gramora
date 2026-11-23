@@ -1163,3 +1163,18 @@ body.light .gramora-story-viewer{color:#fff!important}
 .profile-menu-trigger{margin-left:auto;width:36px;height:36px;border:1px solid var(--line,#555);border-radius:50%;background:var(--surface,#242630);color:var(--text,inherit);font-size:19px;display:grid;place-items:center;cursor:pointer}
 .ig-profile-username{width:100%;display:flex;align-items:center;gap:10px}
 @media(max-width:680px){.settings-dialog{width:min(88vw,370px)!important;max-width:370px!important;padding:18px 14px!important;max-height:100dvh!important}.settings-layout{display:flex!important}.settings-menu{display:flex!important;flex-direction:column!important;overflow:visible!important}.settings-tab{flex:0 0 auto!important}}
+
+
+/* Keep unread chat counters vivid after refresh in both themes */
+.gramora-conversation .gramora-inbox-unread,
+body.light .gramora-conversation .gramora-inbox-unread{
+  opacity:1!important;
+  filter:none!important;
+  -webkit-filter:none!important;
+  background:#d946a5!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  box-shadow:0 2px 9px rgba(217,70,165,.32)!important;
+  font-weight:800!important;
+}
+.gramora-conversation.has-unread .gramora-inbox-unread{visibility:visible!important}
