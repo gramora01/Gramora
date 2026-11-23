@@ -1402,11 +1402,32 @@ async function refreshPostLikeButton(postId,postUid,button,countNode){
 }
 async function togglePostLike(postId,postUid,button,countNode){
   const user=auth?.currentUser;if(!user||button.disabled)return;
-  const wasLiked=button.classList.contains("liked"),oldCount=Number(countNode?.textContent)||0;
-  const version=(Number(button.dataset.likeVersion)||0)+1;button.dataset.likeVersion=String(version);
-  button.classList.toggle("liked",!wasLiked);button.setAttribute("aria-pressed",String(!wasLiked));
-  button.setAttribute("aria-label",wasLiked?"Like post":"Unlike post");
-  if(countNode)countNode.textContent=String(Math.max(0,oldCount+(wasLiked?-1:1)));
+  const wasLiked=button.classList.contains("liked");
+  const version=(Number(button.dataset.likeVersion)||0)+1;
+  const matching=Array.from(document.querySelectorAll(".post-actions .like")).filter(other=>other.dataset.postId===postId&&other.dataset.postUid===postUid);
+  if(!matching.includes(button))matching.push(button);
+  const visibleCounts=matching.map(other=>Number(other.querySelector(".post-action-count")?.textContent)||0);
+  const oldCount=Math.max(0,...visibleCounts,Number(countNode?.textContent)||0);
+  const nextCount=Math.max(0,oldCount+(wasLiked?-1:1));
+  const applyVisibleState=(liked,count)=>{
+    matching.forEach(other=>{
+      other.dataset.likeVersion=String((Number(other.dataset.likeVersion)||0)+1);
+      other.classList.toggle("liked",liked);
+      other.setAttribute("aria-pressed",String(liked));
+      other.setAttribute("aria-label",liked?"Unlike post":"Like post");
+      const node=other.querySelector(".post-action-count");if(node)node.textContent=String(count);
+    });
+    const detail=document.getElementById("postDetailLike");
+    if(detail&&currentViewedPost?.id===postId&&currentViewedPost?.uid===postUid){
+      detail.classList.toggle("liked",liked);detail.setAttribute("aria-pressed",String(liked));
+      detail.setAttribute("aria-label",liked?"Unlike post":"Like post");
+      const node=detail.querySelector(".post-action-count");if(node)node.textContent=String(count);
+      const total=document.getElementById("postDetailLikeCount");if(total)total.textContent=String(count);
+    }
+  };
+  const operationVersion=version;
+  matching.forEach(other=>{other.dataset.likeVersion=String(operationVersion);});
+  applyVisibleState(!wasLiked,nextCount);
   button.disabled=true;
   try{
     const ref=doc(db,"postLikes",postId+"_"+user.uid),snap=await getDoc(ref);
@@ -1414,27 +1435,33 @@ async function togglePostLike(postId,postUid,button,countNode){
     else{
       const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};
       await setDoc(ref,{postId,postUid,uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",createdAt:serverTimestamp()});
-      await createGramoraNotification(postUid,"post_like","liked your post.",{postId});
+      createGramoraNotification(postUid,"post_like","liked your post.",{postId}).catch(error=>console.warn("Like notification failed:",error));
     }
     const latest=await getDocs(query(collection(db,"postLikes"),where("postId","==",postId),where("postUid","==",postUid),limit(500)));
-    if(button.isConnected&&(Number(button.dataset.likeVersion)||0)===version){
-      if(countNode)countNode.textContent=String(latest.size);
-      button.classList.toggle("liked",!snap.exists());button.setAttribute("aria-pressed",String(!snap.exists()));
-      button.setAttribute("aria-label",snap.exists()?"Like post":"Unlike post");
-      document.querySelectorAll(".post-actions .like").forEach(other=>{
-        if(other.dataset.postId===postId&&other.dataset.postUid===postUid){
-          const count=other.querySelector(".post-action-count");if(count)count.textContent=String(latest.size);
-          other.classList.toggle("liked",!snap.exists());other.setAttribute("aria-pressed",String(!snap.exists()));
-          other.setAttribute("aria-label",snap.exists()?"Like post":"Unlike post");
-        }
-      });
+    const finalLiked=!snap.exists();
+    const finalCount=latest.size;
+    matching.forEach(other=>{
+      if(other.isConnected&&(Number(other.dataset.likeVersion)||0)===operationVersion){
+        other.classList.toggle("liked",finalLiked);other.setAttribute("aria-pressed",String(finalLiked));
+        other.setAttribute("aria-label",finalLiked?"Unlike post":"Like post");
+        const node=other.querySelector(".post-action-count");if(node)node.textContent=String(finalCount);
+      }
+    });
+    const detail=document.getElementById("postDetailLike");
+    if(detail&&currentViewedPost?.id===postId&&currentViewedPost?.uid===postUid){
+      detail.classList.toggle("liked",finalLiked);detail.setAttribute("aria-pressed",String(finalLiked));
+      detail.setAttribute("aria-label",finalLiked?"Unlike post":"Like post");
+      const node=detail.querySelector(".post-action-count");if(node)node.textContent=String(finalCount);
+      const total=document.getElementById("postDetailLikeCount");if(total)total.textContent=String(finalCount);
     }
   }catch(error){
-    if((Number(button.dataset.likeVersion)||0)===version){
-      button.classList.toggle("liked",wasLiked);button.setAttribute("aria-pressed",String(wasLiked));
-      button.setAttribute("aria-label",wasLiked?"Unlike post":"Like post");
-      if(countNode)countNode.textContent=String(oldCount);
-    }
+    matching.forEach(other=>{
+      if((Number(other.dataset.likeVersion)||0)===operationVersion){
+        other.classList.toggle("liked",wasLiked);other.setAttribute("aria-pressed",String(wasLiked));
+        other.setAttribute("aria-label",wasLiked?"Unlike post":"Like post");
+        const node=other.querySelector(".post-action-count");if(node)node.textContent=String(oldCount);
+      }
+    });
     console.error("Post like failed:",error);alert(error.code==="permission-denied"?"Publish the latest Firestore Rules to enable post likes.":"Could not update like. Please try again.");
   }finally{button.disabled=false;}
 }
