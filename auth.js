@@ -2464,6 +2464,10 @@ async function loadProfileHighlights(user,panel,canManage=true){
   const strip=panel.querySelector(".ig-highlights");if(!strip)return;
   try{
     const snap=await getDocs(query(collection(db,"storyHighlights"),where("uid","==",user.uid)));
+    if(snap.empty){
+      if(!canManage){const note=document.createElement("small");note.className="highlight-load-note";note.textContent="No public highlights found.";strip.append(note);}
+      return;
+    }
     snap.docs.sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(highlightDoc=>{
       const data=highlightDoc.data(),button=document.createElement("button");button.type="button";button.className="ig-highlight saved-highlight";
       const cover=document.createElement("span");if(data.coverImage){const img=document.createElement("img");img.src=data.coverImage;img.alt="";cover.append(img);}else{const item=(data.stories||[]).find(x=>x.storyId===data.coverStoryId)||(data.stories||[])[0];cover.textContent=(item?.text||data.coverText||data.title||"G").slice(0,2).toUpperCase();cover.style.background=item?.background||"";}
@@ -2479,7 +2483,12 @@ async function loadProfileHighlights(user,panel,canManage=true){
       }
       strip.append(button);
     });
-  }catch(error){console.error("Highlights load failed:",error);}
+  }catch(error){
+    console.error("Highlights load failed:",error);
+    const note=document.createElement("small");note.className="highlight-load-note";
+    note.textContent="Highlights load nahi hui ("+(error.code||"error")+").";
+    strip.append(note);
+  }
 }
 function showHighlightOptions(highlightDoc){
   const menu=document.createElement("dialog");menu.className="dp-action-dialog highlight-options-dialog";
