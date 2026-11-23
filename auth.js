@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, Timestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs, where, deleteDoc, updateDoc, startAfter } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, Timestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs, where, deleteDoc, updateDoc, startAfter, increment } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
@@ -2402,6 +2402,8 @@ function exitPublicProfilePage(){
   document.body.classList.remove("public-profile-open");
   document.querySelector('.mobile-nav [data-view="home"], .sidebar [data-view="home"]')?.click();
 }
+function formatPostViews(value){const count=Math.max(0,Number(value)||0);if(count>=1000000){const n=count/1000000;return (n>=10?n.toFixed(0):n.toFixed(1)).replace(/\.0$/,'')+'M';}if(count>=1000){const n=count/1000;return (n>=100?n.toFixed(0):n.toFixed(1)).replace(/\.0$/,'')+'K';}return Math.floor(count).toLocaleString('en-US');}
+async function recordPostView(post){const viewer=auth?.currentUser;if(!viewer||!post?.id||!post?.uid)return null;const postRef=doc(db,'posts',post.id),viewRef=doc(db,'postViews',post.id+'_'+viewer.uid);return runTransaction(db,async transaction=>{const postSnap=await transaction.get(postRef),viewSnap=await transaction.get(viewRef);if(!postSnap.exists())return null;const current=Math.max(0,Number(postSnap.data().views)||0);if(viewSnap.exists())return current;transaction.update(postRef,{views:increment(1)});transaction.set(viewRef,{postId:post.id,postUid:post.uid,uid:viewer.uid,createdAt:serverTimestamp()});return current+1;});}
 let publicProfileLoadToken=0;
 async function loadPublicProfile(viewer,targetUid){
   const profileLoadToken=++publicProfileLoadToken;
