@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v112-highlight-row-light-fallback";
+const CACHE_NAME = "gramora-shell-v113-remove-empty-public-highlights";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=151",
   "./script.js?v=74",
-  "./auth.js?v=225",
+  "./auth.js?v=226",
   "./auth.css?v=62",
   "./story-creator.css?v=3",
   "./story-creator.js?v=3",
