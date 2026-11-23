@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v106-instagram-own-profile";
+const CACHE_NAME = "gramora-shell-v107-profile-post-actions-in-detail";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=147",
   "./script.js?v=74",
-  "./auth.js?v=222",
+  "./auth.js?v=223",
   "./auth.css?v=62",
   "./story-creator.css?v=3",
   "./story-creator.js?v=3",
