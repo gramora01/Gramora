@@ -612,11 +612,11 @@ function openStoryViewer(docs,id){
   storyViewerSequence=dialog._highlightStories?.length?dialog._highlightStories:docs.filter(item=>item.data().uid===data.uid).sort((a,b)=>(a.data().createdAt?.toMillis?.()||0)-(b.data().createdAt?.toMillis?.()||0));
   storyViewerIndex=storyViewerSequence.findIndex(item=>item.id===id);if(storyViewerIndex<0)storyViewerIndex=0;
   dialog.dataset.storyId=id;
+  const isOwnStory=data.uid===auth?.currentUser?.uid&&!dialog._highlightStories?.length;
   stopStoryLikeLiveAnimation();
   if(isOwnStory)watchStoryLikesForOwner(id,data.uid);
   const content=document.getElementById("storyViewerText");
   const deleteButton=document.getElementById("storyViewerDelete");
-  const isOwnStory=data.uid===auth?.currentUser?.uid&&!dialog._highlightStories?.length;
   const ownerActions=document.getElementById("storyOwnerActions");
   const ownerMenu=document.getElementById("storyOwnerMenu");
   if(ownerActions)ownerActions.hidden=!isOwnStory;
