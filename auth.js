@@ -2163,8 +2163,9 @@ async function loadPublicProfile(viewer,targetUid){
     if(results[4].status==="fulfilled")requestPending=results[4].value.exists();
     const panel=document.createElement("section");panel.className="ig-profile";
     const avatar=p.photoURL?'<img alt="" src="'+escapeHtml(p.photoURL)+'">':escapeHtml((p.displayName||"G").charAt(0).toUpperCase());
-    panel.innerHTML='<div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>@'+escapeHtml(p.username||"member")+'</strong></div><div class="ig-profile-stats"><span class="profile-stat"><b>'+((p.isPrivate&&!already)?"—":posts.length)+'</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>'+followersCount+'</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>'+followingCount+'</b><small>following</small></button></div></div></div><div class="ig-profile-bio"><b>'+escapeHtml(p.displayName||"GRAMORA member")+'</b><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already?"Following":(requestPending?"Requested":"Follow"))+'</button><button class="public-message" type="button" aria-label="Message '+escapeHtml(p.displayName||"user")+'"><span aria-hidden="true">↗</span> Message</button><button class="public-block" type="button" aria-label="Block account">⋯</button></div><div class="ig-profile-grid"></div>';
+    panel.innerHTML='<div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>@'+escapeHtml(p.username||"member")+'</strong></div><div class="ig-profile-stats"><span class="profile-stat"><b>'+((p.isPrivate&&!already)?"—":posts.length)+'</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>'+followersCount+'</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>'+followingCount+'</b><small>following</small></button></div></div></div><div class="ig-profile-bio"><b>'+escapeHtml(p.displayName||"GRAMORA member")+'</b><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already?"Following":(requestPending?"Requested":"Follow"))+'</button><button class="public-message" type="button" aria-label="Message '+escapeHtml(p.displayName||"user")+'"><span aria-hidden="true">↗</span> Message</button><button class="public-block" type="button" aria-label="Block account">⋯</button></div><div class="ig-highlights public-profile-highlights"></div><div class="ig-profile-grid"></div>';
     feed.replaceChildren(panel);
+    if(!p.isPrivate||already)loadProfileHighlights({uid:targetUid},panel,false);
     if(p.isPrivate&&!already){const lock=document.createElement("div");lock.className="private-profile-notice";lock.innerHTML='<strong>🔒 This account is private</strong><span>Follow this account to see their photos and posts.</span>';panel.querySelector(".ig-profile-grid").append(lock);panel.querySelector(".public-message").disabled=true;}
     bindAvatarLongPress(panel.querySelector(".ig-profile-avatar"),targetUid,p);
     panel.querySelectorAll(".stat-open").forEach(btn=>btn.addEventListener("click",()=>showFollowList(targetUid,btn.dataset.list)));
@@ -2459,7 +2460,7 @@ async function openStoryHighlightChooser(user,storyId){
     document.body.append(dialog);dialog.addEventListener("close",()=>dialog.remove(),{once:true});dialog.showModal();
   }catch(error){console.error("Highlight chooser failed:",error);openHighlightCreator(user,storyId);}
 }
-async function loadProfileHighlights(user,panel){
+async function loadProfileHighlights(user,panel,canManage=true){
   const strip=panel.querySelector(".ig-highlights");if(!strip)return;
   try{
     const snap=await getDocs(query(collection(db,"storyHighlights"),where("uid","==",user.uid)));
@@ -2469,11 +2470,13 @@ async function loadProfileHighlights(user,panel){
       const label=document.createElement("small");label.textContent=data.title||"Highlight";button.append(cover,label);
       const open=()=>{const stories=(data.stories||[]).map((item,index)=>({id:item.storyId||highlightDoc.id+"_"+index,data:()=>item}));if(!stories.length)return;const viewer=document.getElementById("storyViewerDialog");viewer._highlightStories=stories;viewer.dataset.highlightIndex="0";openStoryViewer(stories,stories[0].id);};
       button.addEventListener("click",open);
-      let holdTimer=null,held=false;
-      button.addEventListener("pointerdown",()=>{held=false;holdTimer=setTimeout(()=>{held=true;showHighlightOptions(highlightDoc);},550);});
-      ["pointerup","pointerleave","pointercancel"].forEach(type=>button.addEventListener(type,()=>clearTimeout(holdTimer)));
-      button.addEventListener("contextmenu",event=>{event.preventDefault();showHighlightOptions(highlightDoc);});
-      button.addEventListener("click",event=>{if(held){event.preventDefault();event.stopImmediatePropagation();held=false;}},true);
+      if(canManage){
+        let holdTimer=null,held=false;
+        button.addEventListener("pointerdown",()=>{held=false;holdTimer=setTimeout(()=>{held=true;showHighlightOptions(highlightDoc);},550);});
+        ["pointerup","pointerleave","pointercancel"].forEach(type=>button.addEventListener(type,()=>clearTimeout(holdTimer)));
+        button.addEventListener("contextmenu",event=>{event.preventDefault();showHighlightOptions(highlightDoc);});
+        button.addEventListener("click",event=>{if(held){event.preventDefault();event.stopImmediatePropagation();held=false;}},true);
+      }
       strip.append(button);
     });
   }catch(error){console.error("Highlights load failed:",error);}
@@ -2635,7 +2638,7 @@ async function loadProfilePage(user){
     });
     panel.querySelector(".profile-add").addEventListener("click",()=>{document.querySelector('.mobile-nav [data-view="explore"], .sidebar [data-view="explore"]')?.click();});
     panel.querySelector(".add-highlight").addEventListener("click",()=>openHighlightCreator(user));
-    loadProfileHighlights(user,panel);
+    loadProfileHighlights(user,panel,true);
     editForm.addEventListener("submit",async event=>{
       event.preventDefault();
       const newName=editForm.elements.displayName.value.trim(),newUsername=editForm.elements.username.value.trim().toLowerCase().replace(/^@/,""),bio=editForm.elements.bio.value.trim(),status=editForm.querySelector(".ig-edit-status"),save=editForm.querySelector("button[type=submit]");
