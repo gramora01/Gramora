@@ -809,7 +809,7 @@ async function openStoryActivitySheet(storyId,ownerUid){
       const id=document.createElement("small");id.textContent="@"+username;
       info.append(name,id);row.append(avatar,info);
       const likeSnap=await getDoc(doc(db,"storyLikes",storyId+"_"+data.uid));
-      if(likeSnap.exists()){const heart=document.createElement("span");heart.className="gramora-story-viewer-like-heart";heart.textContent="♥";heart.setAttribute("aria-label","Liked your story");row.append(heart);}
+      if(likeSnap.exists()){const heart=document.createElement("span");heart.className="gramora-story-viewer-like-heart";heart.textContent="♥";heart.setAttribute("aria-label","Liked your story");avatar.append(heart);}
       row.addEventListener("click",async()=>{closeStoryActivitySheet();dialog.close();await openPersonProfile(data.uid);});
       list.append(row);
     }
