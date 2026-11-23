@@ -1,0 +1,31 @@
+/* Prevent the document itself from drifting sideways on touch screens. */
+html,body{
+  width:100%;
+  max-width:100%;
+  overflow-x:hidden!important;
+}
+body{position:relative}
+.app-shell,.main-content,.feed,.post,.section-head,.stories-section{
+  min-width:0;
+  max-width:100%;
+}
+@media(max-width:900px){
+  .topbar,.app-shell,.main-content,.feed{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+  .topbar{overflow:hidden}
+  .post-head,.post-actions,.post-text{min-width:0;max-width:100%}
+  .post-text,.post-head b,.post-head small{
+    overflow-wrap:anywhere;
+    word-break:normal;
+  }
+  .post-actions{flex-wrap:wrap;row-gap:4px}
+  .post-actions button{max-width:100%;white-space:normal}
+  .mobile-nav{max-width:100vw;overflow:hidden}
+}
+/* Keep intentional horizontal carousels and tab strips usable. */
+.stories,.highlight-cover-choices,.settings-menu,.gramora-story-style-strip{
+  overscroll-behavior-x:contain;
+}
