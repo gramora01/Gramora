@@ -1382,6 +1382,58 @@ async function showPostLikesList(postId,postUid){
     if(!body.children.length)body.textContent="Like karne wale profiles nahi mil paye.";
   }catch(error){console.error("Post likes list failed:",error);body.textContent="Likes list load nahi hui. Firestore Rules publish karein.";}
 }
+function bindPostActionLongPress(button,openList){
+  if(!button||button.dataset.longPressListBound==="1")return ()=>false;
+  button.dataset.longPressListBound="1";
+  let timer=null,suppressClick=false;
+  const cancel=()=>{if(timer){clearTimeout(timer);timer=null;}};
+  button.addEventListener("pointerdown",()=>{
+    cancel();
+    timer=setTimeout(()=>{
+      timer=null;suppressClick=true;
+      if(navigator.vibrate)navigator.vibrate(18);
+      openList();
+      setTimeout(()=>{suppressClick=false;},900);
+    },550);
+  });
+  ["pointerup","pointercancel","pointerleave"].forEach(type=>button.addEventListener(type,cancel));
+  button.addEventListener("contextmenu",event=>event.preventDefault());
+  return ()=>suppressClick;
+}
+async function showPostRepostsList(postId,postUid){
+  const viewer=auth?.currentUser;if(!viewer)return;
+  const dialog=document.createElement("dialog");dialog.className="follow-list-dialog post-likes-dialog";
+  const head=document.createElement("div");head.className="follow-list-head";
+  const title=document.createElement("h3");title.textContent="Reposted by";
+  const close=document.createElement("button");close.type="button";close.className="follow-list-close";close.textContent="×";close.setAttribute("aria-label","Close");close.addEventListener("click",()=>dialog.close());
+  head.append(title,close);dialog.append(head);
+  const body=document.createElement("div");body.className="follow-list-body";body.textContent="Loading…";dialog.append(body);
+  document.body.append(dialog);dialog.addEventListener("close",()=>dialog.remove(),{once:true});dialog.showModal();
+  try{
+    const reposts=await getDocs(query(collection(db,"reposts"),where("originalPostId","==",postId),where("originalUid","==",postUid),limit(500)));
+    body.replaceChildren();
+    if(reposts.empty){const empty=document.createElement("p");empty.className="follow-list-empty";empty.textContent="No reposts yet.";body.append(empty);return;}
+    const people=await Promise.all(reposts.docs.map(async repostDoc=>{
+      const repost=repostDoc.data();if(!repost.uid)return null;
+      const profileSnap=await getDoc(doc(db,"userProfiles",repost.uid));
+      const profile=profileSnap.exists()?profileSnap.data():{};
+      return {uid:repost.uid,displayName:profile.displayName||repost.displayName||"GRAMORA member",username:await getUsernameForUid(repost.uid,profile),photoURL:profile.photoURL||repost.photoURL||""};
+    }));
+    people.filter(Boolean).forEach(person=>{
+      const row=document.createElement("div");row.className="follow-person-row";
+      const open=document.createElement("button");open.type="button";open.className="follow-person-profile";
+      const avatar=document.createElement("span");avatar.className="follow-person-avatar";
+      if(person.photoURL){const img=document.createElement("img");img.src=person.photoURL;img.alt="";avatar.append(img);}else avatar.textContent=person.displayName.trim().charAt(0).toUpperCase();
+      const info=document.createElement("span");info.className="follow-person-info";
+      const name=document.createElement("strong");name.textContent=person.displayName;
+      const username=document.createElement("small");username.textContent="@"+(person.username||"username-not-set");
+      info.append(name,username);open.append(avatar,info);
+      open.addEventListener("click",()=>{dialog.close();openPersonProfile(person.uid);});
+      row.append(open);body.append(row);
+    });
+    if(!body.children.length)body.textContent="Repost karne wale profiles nahi mil paye.";
+  }catch(error){console.error("Post repost list failed:",error);body.textContent="Repost list load nahi hui. Latest Firestore Rules publish karein.";}
+}
 async function getPostEngagement(postId,postUid){
   const user=auth?.currentUser;if(!user)return {liked:false,count:0};
   const [own,all]=await Promise.all([
@@ -1576,10 +1628,12 @@ function renderPosts(docs){
     comment.dataset.postId=originalId;comment.dataset.postUid=authorUid;
     save.dataset.postUid=authorUid;
     save.addEventListener("click",()=>togglePostSave(originalId,save,saveCount));
-    like.addEventListener("click",()=>togglePostLike(originalId,authorUid,like,likeCount));
+    const likeHoldState=bindPostActionLongPress(like,()=>showPostLikesList(originalId,authorUid));
+    like.addEventListener("click",()=>{if(likeHoldState())return;togglePostLike(originalId,authorUid,like,likeCount);});
     comment.addEventListener("click",()=>openPostDetail(postForDetail,false));
     repost.dataset.postId=originalId;repost.dataset.postUid=authorUid;
-    if(auth?.currentUser?.uid!==authorUid)repost.addEventListener("click",()=>createPostRepost(originalId,originalData,repost));
+    const repostHoldState=bindPostActionLongPress(repost,()=>showPostRepostsList(originalId,authorUid));
+    if(auth?.currentUser?.uid!==authorUid)repost.addEventListener("click",()=>{if(repostHoldState())return;createPostRepost(originalId,originalData,repost);});
     else repost.hidden=true;
     actions.append(like,comment,repost,save);
     article.append(head,content,actions);
