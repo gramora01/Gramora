@@ -2001,7 +2001,23 @@ async function openGramoraChat(viewer,targetUid,targetProfile){
 
 
 let activeInboxUnsubscribe=null;
+let inboxTimeRefresh=null;
 let inboxRenderToken=0;
+function formatGramoraInboxTime(timestamp){
+  const elapsed=Math.max(0,Date.now()-Number(timestamp||0));
+  if(!timestamp||elapsed<60000)return "now";
+  const minutes=Math.floor(elapsed/60000);
+  if(minutes<60)return minutes+"min";
+  const hours=Math.floor(minutes/60);
+  if(hours<24)return hours+"hr";
+  const days=Math.floor(hours/24);
+  return days+"d";
+}
+function refreshGramoraInboxTimes(){
+  document.querySelectorAll(".gramora-inbox-time[data-timestamp]").forEach(node=>{
+    node.textContent=formatGramoraInboxTime(Number(node.dataset.timestamp));
+  });
+}
 function clearGramoraInboxUnread(conversationId,lastMessage){
   const list=document.querySelector(".gramora-inbox .gramora-conversation-list");
   if(!list)return;
@@ -2015,11 +2031,13 @@ function clearGramoraInboxUnread(conversationId,lastMessage){
 
 function stopGramoraInbox(){
   if(activeInboxUnsubscribe){activeInboxUnsubscribe();activeInboxUnsubscribe=null;}
+  if(inboxTimeRefresh){clearInterval(inboxTimeRefresh);inboxTimeRefresh=null;}
   inboxRenderToken++;
 }
 async function renderGramoraInbox(user){
   stopGramoraInbox();
   const token=inboxRenderToken;
+  inboxTimeRefresh=setInterval(refreshGramoraInboxTimes,15000);
   const page=document.querySelector(".gramora-inbox");
   if(!page||!user||!db)return;
   const empty=page.querySelector(".gramora-inbox-empty");
@@ -2067,12 +2085,14 @@ async function renderGramoraInbox(user){
         const details=document.createElement("span");details.className="gramora-conversation-details";
         const name=document.createElement("strong");name.textContent=item.displayName;
         const preview=document.createElement("small");preview.textContent=item.lastMessage||"Start a conversation";
-        if(item.unreadCount){
-          row.classList.add("has-unread");
-          preview.textContent=item.unreadCount+" new message"+(item.unreadCount===1?"":"s");
-        }
+        if(item.unreadCount)row.classList.add("has-unread");
         details.append(name,preview);
         const right=document.createElement("span");right.className="gramora-conversation-right";
+        const time=document.createElement("small");time.className="gramora-inbox-time";
+        time.dataset.timestamp=String(item.lastMessageAt||0);
+        time.textContent=formatGramoraInboxTime(item.lastMessageAt);
+        time.setAttribute("aria-label",item.lastMessageAt?new Date(item.lastMessageAt).toLocaleString():"No recent message");
+        right.append(time);
         if(item.unreadCount){
           const unread=document.createElement("span");unread.className="gramora-inbox-unread";
           unread.textContent=item.unreadCount>3?"4+":String(item.unreadCount);
