@@ -2435,16 +2435,29 @@ async function loadPublicProfile(viewer,targetUid){
     p.username=await getUsernameForUid(targetUid,p);
     let posts=[],postsCount=0,followersCount=0,followingCount=0,already=false,requestPending=false;
     const canViewProfilePosts=!p.isPrivate||(await getDoc(doc(db,"follows",viewer.uid+"_"+targetUid))).exists();
+    const repostsPromise=(async()=>{
+      if(!canViewProfilePosts)return {docs:[]};
+      const candidateUids=await getVisibleContentUids(viewer);
+      const blockChecks=await Promise.all(candidateUids.map(uid=>getBlockStatus(viewer.uid,uid)));
+      const visibleOriginalUids=candidateUids.filter((uid,index)=>!blockChecks[index].blockedByMe&&!blockChecks[index].blockedMe);
+      const batches=[];
+      for(let i=0;i<visibleOriginalUids.length;i+=30)batches.push(visibleOriginalUids.slice(i,i+30));
+      const snapshots=await Promise.all(batches.map(batch=>getDocs(query(
+        collection(db,"repostFeed"),
+        where("uid","==",targetUid),
+        where("originalUid","in",batch),
+        limit(60)
+      ))));
+      return {docs:snapshots.flatMap(snapshot=>snapshot.docs)};
+    })();
     const results=await Promise.allSettled([
       canViewProfilePosts?getDocs(query(collection(db,"posts"),where("uid","==",targetUid),limit(60))):Promise.resolve({docs:[]}),
-      canViewProfilePosts?getDocs(query(collection(db,"repostFeed"),where("uid","==",targetUid),limit(60))):Promise.resolve({docs:[]}),
+      repostsPromise,
       getDocs(query(collection(db,"follows"),where("followingUid","==",targetUid),limit(100))),
       getDocs(query(collection(db,"follows"),where("followerUid","==",targetUid),limit(100))),
       getDoc(doc(db,"follows",viewer.uid+"_"+targetUid)),
       getDoc(doc(db,"followRequests",viewer.uid+"_"+targetUid)),
-      canViewProfilePosts?getCountFromServer(query(collection(db,"posts"),where("uid","==",targetUid))):Promise.resolve({data:()=>({count:0})}),
-      getCountFromServer(query(collection(db,"follows"),where("followingUid","==",targetUid))),
-      getCountFromServer(query(collection(db,"follows"),where("followerUid","==",targetUid)))
+      canViewProfilePosts?getCountFromServer(query(collection(db,"posts"),where("uid","==",targetUid))):Promise.resolve({data:()=>({count:0})})
     ]);
     if(profileLoadToken!==publicProfileLoadToken||!document.body.classList.contains("public-profile-open"))return;
     if(results[0].status==="fulfilled")posts=results[0].value.docs;
@@ -2562,7 +2575,7 @@ async function loadPublicProfile(viewer,targetUid){
       publicTabs.forEach(button=>button.addEventListener("click",()=>showPublicProfileTab(button.dataset.publicProfileTab)));
       showPublicProfileTab("posts");
     }
-    if(results.slice(2).some(x=>x.status==="rejected")){
+    if(results.slice(2,6).some(x=>x.status==="rejected")){
       const note=document.createElement("p");note.className="muted tiny";note.textContent="Some follower details could not be loaded. Check Firestore Rules.";panel.append(note);
     }
     if(results[0].status==="rejected"){
