@@ -1396,5 +1396,5 @@ body.public-profile-open .public-profile-tabs{border-top:0}
 
 
 /* Public profile follow button state colors */
-body.public-profile-open .ig-profile-actions .public-follow:not(.is-following){background:#1877f2!important;color:#fff!important;border-color:#1877f2!important}
+body.public-profile-open .ig-profile-actions .public-follow:not(.is-following):not(.is-requested){background:#1877f2!important;color:#fff!important;border-color:#1877f2!important}
 body.public-profile-open .ig-profile-actions .public-follow.is-following{background:#30333b!important;color:#f7f7f8!important;border-color:#454954!important}
