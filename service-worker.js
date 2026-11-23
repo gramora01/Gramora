@@ -1,8 +1,8 @@
-const CACHE_NAME = "gramora-shell-v110-profile-header-own-id";
+const CACHE_NAME = "gramora-shell-v111-light-empty-highlights";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=149",
+  "./style.css?v=150",
   "./script.js?v=74",
   "./auth.js?v=225",
   "./auth.css?v=62",
