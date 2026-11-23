@@ -23,9 +23,15 @@ grid:'<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8
 const svg=n=>'<svg class="gramora-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(p[n]||p.plus)+'</svg>';
 function set(node,name,label=false){
 if(!node)return;
-if(node.dataset.gramoraIcon===name&&node.querySelector(":scope > svg.gramora-ui-icon"))return;
+if(node.dataset.gramoraIcon===name&&node.querySelector(":scope > svg.gramora-ui-icon")){
+ const cleanHeart=name!=="heart"||(!Array.from(node.childNodes).some(child=>child.nodeType===3&&child.textContent.trim())&&!!node.querySelector(":scope > .post-action-count"));
+ if(cleanHeart)return;
+}
 const oldChildren=Array.from(node.childNodes);
 const keep=oldChildren.filter(child=>{
+ if(name==="heart"&&(node.matches(".post-actions .like,.post-detail-like"))){
+   return child.nodeType===1&&child.matches(".post-action-count");
+ }
  if(child.nodeType===1&&child.matches("svg.gramora-ui-icon"))return false;
  if(child.nodeType===3){
    const raw=child.textContent||"";
