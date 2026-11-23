@@ -1254,3 +1254,34 @@ body.light .post-actions .save.saved .gramora-ui-icon path{fill:#e1306c;stroke:#
 .post-actions .like::after{content:attr(data-like-count);display:inline-block;visibility:visible;font-size:13px!important;line-height:1;font-weight:600;font-variant-numeric:tabular-nums;margin-left:-3px!important;padding:0!important;letter-spacing:0!important}
 .post-actions .like .gramora-ui-icon,.post-detail-like .gramora-ui-icon{font-size:initial!important}
 .post-actions .like .post-action-count,.post-detail-like .post-action-count{display:inline-block!important;visibility:visible!important;font-size:13px!important;line-height:1!important}
+
+
+/* Lock feed Like count to a fixed position so the heart/count never shifts on toggle. */
+.post-actions .like{
+  position:relative!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:0!important;
+  width:47px!important;
+  min-width:47px!important;
+  flex:0 0 47px!important;
+  padding:6px 0!important;
+}
+.post-actions .like::after{
+  position:absolute!important;
+  left:28px!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  margin:0!important;
+  padding:0!important;
+  white-space:nowrap!important;
+}
+.post-actions .like .gramora-ui-icon{
+  position:absolute!important;
+  left:0!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  margin:0!important;
+}
+@media(max-width:680px){.post-actions .like{padding:7px 0!important}}
