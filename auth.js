@@ -2491,7 +2491,7 @@ async function loadPublicProfile(viewer,targetUid){
     if(results[6].status==="fulfilled")postsCount=results[6].value.data().count;
     const panel=document.createElement("section");panel.className="ig-profile";
     const avatar=p.photoURL?'<img alt="" src="'+escapeHtml(p.photoURL)+'">':escapeHtml((p.displayName||"G").charAt(0).toUpperCase());
-    panel.innerHTML='<header class="public-profile-page-head"><button class="public-profile-back" type="button" aria-label="Back">‹</button><strong>@'+escapeHtml(p.username||"member")+'</strong><button class="public-profile-more public-block" type="button" aria-label="More options">⋯</button></header><div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>'+escapeHtml(p.displayName||"GRAMORA member")+'</strong></div><div class="ig-profile-stats"><span class="profile-stat"><b>'+((p.isPrivate&&!already)?"—":postsCount)+'</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>'+followersCount+'</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>'+followingCount+'</b><small>following</small></button></div></div></div><div class="ig-profile-bio"><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already?"Following":(requestPending?"Requested":"Follow"))+'</button><button class="public-message" type="button" aria-label="Message '+escapeHtml(p.displayName||"user")+'">Message</button><button class="public-add-person" type="button" aria-label="Add person"></button></div><div class="ig-highlights public-profile-highlights" aria-label="Story highlights"></div><div class="ig-profile-tabs public-profile-tabs" role="tablist"><button class="active" data-public-profile-tab="posts" type="button" aria-label="Posts" title="Posts"></button><button data-public-profile-tab="reposts" type="button" aria-label="Reposts" title="Reposts"></button></div><div class="ig-profile-grid"></div>';
+    panel.innerHTML='<header class="public-profile-page-head"><button class="public-profile-back" type="button" aria-label="Back">‹</button><strong>@'+escapeHtml(p.username||"member")+'</strong><button class="public-profile-more public-block" type="button" aria-label="More options">⋯</button></header><div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>'+escapeHtml(p.displayName||"GRAMORA member")+'</strong></div><div class="ig-profile-stats"><span class="profile-stat"><b>'+((p.isPrivate&&!already)?"—":postsCount)+'</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>'+followersCount+'</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>'+followingCount+'</b><small>following</small></button></div></div></div><div class="ig-profile-bio"><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already?"Following":(requestPending?"Requested":"Follow"))+'</button><button class="public-message" type="button" aria-label="Message '+escapeHtml(p.displayName||"user")+'">Message</button><button class="public-add-person" type="button" aria-label="Add person"></button></div><div class="ig-highlights public-profile-highlights" aria-label="Story highlights" hidden></div><div class="ig-profile-tabs public-profile-tabs" role="tablist"><button class="active" data-public-profile-tab="posts" type="button" aria-label="Posts" title="Posts"></button><button data-public-profile-tab="reposts" type="button" aria-label="Reposts" title="Reposts"></button></div><div class="ig-profile-grid"></div>';
     feed.replaceChildren(panel);
     panel.querySelector(".public-profile-back").addEventListener("click",exitPublicProfilePage);
     if(title)title.textContent="@"+(p.username||"member");
@@ -2859,9 +2859,10 @@ async function loadProfileHighlights(user,panel,canManage=true){
   try{
     const snap=await getDocs(query(collection(db,"storyHighlights"),where("uid","==",user.uid)));
     if(snap.empty){
-      if(!canManage){const note=document.createElement("small");note.className="highlight-load-note";note.textContent="No public highlights found.";strip.append(note);}
+      if(!canManage){strip.replaceChildren();strip.hidden=true;}
       return;
     }
+    if(!canManage)strip.hidden=false;
     snap.docs.sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(highlightDoc=>{
       const data=highlightDoc.data(),button=document.createElement("button");button.type="button";button.className="ig-highlight saved-highlight";
       const cover=document.createElement("span");if(data.coverImage){const img=document.createElement("img");img.src=data.coverImage;img.alt="";cover.append(img);}else{const item=(data.stories||[]).find(x=>x.storyId===data.coverStoryId)||(data.stories||[])[0];cover.textContent=(item?.text||data.coverText||data.title||"G").slice(0,2).toUpperCase();cover.style.background=item?.background||"";}
@@ -2879,6 +2880,7 @@ async function loadProfileHighlights(user,panel,canManage=true){
     });
   }catch(error){
     console.error("Highlights load failed:",error);
+    if(!canManage){strip.replaceChildren();strip.hidden=true;return;}
     const note=document.createElement("small");note.className="highlight-load-note";
     note.textContent="Highlights load nahi hui ("+(error.code||"error")+").";
     strip.append(note);
