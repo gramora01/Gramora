@@ -252,7 +252,8 @@ service cloud.firestore {
           || resource.data.uid == request.auth.uid
           || resource.data.originalUid == request.auth.uid);
       allow list: if signedIn()
-        && resource.data.originalUid == request.auth.uid;
+        && (resource.data.originalUid == request.auth.uid
+          || resource.data.uid == request.auth.uid);
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.originalPostId is string
@@ -287,34 +288,6 @@ service cloud.firestore {
       allow update: if false;
     }
 
-    match /reposts/{repostId} {
-      // A signed-in user may check their own deterministic repost document
-      // before creating it (including when that document does not exist yet).
-      // Other individual reads and all list queries remain privacy-protected.
-      allow get: if signedIn()
-        && (repostId.matches('.*_' + request.auth.uid)
-          || resource.data.uid == request.auth.uid
-          || canViewUserContent(resource.data.originalUid));
-      allow list: if signedIn()
-        && (resource.data.uid == request.auth.uid
-          || canViewUserContent(resource.data.originalUid));
-      allow create: if signedIn()
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.originalPostId is string
-        && request.resource.data.originalUid is string
-        && request.resource.data.originalUid != request.auth.uid
-        && canViewUserContent(request.resource.data.originalUid)
-        && repostId == request.resource.data.originalPostId + '_' + request.auth.uid
-        && request.resource.data.originalText is string
-        && request.resource.data.originalText.size() <= 2000
-        && request.resource.data.keys().hasOnly(['uid','displayName','username','photoURL','originalPostId','originalUid','originalDisplayName','originalUsername','originalPhotoURL','originalText','originalBackground','originalCreatedAt','createdAt'])
-        && (!('username' in request.resource.data) || request.resource.data.username is string)
-        && (!('photoURL' in request.resource.data) || (request.resource.data.photoURL is string && request.resource.data.photoURL.size() <= 2000));
-      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
-      allow update: if false;
-    }
-
-    // TEXT STORIES (expire in 24 hours; clients hide expired stories)
     match /stories/{storyId} {
       allow read: if canViewUserContent(resource.data.uid);
       allow create: if signedIn()
