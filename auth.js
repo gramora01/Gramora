@@ -597,6 +597,8 @@ storyActivitySheet?.addEventListener("touchstart",event=>{storyActivityTouchY=ev
 storyActivitySheet?.addEventListener("touchend",event=>{if(event.changedTouches[0].clientY-storyActivityTouchY>65)closeStoryActivitySheet();},{passive:true});
 document.getElementById("storyViewerDialog")?.addEventListener("close",()=>{
   stopStoryViewerTimer();
+  const audio=document.getElementById("storyViewerAudio");
+  if(audio)audio.pause();
   closeStoryActivitySheet();
 });
 document.getElementById("storyViewerPrevious")?.addEventListener("click",()=>navigateStoryViewer(-1));
@@ -947,6 +949,30 @@ const setStoryMusicPreview=async()=>{
   try{await storyMusicPreview.play();}catch(error){console.warn("Preview playback needs a user tap:",error);}
 };
 const stopStoryMusicPreview=()=>{if(storyMusicPreview){storyMusicPreview.pause();}};
+function stopGramoraStoryAudio(){
+  if(storyMusicPreview)storyMusicPreview.pause();
+  const viewerAudio=document.getElementById("storyViewerAudio");
+  if(viewerAudio)viewerAudio.pause();
+}
+document.addEventListener("visibilitychange",()=>{
+  const viewerAudio=document.getElementById("storyViewerAudio");
+  if(document.hidden){
+    stopGramoraStoryAudio();
+    storyViewerPaused=true;
+    stopStoryViewerTimer();
+  }else{
+    const viewer=document.getElementById("storyViewerDialog");
+    if(viewer?.open){
+      if(viewerAudio&&!viewerAudio.hidden&&viewerAudio.src){
+        const playAttempt=viewerAudio.play();
+        if(playAttempt?.catch)playAttempt.catch(()=>{});
+      }
+      storyViewerPaused=false;
+      startStoryViewerTimer();
+    }
+  }
+});
+window.addEventListener("pagehide",stopGramoraStoryAudio);
 const storyEditorDone=document.getElementById("storyEditorDone");
 const setStoryEditingMode=editing=>{
   if(!storyTextArea||!storyEditorDone)return;
@@ -1124,6 +1150,7 @@ storyForm?.addEventListener("submit",async event=>{
 });
 document.getElementById("closeStoryCreate")?.addEventListener("click",()=>document.getElementById("storyCreateDialog").close());
 document.getElementById("storyCreateDialog")?.addEventListener("close",()=>{
+  stopStoryMusicPreview();
   if(storyEditingId){storyEditingId=null;storyForm?.reset();}
   setStoryEditingMode(true);
   const heading=document.getElementById("storyCreateDialog").querySelector("h2");
