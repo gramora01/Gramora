@@ -1411,7 +1411,6 @@ async function togglePostLike(postId,postUid,button,countNode){
   const nextCount=Math.max(0,oldCount+(wasLiked?-1:1));
   const applyVisibleState=(liked,count)=>{
     matching.forEach(other=>{
-      other.dataset.likeVersion=String((Number(other.dataset.likeVersion)||0)+1);
       other.classList.toggle("liked",liked);
       other.setAttribute("aria-pressed",String(liked));
       other.setAttribute("aria-label",liked?"Unlike post":"Like post");
