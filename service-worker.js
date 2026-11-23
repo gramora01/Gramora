@@ -1,8 +1,8 @@
-const CACHE_NAME = "gramora-shell-v66";
+const CACHE_NAME = "gramora-shell-v67";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=130",
+  "./style.css?v=131",
   "./script.js?v=74",
   "./auth.js?v=191",
   "./auth.css?v=62",
