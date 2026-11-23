@@ -2093,11 +2093,6 @@ async function renderGramoraInbox(user){
         time.textContent=formatGramoraInboxTime(item.lastMessageAt);
         time.setAttribute("aria-label",item.lastMessageAt?new Date(item.lastMessageAt).toLocaleString():"No recent message");
         right.append(time);
-        if(item.unreadCount){
-          const unread=document.createElement("span");unread.className="gramora-inbox-unread";
-          unread.textContent=item.unreadCount>3?"4+":String(item.unreadCount);
-          unread.setAttribute("aria-label",item.unreadCount+" unread messages");right.append(unread);
-        }
         const arrow=document.createElement("span");arrow.className="gramora-conversation-arrow";arrow.textContent="›";right.append(arrow);
         row.append(avatar,details,right);
         row.addEventListener("click",()=>openGramoraChat(user,item.uid,item.profile));
