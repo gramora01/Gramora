@@ -1392,3 +1392,8 @@ body.public-profile-open .public-profile-highlights .highlight-load-note{color:#
 /* Keep searched-profile highlights as a distinct section between two divider lines. */
 body.public-profile-open .public-profile-highlights{border-top:1px solid #292c35;border-bottom:1px solid #292c35;margin:0;padding:12px 14px 14px}
 body.public-profile-open .public-profile-tabs{border-top:0}
+
+
+/* Public profile follow button state colors */
+body.public-profile-open .ig-profile-actions .public-follow:not(.is-following){background:#1877f2!important;color:#fff!important;border-color:#1877f2!important}
+body.public-profile-open .ig-profile-actions .public-follow.is-following{background:#30333b!important;color:#f7f7f8!important;border-color:#454954!important}
