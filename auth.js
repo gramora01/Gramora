@@ -1291,6 +1291,7 @@ async function refreshPostSaveButton(postId,button,countNode){
     button.classList.toggle("saved",snap.exists());
     button.setAttribute("aria-pressed",String(snap.exists()));
     button.setAttribute("aria-label",snap.exists()?"Remove saved post":"Save post");
+    if(countNode?.isConnected){try{const all=await getDocs(query(collection(db,"savedPosts"),where("postId","==",postId),limit(500)));countNode.textContent=String(all.size);}catch(error){countNode.textContent="0";}}
   }catch(error){console.warn("Saved post state unavailable:",error);}
 }
 async function togglePostSave(postId,button,countNode){
@@ -1411,9 +1412,10 @@ async function loadPostEngagement(post,root){
       getDocs(query(collection(db,"postComments"),where("postId","==",post.id),where("postUid","==",post.uid),limit(100))),
       getDoc(doc(db,"postLikes",post.id+"_"+auth.currentUser.uid))
     ]);
-    likeCount.textContent=likesSnap.size+" likes";likeCount.onclick=()=>showPostLikesList(post.id,post.uid);
+    if(likeCount){likeCount.textContent=String(likesSnap.size);likeCount.onclick=()=>showPostLikesList(post.id,post.uid);}
     likeButton.classList.toggle("liked",ownLike.exists());likeButton.setAttribute("aria-pressed",String(ownLike.exists()));
-    likeButton.innerHTML="<span>"+(ownLike.exists()?"Liked":"Like")+"</span>";
+    likeButton.setAttribute("aria-label",ownLike.exists()?"Unlike post":"Like post");
+    const detailCount=likeButton.querySelector(".post-action-count");if(detailCount)detailCount.textContent=String(likesSnap.size);
     list.replaceChildren();
     if(commentsSnap.empty){const empty=document.createElement("p");empty.className="muted tiny";empty.textContent="Abhi koi comment nahi hai. Pehla comment karein!";list.append(empty);}
     commentsSnap.docs.sort((x,y)=>(x.data().createdAt?.toMillis?.()||0)-(y.data().createdAt?.toMillis?.()||0)).forEach(item=>{
@@ -1424,7 +1426,7 @@ async function loadPostEngagement(post,root){
       if(d.uid===auth.currentUser.uid){const del=document.createElement("button");del.type="button";del.textContent="×";del.setAttribute("aria-label","Delete comment");del.addEventListener("click",async()=>{del.disabled=true;try{await deleteDoc(doc(db,"postComments",item.id));await loadPostEngagement(post,root);}catch(error){alert("Comment delete nahi hua. Firestore Rules check karein.");del.disabled=false;}});row.append(del);}
       list.append(row);
     });
-    status.textContent=likesSnap.size+" likes · "+commentsSnap.size+" comments";
+    status.textContent="";
   }catch(error){console.error("Post engagement load failed:",error);status.textContent=error.code==="permission-denied"?"Latest Firestore Rules publish karein.":"Likes/comments load nahi ho paye.";
   }
 }
@@ -2344,7 +2346,7 @@ document.getElementById("postDetailDelete")?.addEventListener("click",async()=>{
   try{await deleteDoc(doc(db,"posts",post.id));document.getElementById("postDetailDialog").close();if(activeView==="profile")await loadProfilePage(auth.currentUser);else await getDocsForFeed();}
   catch(error){console.error(error);alert("Post delete nahi hui. Firestore Rules check karein.");}finally{button.disabled=false;}
 });
-document.getElementById("postDetailLike")?.addEventListener("click",()=>{if(currentViewedPost)togglePostLike(currentViewedPost.id,currentViewedPost.uid,document.getElementById("postDetailLike"),document.getElementById("postDetailLikeCount")).then(()=>loadPostEngagement(currentViewedPost,document.getElementById("postDetailDialog")));});
+document.getElementById("postDetailLike")?.addEventListener("click",()=>{if(currentViewedPost)togglePostLike(currentViewedPost.id,currentViewedPost.uid,document.getElementById("postDetailLike"),document.querySelector("#postDetailLike .post-action-count")).then(()=>loadPostEngagement(currentViewedPost,document.getElementById("postDetailDialog")));});
 document.getElementById("postCommentForm")?.addEventListener("submit",async event=>{
   event.preventDefault();const post=currentViewedPost,user=auth?.currentUser,input=document.getElementById("postCommentInput"),status=document.getElementById("postCommentStatus"),button=event.currentTarget.querySelector("button[type=submit]"),text=input.value.trim();
   if(!post||!user||!text)return;button.disabled=true;status.textContent="Comment post ho raha hai…";
