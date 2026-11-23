@@ -2467,18 +2467,28 @@ async function loadPublicProfile(viewer,targetUid){
     panel.querySelector(".public-message").addEventListener("click",()=>{
       openGramoraChat(viewer,targetUid,p);
     });
-    panel.querySelector(".public-block").addEventListener("click",async()=>{
-      if(!confirm("Block @"+(p.username||"this account")+"? They won't be able to message or follow you."))return;
-      const button=panel.querySelector(".public-block");button.disabled=true;
-      try{
-        await setDoc(doc(db,"userBlocks",viewer.uid+"_"+targetUid),{
-          blockerUid:viewer.uid,blockedUid:targetUid,
-          blockedName:p.displayName||"GRAMORA member",
-          blockedUsername:p.username||"",createdAt:serverTimestamp()
-        });
-        await deleteDoc(doc(db,"follows",viewer.uid+"_"+targetUid)).catch(()=>{});
-        await loadPublicProfile(viewer,targetUid);
-      }catch(error){console.error("Block account failed:",error);button.disabled=false;alert(error.code==="permission-denied"?"Block option ke liye latest Firestore Rules publish karein.":"Account block nahi hua. Dobara try karein.");}
+    panel.querySelector(".public-block").addEventListener("click",event=>{
+      event.stopPropagation();
+      const existingMenu=panel.querySelector(".public-profile-menu");
+      if(existingMenu){existingMenu.remove();return;}
+      const menu=document.createElement("div");menu.className="public-profile-menu";
+      const blockOption=document.createElement("button");blockOption.type="button";blockOption.textContent="Block account";
+      blockOption.addEventListener("click",async()=>{
+        menu.remove();
+        if(!confirm("Block @"+(p.username||"this account")+"? They won't be able to message or follow you."))return;
+        const button=panel.querySelector(".public-block");button.disabled=true;
+        try{
+          await setDoc(doc(db,"userBlocks",viewer.uid+"_"+targetUid),{
+            blockerUid:viewer.uid,blockedUid:targetUid,
+            blockedName:p.displayName||"GRAMORA member",
+            blockedUsername:p.username||"",createdAt:serverTimestamp()
+          });
+          await deleteDoc(doc(db,"follows",viewer.uid+"_"+targetUid)).catch(()=>{});
+          await loadPublicProfile(viewer,targetUid);
+        }catch(error){console.error("Block account failed:",error);button.disabled=false;alert(error.code==="permission-denied"?"Block option ke liye latest Firestore Rules publish karein.":"Account block nahi hua. Dobara try karein.");}
+      });
+      menu.append(blockOption);panel.querySelector(".public-profile-page-head").append(menu);
+      document.addEventListener("click",()=>menu.remove(),{once:true});
     });
     panel.querySelector(".public-follow").addEventListener("click",async e=>{
       const btn=e.currentTarget;
