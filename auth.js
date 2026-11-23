@@ -624,7 +624,7 @@ function openStoryViewer(docs,id){
   const isOwnStory=data.uid===auth?.currentUser?.uid&&!dialog._highlightStories?.length;
   stopStoryLikeLiveAnimation();
   document.querySelectorAll("#storyViewerStage .gramora-story-like-float-layer").forEach(layer=>layer.remove());
-  animateStoryLikeHearts();
+  if(isOwnStory)animateStoryLikeHearts();
   if(isOwnStory)watchStoryLikesForOwner(id,data.uid);
   const content=document.getElementById("storyViewerText");
   const deleteButton=document.getElementById("storyViewerDelete");
