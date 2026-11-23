@@ -248,7 +248,8 @@ service cloud.firestore {
     // PRIVATE REPOST LISTS: only the original post owner can query this collection.
     match /repostLists/{repostId} {
       allow get: if signedIn()
-        && (resource.data.uid == request.auth.uid
+        && (repostId.matches('.*_' + request.auth.uid)
+          || resource.data.uid == request.auth.uid
           || resource.data.originalUid == request.auth.uid);
       allow list: if signedIn()
         && resource.data.originalUid == request.auth.uid;
