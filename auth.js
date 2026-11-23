@@ -1248,7 +1248,7 @@ async function migrateOwnedRepostsToFeed(user){
     const owned=await getDocs(query(collection(db,"reposts"),where("originalUid","==",user.uid),limit(500)));
     for(const item of owned.docs){
       const target=doc(db,"repostFeed",item.id);
-      await setDoc(target,item.data());
+      if(!(await getDoc(target)).exists())await setDoc(target,item.data());
     }
   }catch(error){console.warn("Legacy repost feed migration is waiting for the latest Firestore Rules:",error.code||error);}
 }
@@ -1745,7 +1745,7 @@ async function createPostRepost(postId,original,button){
         await deleteDoc(feedRef).catch(error=>{if(error.code!=="not-found")throw error;});
       }else{
         const saved=existing.data();
-        await setDoc(feedRef,saved);
+        if(!(await getDoc(feedRef)).exists())await setDoc(feedRef,saved);
       }
     }else{
       const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};
