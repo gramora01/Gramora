@@ -1178,3 +1178,10 @@ body.light .gramora-conversation .gramora-inbox-unread{
   font-weight:800!important;
 }
 .gramora-conversation.has-unread .gramora-inbox-unread{visibility:visible!important}
+
+
+/* Message inbox: relative time at the top-right, with unread count below */
+.gramora-conversation-right{display:flex!important;flex-direction:column!important;align-items:flex-end!important;justify-content:flex-start!important;gap:5px!important;margin-left:auto!important;min-width:42px}
+.gramora-inbox-time{display:block!important;color:var(--muted,#a4a6af)!important;font-size:11px!important;line-height:1.2!important;font-weight:500!important;white-space:nowrap!important}
+.gramora-conversation.has-unread .gramora-inbox-time{color:#d946a5!important;font-weight:700!important}
+.gramora-conversation-arrow{display:none!important}
