@@ -1293,7 +1293,7 @@ async function refreshPostSaveButton(postId,button,countNode){
     button.setAttribute("aria-label",snap.exists()?"Remove saved post":"Save post");
     if(countNode?.isConnected){
       const all=await getDocs(query(collection(db,"postSaves"),where("postId","==",postId),where("postUid","==",button.dataset.postUid||""),limit(500)));
-      if(countNode.isConnected)countNode.textContent=String(all.size);
+      if(countNode.isConnected)countNode.textContent=displayPostActionCount(all.size);
     }
   }catch(error){console.warn("Saved post state unavailable:",error);}
 }
@@ -1302,7 +1302,7 @@ async function togglePostSave(postId,button,countNode){
   const wasSaved=button.classList.contains("saved"),oldCount=Number(countNode?.textContent)||0;
   button.classList.toggle("saved",!wasSaved);button.setAttribute("aria-pressed",String(!wasSaved));
   button.setAttribute("aria-label",wasSaved?"Save post":"Remove saved post");
-  if(countNode)countNode.textContent=String(Math.max(0,oldCount+(wasSaved?-1:1)));
+  if(countNode)countNode.textContent=displayPostActionCount(Math.max(0,oldCount+(wasSaved?-1:1)));
   button.disabled=true;
   try{
     const ref=doc(db,"savedPosts",postId+"_"+user.uid),publicRef=doc(db,"postSaves",postId+"_"+user.uid);
