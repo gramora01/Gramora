@@ -1760,17 +1760,22 @@ async function createPostRepost(postId,original,button){
   button.setAttribute("aria-label",wasReposted?"Repost":"Unrepost");
   if(countNode)countNode.textContent=displayPostActionCount(Math.max(0,oldCount+(wasReposted?-1:1)));
   updateVisibleRepostButtons(postId,!wasReposted,Math.max(0,oldCount+(wasReposted?-1:1)));
+  let repostStep="existing repost check";
   try{
     const existing=await getDoc(ref);
     if(existing.exists()){
       if(wasReposted){
+        repostStep="repost remove";
         await deleteDoc(ref);
+        repostStep="feed repost remove";
         if((await getDoc(feedRef)).exists())await deleteDoc(feedRef);
       }else{
         const saved=existing.data();
+        repostStep="feed repost restore";
         if(!(await getDoc(feedRef)).exists())await setDoc(feedRef,saved);
       }
     }else{
+      repostStep="profile check";
       const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};
       const repostData={
         uid:user.uid,
@@ -1787,16 +1792,20 @@ async function createPostRepost(postId,original,button){
         originalCreatedAt:original.createdAt||null,
         createdAt:serverTimestamp()
       };
+      repostStep="repost save";
       await setDoc(ref,repostData);
+      repostStep="feed repost save";
       await setDoc(feedRef,repostData);
     }
+    repostStep="repost count refresh";
     const latestCount=await getVisibleRepostCount(postId,original.uid,user);
+    repostStep="repost status refresh";
     const ownNow=(await getDoc(ref)).exists();
     updateVisibleRepostButtons(postId,ownNow,latestCount);
   }catch(error){
-    console.error("Repost toggle failed:",error);
+    console.error("Repost toggle failed at "+repostStep+":",error);
     updateVisibleRepostButtons(postId,wasReposted,oldCount);
-    alert(error.code==="permission-denied"?"Latest Firestore Rules Firebase mein publish karein.":"Repost update nahi hua. Dobara try karein.");
+    alert("Repost mein dikkat ("+repostStep+"): "+(error.code||"error")+". Is message ka screenshot bhejo.");
   }finally{button.disabled=false;}
 }
 async function deleteOwnPost(postId,button,afterDelete){
