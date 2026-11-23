@@ -1456,7 +1456,7 @@ function renderPosts(docs){
     refreshPostSaveButton(originalId,save);
     const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,background:data.originalBackground,createdAt:data.originalCreatedAt}:data;
     const likeCount=document.createElement("button");likeCount.type="button";likeCount.className="post-like-count";likeCount.textContent="Loading likes…";
-    const comment=document.createElement("button");comment.className="post-comment-open";comment.type="button";comment.innerHTML="▢ <span>Comment</span>";
+    const comment=document.createElement("button");comment.className="post-comment-open";comment.type="button";comment.innerHTML="<span>Comment</span>";
     const postForDetail={id:originalId,...originalData};
     like.addEventListener("click",()=>togglePostLike(originalId,authorUid,like,likeCount));
     comment.addEventListener("click",()=>openPostDetail(postForDetail,false));
