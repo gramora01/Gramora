@@ -1542,7 +1542,15 @@ function renderPosts(docs){
     const authorUid=isRepost?data.originalUid:data.uid,authorName=isRepost?data.originalDisplayName:data.displayName;
     const authorUsername=isRepost?data.originalUsername:data.username,authorPhoto=isRepost?data.originalPhotoURL:data.photoURL;
     const article=document.createElement("article");article.className="post";
-    if(isRepost){const by=document.createElement("div");by.className="post-reposted-by";by.textContent="↻ "+(data.displayName||"GRAMORA member")+" reposted";article.append(by);}
+    let repostAvatar=null,repostText=null;
+    if(isRepost){
+      const by=document.createElement("button");by.type="button";by.className="post-reposted-by";
+      repostAvatar=document.createElement("span");repostAvatar.className="post-repost-avatar";
+      if(data.photoURL){const img=document.createElement("img");img.src=data.photoURL;img.alt="";repostAvatar.append(img);}
+      else repostAvatar.textContent=(data.displayName||"G").trim().charAt(0).toUpperCase();
+      repostText=document.createElement("span");repostText.textContent=(data.displayName||"GRAMORA member")+" reposted";
+      by.append(repostAvatar,repostText);by.addEventListener("click",()=>openPersonProfile(data.uid));article.append(by);
+    }
     const head=document.createElement("button");head.className="post-head post-author-link";head.type="button";
     const avatar=document.createElement("div");avatar.className="avatar";avatar.textContent=(authorName||"G").trim().charAt(0).toUpperCase();
      bindAvatarLongPress(avatar,authorUid,{displayName:authorName||"GRAMORA member",photoURL:authorPhoto||""});
@@ -1570,8 +1578,8 @@ function renderPosts(docs){
     save.addEventListener("click",()=>togglePostSave(originalId,save,saveCount));
     like.addEventListener("click",()=>togglePostLike(originalId,authorUid,like,likeCount));
     comment.addEventListener("click",()=>openPostDetail(postForDetail,false));
-    if(!isRepost&&auth?.currentUser?.uid!==data.uid)repost.addEventListener("click",()=>createPostRepost(originalId,originalData,repost));
-    else if(isRepost){repost.disabled=true;repost.setAttribute("aria-label","Already reposted");repost.classList.add("reposted");}
+    repost.dataset.postId=originalId;repost.dataset.postUid=authorUid;
+    if(auth?.currentUser?.uid!==authorUid)repost.addEventListener("click",()=>createPostRepost(originalId,originalData,repost));
     else repost.hidden=true;
     actions.append(like,comment,repost,save);
     article.append(head,content,actions);
@@ -1584,6 +1592,7 @@ function renderPosts(docs){
     refreshPostLikeButton(originalId,authorUid,like,likeCount);
     refreshPostSaveButton(originalId,save,saveCount);
     refreshPostActionCounts(originalId,authorUid,{comment:commentCount,repost:repostCount,save:saveCount});
+    refreshPostRepostButton(originalId,authorUid,repost,repostCount);
     // Resolve the latest profile details instead of relying on old names saved in post documents.
     const profileUids=[authorUid,isRepost?data.uid:null].filter(Boolean);
     Promise.all(profileUids.map(uid=>getDoc(doc(db,"userProfiles",uid)).then(snap=>({uid,data:snap.exists()?snap.data():null}))))
@@ -1604,7 +1613,12 @@ function renderPosts(docs){
         if(isRepost){
           const latestReposter=profiles.get(data.uid);
           const repostLabel=article.querySelector(".post-reposted-by");
-          if(latestReposter&&repostLabel)repostLabel.textContent="↻ "+(latestReposter.displayName||data.displayName||"GRAMORA member")+" reposted";
+          if(latestReposter&&repostText)repostText.textContent=(latestReposter.displayName||data.displayName||"GRAMORA member")+" reposted";
+          if(latestReposter&&repostAvatar){
+            repostAvatar.replaceChildren();
+            if(latestReposter.photoURL){const img=document.createElement("img");img.src=latestReposter.photoURL;img.alt="";repostAvatar.append(img);}
+            else repostAvatar.textContent=(latestReposter.displayName||data.displayName||"G").trim().charAt(0).toUpperCase();
+          }
         }
       }).catch(error=>console.warn("Latest feed profile lookup failed:",error));
   });
@@ -1612,7 +1626,7 @@ function renderPosts(docs){
 async function refreshPostActionCounts(postId,postUid,nodes){
   const jobs=[
     ["comment",query(collection(db,"postComments"),where("postId","==",postId),where("postUid","==",postUid),limit(500))],
-    ["repost",query(collection(db,"reposts"),where("originalPostId","==",postId),limit(500))],
+    ["repost",query(collection(db,"reposts"),where("originalPostId","==",postId),where("originalUid","==",postUid),limit(500))],
     ["save",query(collection(db,"postSaves"),where("postId","==",postId),where("postUid","==",postUid),limit(500))]
   ];
   const results=await Promise.allSettled(jobs.map(([,q])=>getDocs(q)));
@@ -1622,16 +1636,73 @@ async function refreshPostActionCounts(postId,postUid,nodes){
     node.textContent=result.status==="fulfilled"?displayPostActionCount(result.value.size):"";
   });
 }
-async function createPostRepost(postId,original,button){
-  const user=auth?.currentUser;if(!user)return;
-  const repostId=postId+"_"+user.uid,ref=doc(db,"reposts",repostId);button.disabled=true;
+async function refreshPostRepostButton(postId,postUid,button,countNode){
+  const user=auth?.currentUser;if(!user||!button)return;
   try{
-    if((await getDoc(ref)).exists()){button.classList.add("reposted");button.setAttribute("aria-label","Already reposted");return;}
-    const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};
-    await setDoc(ref,{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",originalPostId:postId,originalUid:original.uid,originalDisplayName:original.displayName||"GRAMORA member",originalUsername:original.username||"",originalPhotoURL:original.photoURL||"",originalText:original.text||"",originalBackground:original.background||POST_BACKGROUNDS[4],originalCreatedAt:original.createdAt||null,createdAt:serverTimestamp()});
-    button.classList.add("reposted");button.setAttribute("aria-label","Already reposted");
-    const count=button.querySelector(".post-action-count");if(count)count.textContent=displayPostActionCount((await getDocs(query(collection(db,"reposts"),where("originalPostId","==",postId),limit(500)))).size);
-  }catch(error){console.error("Repost failed:",error);alert(error.code==="permission-denied"?"Publish the latest Firestore Rules to enable reposts.":"Could not repost this post. Please try again.");button.disabled=false;}
+    const [own,all]=await Promise.all([
+      getDoc(doc(db,"reposts",postId+"_"+user.uid)),
+      getDocs(query(collection(db,"reposts"),where("originalPostId","==",postId),where("originalUid","==",postUid),limit(500)))
+    ]);
+    if(!button.isConnected)return;
+    button.classList.toggle("reposted",own.exists());
+    button.setAttribute("aria-pressed",String(own.exists()));
+    button.setAttribute("aria-label",own.exists()?"Unrepost":"Repost");
+    if(countNode?.isConnected)countNode.textContent=displayPostActionCount(all.size);
+  }catch(error){console.warn("Repost state/count unavailable:",error);}
+}
+function updateVisibleRepostButtons(postId,active,count){
+  document.querySelectorAll(".post-actions .repost").forEach(button=>{
+    if(button.dataset.postId!==postId)return;
+    button.classList.toggle("reposted",active);
+    button.setAttribute("aria-pressed",String(active));
+    button.setAttribute("aria-label",active?"Unrepost":"Repost");
+    const node=button.querySelector(".post-action-count");
+    if(node)node.textContent=displayPostActionCount(count);
+  });
+}
+async function createPostRepost(postId,original,button){
+  const user=auth?.currentUser;if(!user||!button)return;
+  const repostId=postId+"_"+user.uid,ref=doc(db,"reposts",repostId);
+  const countNode=button.querySelector(".post-action-count");
+  const wasReposted=button.classList.contains("reposted");
+  const oldCount=Number(countNode?.textContent)||0;
+  button.disabled=true;
+  button.classList.toggle("reposted",!wasReposted);
+  button.setAttribute("aria-pressed",String(!wasReposted));
+  button.setAttribute("aria-label",wasReposted?"Repost":"Unrepost");
+  if(countNode)countNode.textContent=displayPostActionCount(Math.max(0,oldCount+(wasReposted?-1:1)));
+  updateVisibleRepostButtons(postId,!wasReposted,Math.max(0,oldCount+(wasReposted?-1:1)));
+  try{
+    const existing=await getDoc(ref);
+    if(existing.exists()){
+      if(wasReposted)await deleteDoc(ref);
+      else {button.classList.add("reposted");}
+    }else{
+      const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};
+      await setDoc(ref,{
+        uid:user.uid,
+        displayName:profile.displayName||user.displayName||"GRAMORA member",
+        username:profile.username||"",
+        photoURL:profile.photoURL||user.photoURL||"",
+        originalPostId:postId,
+        originalUid:original.uid,
+        originalDisplayName:original.displayName||"GRAMORA member",
+        originalUsername:original.username||"",
+        originalPhotoURL:original.photoURL||"",
+        originalText:original.text||"",
+        originalBackground:original.background||POST_BACKGROUNDS[4],
+        originalCreatedAt:original.createdAt||null,
+        createdAt:serverTimestamp()
+      });
+    }
+    const latest=await getDocs(query(collection(db,"reposts"),where("originalPostId","==",postId),where("originalUid","==",original.uid),limit(500)));
+    const ownNow=(await getDoc(ref)).exists();
+    updateVisibleRepostButtons(postId,ownNow,latest.size);
+  }catch(error){
+    console.error("Repost toggle failed:",error);
+    updateVisibleRepostButtons(postId,wasReposted,oldCount);
+    alert(error.code==="permission-denied"?"Latest Firestore Rules Firebase mein publish karein.":"Repost update nahi hua. Dobara try karein.");
+  }finally{button.disabled=false;}
 }
 async function deleteOwnPost(postId,button,afterDelete){
   if(!auth?.currentUser)return;
