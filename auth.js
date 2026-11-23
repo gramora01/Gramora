@@ -2128,11 +2128,6 @@ function exitPublicProfilePage(){
   document.body.classList.remove("public-profile-open");
   document.querySelector('.mobile-nav [data-view="home"], .sidebar [data-view="home"]')?.click();
 }
-function addPublicProfileBack(panel){
-  const head=document.createElement("div");head.className="public-profile-page-head";
-  const back=document.createElement("button");back.type="button";back.className="public-profile-back";back.setAttribute("aria-label","Back to feed");back.textContent="←";back.addEventListener("click",exitPublicProfilePage);
-  const label=document.createElement("strong");label.textContent="Profile";head.append(back,label);panel.insertBefore(head,panel.firstChild);
-}
 async function loadPublicProfile(viewer,targetUid){
   document.body.classList.add("public-profile-open");
   document.querySelectorAll(".nav").forEach(item=>item.classList.remove("active"));
@@ -2146,7 +2141,7 @@ async function loadPublicProfile(viewer,targetUid){
     if(blockStatus.blockedByMe){
       const blockedPanel=document.createElement("section");blockedPanel.className="ig-profile";
       blockedPanel.innerHTML='<div class="ig-no-posts"><strong>⊘</strong><b>You blocked this account</b><span>You will not be able to follow or message this account while it is blocked.</span></div><div class="ig-profile-actions"><button type="button" class="public-unblock">Unblock</button></div>';
-      feed.replaceChildren(blockedPanel);addPublicProfileBack(blockedPanel);
+      feed.replaceChildren(blockedPanel);
       blockedPanel.querySelector(".public-unblock").addEventListener("click",async()=>{
         const button=blockedPanel.querySelector(".public-unblock");button.disabled=true;button.textContent="Unblocking…";
         try{await deleteDoc(doc(db,"userBlocks",viewer.uid+"_"+targetUid));await loadPublicProfile(viewer,targetUid);}
@@ -2176,7 +2171,7 @@ async function loadPublicProfile(viewer,targetUid){
     const panel=document.createElement("section");panel.className="ig-profile";
     const avatar=p.photoURL?'<img alt="" src="'+escapeHtml(p.photoURL)+'">':escapeHtml((p.displayName||"G").charAt(0).toUpperCase());
     panel.innerHTML='<div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>@'+escapeHtml(p.username||"member")+'</strong></div><div class="ig-profile-stats"><span class="profile-stat"><b>'+((p.isPrivate&&!already)?"—":posts.length)+'</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>'+followersCount+'</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>'+followingCount+'</b><small>following</small></button></div></div></div><div class="ig-profile-bio"><b>'+escapeHtml(p.displayName||"GRAMORA member")+'</b><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already?"Following":(requestPending?"Requested":"Follow"))+'</button><button class="public-message" type="button" aria-label="Message '+escapeHtml(p.displayName||"user")+'"><span aria-hidden="true">↗</span> Message</button><button class="public-block" type="button" aria-label="Block account">⋯</button></div><div class="ig-highlights public-profile-highlights"></div><div class="ig-profile-grid"></div>';
-    feed.replaceChildren(panel);addPublicProfileBack(panel);
+    feed.replaceChildren(panel);
     if(title)title.textContent="@"+(p.username||"member");
     if(!p.isPrivate||already)loadProfileHighlights({uid:targetUid},panel,false);
     if(p.isPrivate&&!already){const lock=document.createElement("div");lock.className="private-profile-notice";lock.innerHTML='<strong>🔒 This account is private</strong><span>Follow this account to see their photos and posts.</span>';panel.querySelector(".ig-profile-grid").append(lock);panel.querySelector(".public-message").disabled=true;}
