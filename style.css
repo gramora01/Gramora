@@ -1239,3 +1239,11 @@ body.light .public-profile-back{background:#f0f1f6;color:#20212a}
 .post-actions button:disabled{opacity:.65}
 .post-like-count{display:none!important}
 @media(max-width:680px){.post-actions{gap:15px}.post-actions button{padding:7px 1px!important}}
+
+/* Larger Instagram-style post icons and filled active states */
+.post-actions .gramora-ui-icon{width:25px;height:25px;flex:0 0 25px;stroke-width:1.9}
+.post-actions .post-action-count{font-size:13px}
+.post-actions .like.liked .gramora-ui-icon path{fill:#e1306c;stroke:#e1306c}
+.post-actions .save.saved .gramora-ui-icon path{fill:#e1306c;stroke:#e1306c}
+body.light .post-actions .like.liked .gramora-ui-icon path,
+body.light .post-actions .save.saved .gramora-ui-icon path{fill:#e1306c;stroke:#e1306c}
