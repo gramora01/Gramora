@@ -1695,10 +1695,21 @@ function renderPosts(docs){
       }).catch(error=>console.warn("Latest feed profile lookup failed:",error));
   });
 }
+async function getVisibleRepostCount(postId,postUid,user){
+  const visibleUids=await getVisibleContentUids(user);
+  const batches=[];for(let i=0;i<visibleUids.length;i+=30)batches.push(visibleUids.slice(i,i+30));
+  const snapshots=await Promise.all(batches.map(batch=>getDocs(query(
+    collection(db,"repostFeed"),
+    where("uid","in",batch),
+    where("originalPostId","==",postId),
+    where("originalUid","==",postUid),
+    limit(500)
+  ))));
+  return snapshots.reduce((total,snapshot)=>total+snapshot.size,0);
+}
 async function refreshPostActionCounts(postId,postUid,nodes){
   const jobs=[
     ["comment",query(collection(db,"postComments"),where("postId","==",postId),where("postUid","==",postUid),limit(500))],
-    ["repost",query(collection(db,"repostFeed"),where("originalPostId","==",postId),where("originalUid","==",postUid),limit(500))],
     ["save",query(collection(db,"postSaves"),where("postId","==",postId),where("postUid","==",postUid),limit(500))]
   ];
   const results=await Promise.allSettled(jobs.map(([,q])=>getDocs(q)));
@@ -1707,19 +1718,24 @@ async function refreshPostActionCounts(postId,postUid,nodes){
     if(!node?.isConnected)return;
     node.textContent=result.status==="fulfilled"?displayPostActionCount(result.value.size):"";
   });
+  const repostNode=nodes.repost,user=auth?.currentUser;
+  if(repostNode?.isConnected&&user){
+    try{repostNode.textContent=displayPostActionCount(await getVisibleRepostCount(postId,postUid,user));}
+    catch(error){console.warn("Repost count unavailable:",error);}
+  }
 }
 async function refreshPostRepostButton(postId,postUid,button,countNode){
   const user=auth?.currentUser;if(!user||!button)return;
   try{
-    const [own,all]=await Promise.all([
+    const [own,count]=await Promise.all([
       getDoc(doc(db,"reposts",postId+"_"+user.uid)),
-      getDocs(query(collection(db,"repostFeed"),where("originalPostId","==",postId),where("originalUid","==",postUid),limit(500)))
+      getVisibleRepostCount(postId,postUid,user)
     ]);
     if(!button.isConnected)return;
     button.classList.toggle("reposted",own.exists());
     button.setAttribute("aria-pressed",String(own.exists()));
     button.setAttribute("aria-label",own.exists()?"Unrepost":"Repost");
-    if(countNode?.isConnected)countNode.textContent=displayPostActionCount(all.size);
+    if(countNode?.isConnected)countNode.textContent=displayPostActionCount(count);
   }catch(error){console.warn("Repost state/count unavailable:",error);}
 }
 function updateVisibleRepostButtons(postId,active,count){
@@ -1774,9 +1790,9 @@ async function createPostRepost(postId,original,button){
       await setDoc(ref,repostData);
       await setDoc(feedRef,repostData);
     }
-    const latest=await getDocs(query(collection(db,"repostFeed"),where("originalPostId","==",postId),where("originalUid","==",original.uid),limit(500)));
+    const latestCount=await getVisibleRepostCount(postId,original.uid,user);
     const ownNow=(await getDoc(ref)).exists();
-    updateVisibleRepostButtons(postId,ownNow,latest.size);
+    updateVisibleRepostButtons(postId,ownNow,latestCount);
   }catch(error){
     console.error("Repost toggle failed:",error);
     updateVisibleRepostButtons(postId,wasReposted,oldCount);
