@@ -23,10 +23,21 @@ grid:'<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8
 const svg=n=>'<svg class="gramora-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(p[n]||p.plus)+'</svg>';
 function set(node,name,label=false){
 if(!node)return;
-if(node.dataset.gramoraIcon===name&&node.querySelector(":scope > svg.gramora-ui-icon")){
- const cleanHeart=name!=="heart"||(!Array.from(node.childNodes).some(child=>child.nodeType===3&&child.textContent.trim())&&!!node.querySelector(":scope > .post-action-count"));
- if(cleanHeart)return;
+if(name==="heart"&&node.matches(".post-actions .like,.post-detail-like")){
+ let countNode=node.querySelector(".post-action-count");
+ if(!countNode){
+  countNode=document.createElement("span");
+  countNode.className="post-action-count";
+  countNode.textContent=String(node.dataset.likeCount||"0");
+  node.append(countNode);
+ }
+ if(!node.querySelector(":scope > svg.gramora-ui-icon"))node.insertAdjacentHTML("afterbegin",svg(name));
+ Array.from(node.childNodes).forEach(child=>{if(child.nodeType===3)child.remove();});
+ if(countNode.parentElement!==node)node.append(countNode);
+ node.dataset.gramoraIcon=name;
+ return;
 }
+if(node.dataset.gramoraIcon===name&&node.querySelector(":scope > svg.gramora-ui-icon"))return;
 const oldChildren=Array.from(node.childNodes);
 const keep=oldChildren.filter(child=>{
  if(name==="heart"&&(node.matches(".post-actions .like,.post-detail-like"))){
