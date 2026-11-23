@@ -1651,8 +1651,7 @@ function renderPosts(docs){
     comment.addEventListener("click",()=>openPostDetail(postForDetail,false));
     repost.dataset.postId=originalId;repost.dataset.postUid=authorUid;
     const repostHoldState=auth?.currentUser?.uid===authorUid?bindPostActionLongPress(repost,()=>showPostRepostsList(originalId,authorUid)):()=>false;
-    if(auth?.currentUser?.uid!==authorUid)repost.addEventListener("click",()=>{if(repostHoldState())return;createPostRepost(originalId,originalData,repost);});
-    else repost.setAttribute("aria-label","View reposts");
+    repost.addEventListener("click",()=>{if(repostHoldState())return;createPostRepost(originalId,originalData,repost);});
     actions.append(like,comment,repost,save);
     article.append(head,content,actions);
     if(!isRepost&&auth?.currentUser?.uid===data.uid){
