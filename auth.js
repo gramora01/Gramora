@@ -1392,6 +1392,9 @@ async function getPostEngagement(postId,postUid){
 }
 function ensurePostLikeCountNode(button,fallback=0){
   if(!button)return null;
+  // Feed likes render their live count from data-like-count via CSS, avoiding
+  // nested text nodes being touched by the global SVG icon observer.
+  if(button.matches(".post-actions .like"))return null;
   let node=button.querySelector(".post-action-count");
   if(!node){
     node=document.createElement("span");
@@ -1405,6 +1408,7 @@ function setPostLikeCount(button,count){
   if(!button)return;
   const value=String(Math.max(0,Number(count)||0));
   button.dataset.likeCount=value;
+  if(button.matches(".post-actions .like"))return;
   const node=ensurePostLikeCountNode(button,value);
   if(node)node.textContent=value;
 }
@@ -1546,7 +1550,7 @@ function renderPosts(docs){
     identity.append(name,meta);head.append(avatar,identity);head.addEventListener("click",()=>{const viewer=auth?.currentUser;if(viewer&&authorUid)loadPublicProfile(viewer,authorUid);});
     const content=document.createElement("p");content.className="post-text post-text-card";content.textContent=isRepost?(data.originalText||""):(data.text||"");content.style.background=isRepost?(data.originalBackground||POST_BACKGROUNDS[4]):(data.background||POST_BACKGROUNDS[4]);
     const actions=document.createElement("div");actions.className="post-actions";
-    const like=document.createElement("button");like.className="like";like.type="button";like.innerHTML='<span class="post-action-count">0</span>';
+    const like=document.createElement("button");like.className="like";like.type="button";like.dataset.likeCount="0";
     const comment=document.createElement("button");comment.className="post-comment-open";comment.type="button";comment.innerHTML='<span class="post-action-count">0</span>';
     const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.innerHTML='<span class="post-action-count">0</span>';
     const save=document.createElement("button");save.className="save";save.type="button";save.innerHTML='<span class="post-action-count">0</span>';
