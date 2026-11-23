@@ -2396,7 +2396,9 @@ function exitPublicProfilePage(){
   document.body.classList.remove("public-profile-open");
   document.querySelector('.mobile-nav [data-view="home"], .sidebar [data-view="home"]')?.click();
 }
+let publicProfileLoadToken=0;
 async function loadPublicProfile(viewer,targetUid){
+  const profileLoadToken=++publicProfileLoadToken;
   document.body.classList.add("public-profile-open");
   document.querySelectorAll(".nav").forEach(item=>item.classList.remove("active"));
   const title=document.getElementById("viewTitle");if(title)title.textContent="Profile";
@@ -2405,6 +2407,7 @@ async function loadPublicProfile(viewer,targetUid){
   feed.innerHTML='<div class="profile-loading">Loading profile…</div>';
   try{
     const blockStatus=await getBlockStatus(viewer.uid,targetUid);
+    if(profileLoadToken!==publicProfileLoadToken||!document.body.classList.contains("public-profile-open"))return;
     if(blockStatus.blockedMe){feed.textContent="This profile isn't available.";return;}
     if(blockStatus.blockedByMe){
       const blockedPanel=document.createElement("section");blockedPanel.className="ig-profile";
@@ -2418,6 +2421,7 @@ async function loadPublicProfile(viewer,targetUid){
       return;
     }
     const snap=await getDoc(doc(db,"userProfiles",targetUid));
+    if(profileLoadToken!==publicProfileLoadToken||!document.body.classList.contains("public-profile-open"))return;
     if(!snap.exists()){feed.textContent="Profile unavailable.";return;}
     const p=snap.data();
     p.username=await getUsernameForUid(targetUid,p);
@@ -2431,6 +2435,7 @@ async function loadPublicProfile(viewer,targetUid){
       getDoc(doc(db,"follows",viewer.uid+"_"+targetUid)),
       getDoc(doc(db,"followRequests",viewer.uid+"_"+targetUid))
     ]);
+    if(profileLoadToken!==publicProfileLoadToken||!document.body.classList.contains("public-profile-open"))return;
     if(results[0].status==="fulfilled")posts=results[0].value.docs;
     if(results[1].status==="fulfilled")followersCount=results[1].value.size;
     if(results[2].status==="fulfilled")followingCount=results[2].value.size;
@@ -2968,6 +2973,7 @@ async function loadProfilePage(user){
       }finally{save.disabled=false;}
     });
   }catch(error){
+    if(profileLoadToken!==publicProfileLoadToken)return;
     console.error("Profile load error:",error);
     feed.innerHTML='<p class="muted">Could not load profile: '+escapeHtml(error.message||"Please try again.")+'</p>';
   }
