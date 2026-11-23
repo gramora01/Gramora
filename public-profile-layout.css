@@ -1,4 +1,4 @@
-/* Searched public profile: Highlights is a distinct section between two visible dividers. */
+/* Searched public profile: Highlights sits between Follow actions and Posts/Reposts without divider lines. */
 body.public-profile-open #feed .ig-profile .public-profile-highlights{
   display:flex!important;
   align-items:flex-start!important;
@@ -6,8 +6,7 @@ body.public-profile-open #feed .ig-profile .public-profile-highlights{
   min-height:88px!important;
   margin:0!important;
   padding:12px 14px 14px!important;
-  border-top:1px solid #3a3e49!important;
-  border-bottom:1px solid #3a3e49!important;
+  border:0!important;
   background:#0e1016!important;
   overflow-x:auto!important;
   scrollbar-width:none!important;
