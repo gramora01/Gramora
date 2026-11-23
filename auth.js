@@ -2084,7 +2084,7 @@ async function renderGramoraInbox(user){
         else avatar.textContent=item.displayName.charAt(0).toUpperCase();
         const details=document.createElement("span");details.className="gramora-conversation-details";
         const name=document.createElement("strong");name.textContent=item.displayName;
-        const preview=document.createElement("small");preview.textContent=item.lastMessage||"Start a conversation";
+        const preview=document.createElement("small");preview.textContent=item.unreadCount>1?(item.unreadCount>3?"4+ new messages":item.unreadCount+" new messages"):(item.lastMessage||"Start a conversation");
         if(item.unreadCount)row.classList.add("has-unread");
         details.append(name,preview);
         const right=document.createElement("span");right.className="gramora-conversation-right";
