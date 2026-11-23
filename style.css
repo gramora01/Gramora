@@ -1103,7 +1103,7 @@ body.light .gramora-story-viewer{color:#fff!important}
 .gramora-story-viewer-info strong{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gramora-story-viewer-info small{font-size:12px;color:#777}
 .gramora-story-viewer-row{position:relative}
-.gramora-story-viewer-like-heart{margin-left:auto;flex:0 0 auto;color:#ff3040;font-size:21px;line-height:1;text-shadow:0 1px 3px #ff304055;animation:gramoraViewerHeartPop .32s cubic-bezier(.2,1.6,.4,1) both}
+.gramora-story-viewer-avatar{position:relative;overflow:visible!important}.gramora-story-viewer-avatar img{border-radius:50%}.gramora-story-viewer-like-heart{position:absolute;right:-4px;bottom:-3px;z-index:3;width:19px;height:19px;display:grid;place-items:center;border:2px solid #fff;border-radius:50%;background:#fff;color:#ff3040;font-size:12px;line-height:1;text-shadow:0 1px 2px #ff304055;box-shadow:0 1px 4px #0003;animation:gramoraViewerHeartPop .32s cubic-bezier(.2,1.6,.4,1) both}
 @keyframes gramoraViewerHeartPop{from{opacity:0;transform:scale(.25)}to{opacity:1;transform:scale(1)}}
 .gramora-viewer-stage{position:relative;isolation:isolate}
 .gramora-story-like-float-layer{position:absolute;inset:0;z-index:12;overflow:hidden;pointer-events:none}
