@@ -2448,7 +2448,7 @@ async function openStoryHighlightChooser(user,storyId){
           if(stories.some(item=>item.storyId===storyId)){dialog.close();return;}
           if(stories.length>=20)throw new Error("This highlight already has 20 stories.");
           stories.push({storyId,uid:raw.uid,displayName:raw.displayName||user.displayName||"GRAMORA member",text:raw.text||"",lyrics:raw.lyrics||"",background:raw.background||POST_BACKGROUNDS[4],songTitle:raw.songTitle||"",songArtist:raw.songArtist||"",songUrl:raw.songUrl||"",previewUrl:raw.previewUrl||"",songArtwork:raw.songArtwork||"",songStart:Number(raw.songStart||0),createdAt:raw.createdAt||null});
-          await updateDoc(doc(db,"storyHighlights",highlightDoc.id),{stories});
+          await updateDoc(doc(db,"storyHighlights",highlightDoc.id),{stories,coverStoryId:data.coverStoryId||stories[0]?.storyId||storyId,coverImage:data.coverImage||"",coverText:data.coverText||((stories[0]?.text||data.title||"G").slice(0,2))});
           dialog.close();await loadProfilePage(user);
         }catch(error){console.error("Add story to highlight failed:",error);alert(error.message||"Story highlight update nahi hua.");button.disabled=false;}
       });
