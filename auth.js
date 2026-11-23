@@ -2651,6 +2651,7 @@ function openPostDetail(post,canEdit=false){
   document.getElementById("postDetailByline").textContent=(post.displayName||"GRAMORA member")+(post.username?" · @"+post.username:"")+" · "+formatPostDate(post.createdAt);
   document.getElementById("postDetailEdit").hidden=!canEdit;document.getElementById("postDetailDelete").hidden=!canEdit;
   const dialog=document.getElementById("postDetailDialog");dialog.dataset.postId=post.id;dialog.showModal();loadPostEngagement(post,dialog);
+  recordPostView(post).then(count=>{if(count===null)return;document.querySelectorAll(".ig-post-view-count").forEach(node=>{if(node.dataset.postId===post.id)node.textContent=formatPostViews(count);});}).catch(error=>console.warn("Post view count update failed:",error));
 }
 document.getElementById("postDetailEdit")?.addEventListener("click",()=>{if(!currentViewedPost)return;document.getElementById("postDetailDialog").close();openPostEditor(currentViewedPost);});
 document.getElementById("postDetailDelete")?.addEventListener("click",async()=>{
