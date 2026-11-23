@@ -1249,6 +1249,6 @@ body.light .post-actions .like.liked .gramora-ui-icon path,
 body.light .post-actions .save.saved .gramora-ui-icon path{fill:#e1306c;stroke:#e1306c}
 
 /* Keep post-like controls icon + numeric count only (never legacy Like/Liked text). */
-.post-actions .like,.post-detail-like{font-size:0!important}
+.post-actions .like,.post-detail-like{font-size:0!important}; .post-actions .like::after{content:attr(data-like-count);display:inline-block;visibility:visible;font-size:13px!important;line-height:1;font-weight:600;font-variant-numeric:tabular-nums}
 .post-actions .like .gramora-ui-icon,.post-detail-like .gramora-ui-icon{font-size:initial!important}
 .post-actions .like .post-action-count,.post-detail-like .post-action-count{display:inline-block!important;visibility:visible!important;font-size:13px!important;line-height:1!important}
