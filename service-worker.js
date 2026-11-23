@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v107-profile-post-actions-in-detail";
+const CACHE_NAME = "gramora-shell-v108-profile-repost-grid-size";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=147",
   "./script.js?v=74",
-  "./auth.js?v=223",
+  "./auth.js?v=224",
   "./auth.css?v=62",
   "./story-creator.css?v=3",
   "./story-creator.js?v=3",
