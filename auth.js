@@ -2435,7 +2435,7 @@ async function loadPublicProfile(viewer,targetUid){
     const canViewProfilePosts=!p.isPrivate||(await getDoc(doc(db,"follows",viewer.uid+"_"+targetUid))).exists();
     const results=await Promise.allSettled([
       canViewProfilePosts?getDocs(query(collection(db,"posts"),where("uid","==",targetUid),limit(60))):Promise.resolve({docs:[]}),
-      canViewProfilePosts?getDocs(query(collection(db,"reposts"),where("uid","==",targetUid),limit(60))):Promise.resolve({docs:[]}),
+      canViewProfilePosts?getDocs(query(collection(db,"repostFeed"),where("uid","==",targetUid),limit(60))):Promise.resolve({docs:[]}),
       getDocs(query(collection(db,"follows"),where("followingUid","==",targetUid),limit(100))),
       getDocs(query(collection(db,"follows"),where("followerUid","==",targetUid),limit(100))),
       getDoc(doc(db,"follows",viewer.uid+"_"+targetUid)),
@@ -2443,19 +2443,16 @@ async function loadPublicProfile(viewer,targetUid){
     ]);
     if(profileLoadToken!==publicProfileLoadToken||!document.body.classList.contains("public-profile-open"))return;
     if(results[0].status==="fulfilled")posts=results[0].value.docs;
-    const profileReposts=results[1].status==="fulfilled"?results[1].value.docs.map(item=>({id:"repost_"+item.id,data:()=>({...item.data(),_isRepost:true,_repostId:item.id})})):[];
     if(results[2].status==="fulfilled")followersCount=results[2].value.size;
     if(results[3].status==="fulfilled")followingCount=results[3].value.size;
     if(results[4].status==="fulfilled")already=results[4].value.exists();
     if(results[5].status==="fulfilled")requestPending=results[5].value.exists();
-    const profileItems=[...posts,...profileReposts].sort((x,y)=>(y.data().createdAt?.toMillis?.()||0)-(x.data().createdAt?.toMillis?.()||0));
     const panel=document.createElement("section");panel.className="ig-profile";
     const avatar=p.photoURL?'<img alt="" src="'+escapeHtml(p.photoURL)+'">':escapeHtml((p.displayName||"G").charAt(0).toUpperCase());
     panel.innerHTML='<div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>@'+escapeHtml(p.username||"member")+'</strong></div><div class="ig-profile-stats"><span class="profile-stat"><b>'+((p.isPrivate&&!already)?"—":posts.length)+'</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>'+followersCount+'</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>'+followingCount+'</b><small>following</small></button></div></div></div><div class="ig-profile-bio"><b>'+escapeHtml(p.displayName||"GRAMORA member")+'</b><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already?"Following":(requestPending?"Requested":"Follow"))+'</button><button class="public-message" type="button" aria-label="Message '+escapeHtml(p.displayName||"user")+'"><span aria-hidden="true">↗</span> Message</button><button class="public-block" type="button" aria-label="Block account">⋯</button></div><div class="ig-highlights public-profile-highlights"></div><div class="ig-profile-tabs public-profile-tabs" role="tablist"><button class="active" data-public-profile-tab="posts" type="button" aria-label="Posts" title="Posts"></button><button data-public-profile-tab="reposts" type="button" aria-label="Reposts" title="Reposts"></button></div><div class="ig-profile-grid"></div>';
     feed.replaceChildren(panel);
     if(title)title.textContent="@"+(p.username||"member");
     if(!p.isPrivate||already)loadProfileHighlights({uid:targetUid},panel,false);
-    if(p.isPrivate&&!already){const lock=document.createElement("div");lock.className="private-profile-notice";lock.innerHTML='<strong>🔒 This account is private</strong><span>Follow this account to see their photos and posts.</span>';panel.querySelector(".ig-profile-grid").append(lock);panel.querySelector(".public-message").disabled=true;}
     bindAvatarLongPress(panel.querySelector(".ig-profile-avatar"),targetUid,p);
     panel.querySelectorAll(".stat-open").forEach(btn=>btn.addEventListener("click",()=>showFollowList(targetUid,btn.dataset.list)));
     panel.querySelector(".public-message").addEventListener("click",()=>{
