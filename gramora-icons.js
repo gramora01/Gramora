@@ -56,7 +56,17 @@ root.querySelectorAll?.(".close-btn,.follow-list-close").forEach(n=>set(n,"close
 root.querySelectorAll?.(".gramora-chat-back,.profile-edit-back").forEach(n=>set(n,"back"));
 root.querySelectorAll?.(".gramora-chat-find-head button").forEach(n=>set(n,"close"));
 }
-let pending=false;const queue=()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;scan();});};
-const start=()=>{scan();new MutationObserver(queue).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:["class"]});};
+function removeStrayEscapedLineBreaks(){
+ const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+ const remove=[];
+ while(walker.nextNode()){
+  const node=walker.currentNode;
+  const value=(node.nodeValue||"").trim();
+  if(value==="\\n"||value==="\\n\\n"||value==="\\n\\n\\n")remove.push(node);
+ }
+ remove.forEach(node=>node.remove());
+}
+let pending=false;const queue=()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;removeStrayEscapedLineBreaks();scan();});};
+const start=()=>{removeStrayEscapedLineBreaks();scan();new MutationObserver(queue).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:["class"]});};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});else start();
 })();
