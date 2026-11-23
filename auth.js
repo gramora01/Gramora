@@ -2620,7 +2620,7 @@ async function renderBlockedAccounts(){
 // Settings center
 const settingsDialog=document.getElementById("settingsDialog");
 function openProfileMenu(){if(!settingsDialog)return;settingsDialog.classList.remove("drawer-closing");settingsDialog.showModal();}
-function closeSettingsDrawer(){if(!settingsDialog?.open)return;settingsDialog.classList.add("drawer-closing");window.setTimeout(()=>{settingsDialog.classList.remove("drawer-closing");if(settingsDialog.open)closeSettingsDrawer();},260);}
+function closeSettingsDrawer(){if(!settingsDialog?.open)return;settingsDialog.classList.add("drawer-closing");window.setTimeout(()=>{settingsDialog.classList.remove("drawer-closing");if(settingsDialog.open)settingsDialog.close();},260);}
 document.getElementById("settingsBtn")?.addEventListener("click",openProfileMenu);
 document.getElementById("closeCreate")?.addEventListener("click",()=>document.getElementById("createDialog").close());
 
