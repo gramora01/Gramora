@@ -217,7 +217,7 @@ async function refreshNotificationBadge(){
   try{
     const snap=await getDocs(query(collection(db,"notifications"),where("toUid","==",user.uid),limit(100)));
     const unread=snap.docs.filter(item=>item.data().read!==true).length;
-    button.innerHTML='♧'+(unread?'<span class="notification-badge">'+(unread>99?"99+":unread)+'</span>':'');
+    button.innerHTML=unread?'<span class="notification-badge">'+(unread>99?"99+":unread)+'</span>':"";
     button.setAttribute("aria-label",unread?unread+" unread notifications":"Notifications");
   }catch(error){console.warn("Notification count unavailable:",error);}
 }
@@ -1289,7 +1289,7 @@ async function refreshPostSaveButton(postId,button){
     const snap=await getDoc(doc(db,"savedPosts",postId+"_"+user.uid));
     if(!button.isConnected)return;
     button.classList.toggle("saved",snap.exists());
-    button.innerHTML=snap.exists()?"✓ <span>Saved</span>":"▣ <span>Save</span>";
+    button.innerHTML=snap.exists()?"<span>Saved</span>":"<span>Save</span>";
     button.setAttribute("aria-pressed",String(snap.exists()));
   }catch(error){console.warn("Saved post state unavailable:",error);}
 }
@@ -1382,7 +1382,7 @@ async function refreshPostLikeButton(postId,postUid,button,countNode){
     const state=await getPostEngagement(postId,postUid);
     if(!button.isConnected)return;
     button.classList.toggle("liked",state.liked);button.setAttribute("aria-pressed",String(state.liked));
-    button.innerHTML=(state.liked?"♥":"♡")+" <span>"+(state.liked?"Liked":"Like")+"</span>";
+    button.innerHTML="<span>"+(state.liked?"Liked":"Like")+"</span>";
     if(countNode)countNode.textContent=state.count+" likes";
   }catch(error){console.warn("Post likes unavailable:",error);if(countNode?.isConnected)countNode.textContent="Likes unavailable";}
 }
@@ -1413,7 +1413,7 @@ async function loadPostEngagement(post,root){
     ]);
     likeCount.textContent=likesSnap.size+" likes";likeCount.onclick=()=>showPostLikesList(post.id,post.uid);
     likeButton.classList.toggle("liked",ownLike.exists());likeButton.setAttribute("aria-pressed",String(ownLike.exists()));
-    likeButton.innerHTML=(ownLike.exists()?"♥":"♡")+" <span>"+(ownLike.exists()?"Liked":"Like")+"</span>";
+    likeButton.innerHTML="<span>"+(ownLike.exists()?"Liked":"Like")+"</span>";
     list.replaceChildren();
     if(commentsSnap.empty){const empty=document.createElement("p");empty.className="muted tiny";empty.textContent="Abhi koi comment nahi hai. Pehla comment karein!";list.append(empty);}
     commentsSnap.docs.sort((x,y)=>(x.data().createdAt?.toMillis?.()||0)-(y.data().createdAt?.toMillis?.()||0)).forEach(item=>{
@@ -1448,9 +1448,9 @@ function renderPosts(docs){
     identity.append(name,meta);head.append(avatar,identity);head.addEventListener("click",()=>{const viewer=auth?.currentUser;if(viewer&&authorUid)loadPublicProfile(viewer,authorUid);});
     const content=document.createElement("p");content.className="post-text post-text-card";content.textContent=isRepost?(data.originalText||""):(data.text||"");content.style.background=isRepost?(data.originalBackground||POST_BACKGROUNDS[4]):(data.background||POST_BACKGROUNDS[4]);
     const actions=document.createElement("div");actions.className="post-actions";
-    const like=document.createElement("button");like.className="like";like.type="button";like.innerHTML="♡ <span>Like</span>";
-    const save=document.createElement("button");save.className="save";save.type="button";save.innerHTML="▣ <span>Save</span>";
-    const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.innerHTML="⟳ <span>Repost</span>";
+    const like=document.createElement("button");like.className="like";like.type="button";like.innerHTML="<span>Like</span>";
+    const save=document.createElement("button");save.className="save";save.type="button";save.innerHTML="<span>Save</span>";
+    const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.innerHTML="<span>Repost</span>";
     const originalId=isRepost?data.originalPostId:postDoc.id;
     save.addEventListener("click",()=>togglePostSave(originalId,save));
     refreshPostSaveButton(originalId,save);
@@ -1462,7 +1462,7 @@ function renderPosts(docs){
     comment.addEventListener("click",()=>openPostDetail(postForDetail,false));
     likeCount.addEventListener("click",()=>showPostLikesList(originalId,authorUid));
     if(!isRepost&&auth?.currentUser?.uid!==data.uid)repost.addEventListener("click",()=>createPostRepost(originalId,originalData,repost));
-    else if(isRepost){repost.disabled=true;repost.textContent="⟳ Reposted";}
+    else if(isRepost){repost.disabled=true;repost.textContent="Reposted";}
     else repost.hidden=true;
     actions.append(like,save,repost,comment);
     article.append(head,content,actions,likeCount);
@@ -1502,10 +1502,10 @@ async function createPostRepost(postId,original,button){
   const user=auth?.currentUser;if(!user)return;
   const repostId=postId+"_"+user.uid,ref=doc(db,"reposts",repostId);button.disabled=true;
   try{
-    if((await getDoc(ref)).exists()){button.textContent="⟳ Reposted";return;}
+    if((await getDoc(ref)).exists()){button.textContent="Reposted";return;}
     const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};
     await setDoc(ref,{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",originalPostId:postId,originalUid:original.uid,originalDisplayName:original.displayName||"GRAMORA member",originalUsername:original.username||"",originalPhotoURL:original.photoURL||"",originalText:original.text||"",originalBackground:original.background||POST_BACKGROUNDS[4],originalCreatedAt:original.createdAt||null,createdAt:serverTimestamp()});
-    button.textContent="⟳ Reposted";
+    button.textContent="Reposted";
   }catch(error){console.error("Repost failed:",error);alert(error.code==="permission-denied"?"Publish the latest Firestore Rules to enable reposts.":"Could not repost this post. Please try again.");button.disabled=false;}
 }
 async function deleteOwnPost(postId,button,afterDelete){
@@ -2595,7 +2595,7 @@ async function loadProfilePage(user){
       <div class="ig-profile-bio"><b>${escapeHtml(name)}</b><p>${escapeHtml(data.bio||"")}</p></div>
       <div class="ig-profile-actions"><button type="button" class="profile-edit">Edit profile</button><button type="button" class="profile-share">Share profile</button><button type="button" class="profile-add" aria-label="Discover people">♙+</button></div>
       <div class="ig-highlights"><button class="ig-highlight add-highlight" type="button" aria-label="Create a highlight"><span>＋</span><small>New</small></button></div>
-      <div class="ig-profile-tabs" role="tablist"><button class="active" data-profile-tab="posts" type="button" aria-label="Posts" title="Posts">▦</button><button data-profile-tab="reposts" type="button" aria-label="Reposts" title="Reposts">⟳</button></div>
+      <div class="ig-profile-tabs" role="tablist"><button class="active" data-profile-tab="posts" type="button" aria-label="Posts" title="Posts"></button><button data-profile-tab="reposts" type="button" aria-label="Reposts" title="Reposts"></button></div>
       <div class="ig-profile-grid"></div>
       <form class="ig-edit-form" hidden><h3>Edit profile</h3><label>Display name<input name="displayName" maxlength="60"></label><label>Username<input name="username" value="${escapeHtml(username)}" minlength="3" maxlength="20" pattern="[a-zA-Z0-9_.]{3,20}" autocomplete="username" required><small>3–20 characters: letters, numbers, dot or underscore.</small></label><label>Bio<textarea name="bio" maxlength="160" rows="3"></textarea></label><button class="ig-save-profile" type="submit">Save changes</button><p class="ig-edit-status" role="status"></p></form>
     `;
