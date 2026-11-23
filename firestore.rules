@@ -193,22 +193,50 @@ service cloud.firestore {
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 2000;
 
-      // Only the post owner can edit post text.
-      // Ownership cannot be transferred.
-      allow update: if signedIn()
+      // The owner may edit post content; viewers may atomically increment views once.
+      allow update: if (
+        signedIn()
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == resource.data.uid
-        && request.resource.data.diff(resource.data)
-           .affectedKeys().hasOnly(['text','background'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text','background'])
         && request.resource.data.background is string
         && request.resource.data.background.size() <= 200
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
-        && request.resource.data.text.size() <= 2000;
+        && request.resource.data.text.size() <= 2000
+      ) || (
+        signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views'])
+        && request.resource.data.views is int
+        && request.resource.data.views == resource.data.get('views', 0) + 1
+        && existsAfter(/databases/$(database)/documents/postViews/$(postId + '_' + request.auth.uid))
+        && getAfter(/databases/$(database)/documents/postViews/$(postId + '_' + request.auth.uid)).data.postId == postId
+        && getAfter(/databases/$(database)/documents/postViews/$(postId + '_' + request.auth.uid)).data.postUid == resource.data.uid
+        && getAfter(/databases/$(database)/documents/postViews/$(postId + '_' + request.auth.uid)).data.uid == request.auth.uid
+      );
 
       // Only the post owner can delete their post.
       allow delete: if signedIn()
         && resource.data.uid == request.auth.uid;
+    }
+
+    // POST VIEWS: one immutable view marker per signed-in user and post.
+    // The marker and the +1 post counter update must happen in the same transaction.
+    match /postViews/{viewId} {
+      allow get: if signedIn() && viewId.matches('.*_' + request.auth.uid);
+      allow list: if false;
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.postId is string
+        && request.resource.data.postUid is string
+        && request.resource.data.createdAt is timestamp
+        && viewId == request.resource.data.postId + '_' + request.auth.uid
+        && request.resource.data.keys().hasOnly(['postId','postUid','uid','createdAt'])
+        && canViewUserContent(request.resource.data.postUid)
+        && get(/databases/$(database)/documents/posts/$(request.resource.data.postId)).data.uid == request.resource.data.postUid
+        && getAfter(/databases/$(database)/documents/posts/$(request.resource.data.postId)).data.views
+          == get(/databases/$(database)/documents/posts/$(request.resource.data.postId)).data.get('views', 0) + 1;
+      allow update, delete: if false;
     }
 
     // POST LIKES: one like per user per post.
