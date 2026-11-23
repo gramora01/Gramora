@@ -1305,3 +1305,14 @@ body.light .profile-menu-trigger:active{background:#f0f1f7!important}
 
 /* Keep the topbar theme control hidden; Settings still triggers it programmatically. */
 #themeBtn{display:none!important}
+
+
+/* Public profile grid cards include the same working engagement actions as the main feed. */
+body.public-profile-open .ig-post-wrap{aspect-ratio:auto;min-height:0;display:flex;flex-direction:column;overflow:visible;background:transparent}
+body.public-profile-open .ig-post-wrap .ig-post-tile{display:grid;place-items:center;width:100%;height:auto;aspect-ratio:1/1;min-height:0;flex:0 0 auto;border-radius:0}
+body.public-profile-open .ig-profile-post-actions{min-width:0;justify-content:space-between;gap:2px;padding:2px 3px 5px;overflow:hidden}
+body.public-profile-open .ig-profile-post-actions button{gap:2px;padding:4px 0!important}
+body.public-profile-open .ig-profile-post-actions .gramora-ui-icon{width:17px;height:17px;flex:0 0 17px;stroke-width:1.9}
+body.public-profile-open .ig-profile-post-actions .post-action-count{font-size:10px}
+body.public-profile-open .ig-profile-repost-label{display:block;padding:3px 4px 2px;color:var(--muted);font-size:9px;font-weight:700;line-height:1.2}
+@media(max-width:380px){body.public-profile-open .ig-profile-post-actions .gramora-ui-icon{width:15px;height:15px;flex-basis:15px}body.public-profile-open .ig-profile-post-actions .post-action-count{font-size:9px}}
