@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v117-story-heart-every-open";
+const CACHE_NAME = "gramora-shell-v118-owner-story-heart";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=154",
   "./script.js?v=74",
-  "./auth.js?v=228",
+  "./auth.js?v=229",
   "./auth.css?v=62",
   "./story-creator.css?v=3",
   "./story-creator.js?v=3",
