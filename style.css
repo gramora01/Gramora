@@ -1540,3 +1540,25 @@ body.light.public-profile-open .ig-profile > .public-profile-highlights:not([hid
   border-top-color:#e5e6eb!important;
   border-bottom-color:#e5e6eb!important;
 }
+
+
+/* Open public profiles as a full-screen page instead of leaving them inside the feed layout. */
+body.public-profile-open .app-shell{
+  display:block!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;
+}
+body.public-profile-open .sidebar,
+body.public-profile-open .mobile-nav{
+  display:none!important;
+}
+body.public-profile-open .main-content{
+  position:fixed!important;top:64px;right:0;bottom:0;left:0;z-index:50;
+  width:100%!important;max-width:none!important;margin:0!important;padding:0!important;
+  overflow-y:auto!important;overscroll-behavior:contain;background:var(--bg)!important;
+}
+body.public-profile-open .feed{
+  width:100%!important;max-width:935px!important;margin:0 auto!important;padding:0 0 24px!important;
+}
+@media(max-width:900px){
+  body.public-profile-open .main-content{top:58px!important;bottom:0!important}
+  body.public-profile-open .feed{max-width:none!important;padding-bottom:24px!important}
+}
