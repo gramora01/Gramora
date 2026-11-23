@@ -1434,3 +1434,75 @@ body.profile-active .ig-post-wrap .profile-delete-post{right:4px;top:4px}
  body.profile-active .ig-profile-actions{padding-left:14px;padding-right:14px}
  body.profile-active .ig-profile-grid{gap:2px}
 }
+
+
+/* Public profile: respect the selected light theme while keeping the Instagram-style layout. */
+body.light.public-profile-open,
+body.light.public-profile-open .main-content,
+body.light.public-profile-open .feed,
+body.light.public-profile-open .ig-profile{
+  background:#fff!important;color:#202127!important;
+}
+body.light.public-profile-open .public-profile-page-head{
+  background:#fff!important;color:#202127!important;border-bottom-color:#e5e6eb!important;
+}
+body.light.public-profile-open .public-profile-back,
+body.light.public-profile-open .public-profile-more{
+  color:#202127!important;background:transparent!important;
+}
+body.light.public-profile-open .ig-profile-bio,
+body.light.public-profile-open .ig-profile-bio p,
+body.light.public-profile-open .ig-profile-username strong,
+body.light.public-profile-open .ig-profile-stats .profile-stat,
+body.light.public-profile-open .ig-profile-stats .profile-stat b{
+  color:#202127!important;
+}
+body.light.public-profile-open .ig-profile-stats .profile-stat small{
+  color:#737782!important;
+}
+body.light.public-profile-open .ig-profile-actions .public-follow:not(.is-following):not(.is-requested){
+  background:#1877f2!important;color:#fff!important;border-color:#1877f2!important;
+}
+body.light.public-profile-open .ig-profile-actions .public-follow.is-following,
+body.light.public-profile-open .ig-profile-actions .public-follow.is-requested,
+body.light.public-profile-open .ig-profile-actions .public-message,
+body.light.public-profile-open .ig-profile-actions .public-add-person{
+  background:#eef0f4!important;color:#30333b!important;border:1px solid #dfe2e8!important;
+}
+body.light.public-profile-open .public-profile-tabs{
+  background:#fff!important;border-color:#e5e6eb!important;
+}
+body.light.public-profile-open .public-profile-tabs button{
+  color:#777b87!important;background:transparent!important;
+}
+body.light.public-profile-open .public-profile-tabs button.active{
+  color:#202127!important;border-bottom-color:#202127!important;
+}
+body.light.public-profile-open .public-profile-highlights{
+  background:#fff!important;border-top-color:#e5e6eb!important;border-bottom-color:#e5e6eb!important;
+}
+body.light.public-profile-open .public-profile-highlights .ig-highlight,
+body.light.public-profile-open .public-profile-highlights .ig-highlight small{
+  color:#30333b!important;
+}
+body.light.public-profile-open .public-profile-highlights .ig-highlight>span{
+  background:#f6f7fa!important;border-color:#d9dce5!important;color:#30333b!important;
+}
+body.light.public-profile-open .public-profile-menu{
+  background:#fff!important;border-color:#e1e3e9!important;box-shadow:0 10px 30px rgba(25,35,60,.16)!important;
+}
+body.light.public-profile-open .public-profile-menu button{
+  color:#252733!important;
+}
+body.light.public-profile-open .public-profile-menu button:active{
+  background:#f0f1f5!important;
+}
+body.light.public-profile-open .ig-no-posts,
+body.light.public-profile-open .ig-no-posts b,
+body.light.public-profile-open .private-profile-notice{
+  color:#626570!important;
+}
+body.light.public-profile-open .ig-no-posts b,
+body.light.public-profile-open .private-profile-notice strong{
+  color:#202127!important;
+}
