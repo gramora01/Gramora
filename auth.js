@@ -3045,14 +3045,14 @@ async function loadProfilePage(user){
           grid.replaceChildren();
           if(snap.empty){grid.innerHTML='<div class="ig-no-posts"><strong>⟳</strong><b>No reposts yet</b><span>Posts you repost will appear here.</span></div>';return;}
           snap.docs.sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(d=>{
-            const data=d.data(),tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";
+            const data=d.data(),wrap=document.createElement("div"),tile=document.createElement("button");wrap.className="ig-post-wrap";tile.type="button";tile.className="ig-post-tile";
             tile.textContent=data.originalText||"Reposted post";tile.style.background=data.originalBackground||POST_BACKGROUNDS[4];
             tile.setAttribute("aria-label","Open reposted post by "+(data.originalDisplayName||"GRAMORA member"));
             tile.addEventListener("click",()=>{
               if(!data.originalPostId||!data.originalUid)return;
               openPostDetail({id:data.originalPostId,uid:data.originalUid,displayName:data.originalDisplayName||"GRAMORA member",username:data.originalUsername||"",photoURL:data.originalPhotoURL||"",text:data.originalText||"",background:data.originalBackground||POST_BACKGROUNDS[4],createdAt:data.originalCreatedAt||data.createdAt},false);
             });
-            grid.append(tile);
+            wrap.append(tile);grid.append(wrap);
           });
         }).catch(err=>{if(tabRequest!==profileTabRequest)return;console.error("Profile reposts:",err);grid.innerHTML='<div class="ig-no-posts"><strong>!</strong><b>Reposts could not be loaded</b><span>Check your connection and Firestore Rules.</span></div>';});
       }else{
