@@ -251,7 +251,12 @@ service cloud.firestore {
       // before creating it (including when that document does not exist yet).
       // Other individual reads and all list queries remain privacy-protected.
       allow get: if signedIn()
-        && (repostId.matches('^.*_' + request.auth.uid + '
+        && (repostId.matches('.*_' + request.auth.uid)
+          || resource.data.uid == request.auth.uid
+          || canViewUserContent(resource.data.originalUid));
+      allow list: if signedIn()
+        && (resource.data.uid == request.auth.uid
+          || canViewUserContent(resource.data.originalUid));
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.originalPostId is string
