@@ -1270,13 +1270,20 @@ function startPostsFeed(user){
   };
   activeFeedUnsubscribe=()=>{cancelled=true;clearTimeout(feedLoadTimer);offs.forEach(off=>off());};
   getVisibleContentUids(user).then(uids=>{
-    if(cancelled)return;total=uids.length*2;
+    if(cancelled)return;
+    const groups=[];for(let i=0;i<uids.length;i+=30)groups.push(uids.slice(i,i+30));
+    total=uids.length+groups.length*groups.length;
     if(!total){completed=true;clearTimeout(feedLoadTimer);renderPosts([]);return;}
     uids.forEach(uid=>{
       offs.push(onSnapshot(query(collection(db,"posts"),where("uid","==",uid),limit(100)),snap=>{posts=posts.filter(item=>item.data().uid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.warn("A profile's posts are not visible:",error.code||error);ready++;renderCombined();}));
-      offs.push(onSnapshot(query(collection(db,"repostFeed"),where("originalUid","==",uid),limit(100)),snap=>{reposts=reposts.filter(item=>item.data().originalUid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.warn("Reposts feed unavailable:",error);ready++;renderCombined();}));
     });
-  }).catch(error=>{console.error(error);completed=true;clearTimeout(feedLoadTimer);if(activeView==="home")showFeedRetryMessage("Could not prepare your feed ("+(error.code||"network error")+"). Check your connection or Firestore Rules, then retry.",user);});
+    groups.forEach(reposterBatch=>groups.forEach(originalBatch=>{
+      offs.push(onSnapshot(query(collection(db,"repostFeed"),where("uid","in",reposterBatch),where("originalUid","in",originalBatch),limit(100)),snap=>{
+        reposts=reposts.filter(item=>!(reposterBatch.includes(item.data().uid)&&originalBatch.includes(item.data().originalUid))).concat(snap.docs);
+        ready++;renderCombined();
+      },error=>{console.warn("Reposts feed unavailable:",error.code||error);ready++;renderCombined();}));
+    }));
+  }).catch(error=>{console.error(error);completed=true;clearTimeout(feedLoadTimer);if(activeView==="home")showFeedRetryMessage("Could not prepare your feed ("+(error.code||"network error")+"). Check your connection and Firestore Rules, then retry.",user);});
 }
 function showFeedRetryMessage(message,user){
   const feed=document.getElementById("feed");
@@ -2642,12 +2649,18 @@ async function showFollowList(uid,type){
 async function getDocsForFeed(){
   const user=auth?.currentUser;if(!user)return;
   try{
-    const uids=await getVisibleContentUids(user),batches=await Promise.all(uids.flatMap(uid=>[
-      getDocs(query(collection(db,"posts"),where("uid","==",uid),limit(100))),
-      getDocs(query(collection(db,"repostFeed"),where("originalUid","==",uid),limit(100)))
-    ]));
-    const posts=[],reposts=[];
-    batches.forEach((snap,index)=>{if(index%2===0)posts.push(...snap.docs);else reposts.push(...snap.docs.map(item=>({id:"repost_"+item.id,data:()=>({...item.data(),_isRepost:true,_repostId:item.id})})));});
+    const uids=await getVisibleContentUids(user),groups=[];
+    for(let i=0;i<uids.length;i+=30)groups.push(uids.slice(i,i+30));
+    const postReads=uids.map(uid=>getDocs(query(collection(db,"posts"),where("uid","==",uid),limit(100))));
+    const repostReads=groups.flatMap(reposterBatch=>groups.map(originalBatch=>getDocs(query(
+      collection(db,"repostFeed"),
+      where("uid","in",reposterBatch),
+      where("originalUid","in",originalBatch),
+      limit(100)
+    ))));
+    const snapshots=await Promise.all([...postReads,...repostReads]);
+    const posts=snapshots.slice(0,postReads.length).flatMap(snap=>snap.docs);
+    const reposts=snapshots.slice(postReads.length).flatMap(snap=>snap.docs.map(item=>({id:"repost_"+item.id,data:()=>({...item.data(),_isRepost:true,_repostId:item.id})})));
     const combined=[...posts,...reposts].sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).slice(0,60);
     if(activeView==="home")renderPosts(combined);
   }catch(error){console.error(error);showFeedMessage("Could not load posts ("+(error.code||"unknown")+"): "+(error.message||"Check Firestore Rules."));}
