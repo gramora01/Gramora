@@ -20,7 +20,7 @@ back:'<path d="m15 18-6-6 6-6"/>',
 grid:'<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/>'
 };
 const svg=n=>'<svg class="gramora-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(p[n]||p.plus)+'</svg>';
-function set(node,name,label=false){if(!node||node.dataset.gramoraIcon===name)return;const s=label?node.querySelector("span"):null;if(s)s.remove();node.replaceChildren();node.insertAdjacentHTML("afterbegin",svg(name));if(s)node.append(s);node.dataset.gramoraIcon=name;}
+function set(node,name,label=false){if(!node)return;if(node.dataset.gramoraIcon===name&&node.querySelector(":scope > svg.gramora-ui-icon"))return;const s=label?node.querySelector("span"):null;if(s)s.remove();node.replaceChildren();node.insertAdjacentHTML("afterbegin",svg(name));if(s)node.append(s);node.dataset.gramoraIcon=name;}
 function scan(root=document){
 root.querySelectorAll?.(".nav-icon:not(.mobile-profile-avatar)").forEach(n=>{const v=n.closest(".nav")?.dataset.view;const m={home:"home",explore:"search",messages:"messages",saved:"bookmark",profile:"profile"}[v];if(m)set(n,m);});
 root.querySelectorAll?.("#topCreate,.mobile-create > span,.sidebar-create > span:first-child").forEach(n=>set(n,"plus"));
