@@ -635,7 +635,7 @@ function openStoryViewer(docs,id){
       if(!isOwnStory)return;
       const action=button.dataset.storyOwnerAction;
       if(action==="activity"){openStoryActivitySheet(id,data.uid);return;}
-      if(action==="highlight"){openHighlightCreator(auth.currentUser,id);return;}
+      if(action==="highlight"){openStoryHighlightChooser(auth.currentUser,id);return;}
       if(action==="more"){if(ownerMenu)ownerMenu.hidden=!ownerMenu.hidden;return;}
       if(action==="share"){
         const url=location.href.split("#")[0]+"#story-"+encodeURIComponent(id);
@@ -2428,6 +2428,37 @@ async function openHighlightCreator(user,initialStoryId="",editingDoc=null){
     status.textContent="";renderHighlightArchive();renderHighlightCoverChoices();updateHighlightCoverPreview();
     dialog.showModal();
   }catch(error){console.error("Highlight archive load failed:",error);status.textContent="Stories archive load nahi hua. Internet aur Firestore Rules check karein.";dialog.showModal();}
+}
+
+async function openStoryHighlightChooser(user,storyId){
+  try{
+    const snap=await getDocs(query(collection(db,"storyHighlights"),where("uid","==",user.uid)));
+    const existing=snap.docs;
+    if(!existing.length){openHighlightCreator(user,storyId);return;}
+    const dialog=document.createElement("dialog");dialog.className="dp-action-dialog highlight-options-dialog";
+    const heading=document.createElement("h3");heading.textContent="Add to highlight";dialog.append(heading);
+    existing.forEach(highlightDoc=>{
+      const data=highlightDoc.data(),button=document.createElement("button");button.type="button";button.textContent=(data.title||"Highlight")+"  ›";
+      button.addEventListener("click",async()=>{
+        button.disabled=true;
+        try{
+          const storyDoc=activeStoryDocs.find(item=>item.id===storyId)|| (await getDoc(doc(db,"stories",storyId))).exists()?null:null;
+          const raw=activeStoryDocs.find(item=>item.id===storyId)?.data();
+          if(!raw)throw new Error("Story is no longer available.");
+          const stories=[...(data.stories||[])];
+          if(stories.some(item=>item.storyId===storyId)){dialog.close();return;}
+          if(stories.length>=20)throw new Error("This highlight already has 20 stories.");
+          stories.push({storyId,uid:raw.uid,displayName:raw.displayName||user.displayName||"GRAMORA member",text:raw.text||"",lyrics:raw.lyrics||"",background:raw.background||POST_BACKGROUNDS[4],songTitle:raw.songTitle||"",songArtist:raw.songArtist||"",songUrl:raw.songUrl||"",previewUrl:raw.previewUrl||"",songArtwork:raw.songArtwork||"",songStart:Number(raw.songStart||0),createdAt:raw.createdAt||null});
+          await updateDoc(doc(db,"storyHighlights",highlightDoc.id),{stories});
+          dialog.close();await loadProfilePage(user);
+        }catch(error){console.error("Add story to highlight failed:",error);alert(error.message||"Story highlight update nahi hua.");button.disabled=false;}
+      });
+      dialog.append(button);
+    });
+    const create=document.createElement("button");create.type="button";create.textContent="＋  New highlight";create.addEventListener("click",()=>{dialog.close();openHighlightCreator(user,storyId);});dialog.append(create);
+    const cancel=document.createElement("button");cancel.type="button";cancel.className="dp-action-cancel";cancel.textContent="Cancel";cancel.addEventListener("click",()=>dialog.close());dialog.append(cancel);
+    document.body.append(dialog);dialog.addEventListener("close",()=>dialog.remove(),{once:true});dialog.showModal();
+  }catch(error){console.error("Highlight chooser failed:",error);openHighlightCreator(user,storyId);}
 }
 async function loadProfileHighlights(user,panel){
   const strip=panel.querySelector(".ig-highlights");if(!strip)return;
