@@ -2432,10 +2432,10 @@ async function loadPublicProfile(viewer,targetUid){
     const p=snap.data();
     p.username=await getUsernameForUid(targetUid,p);
     let posts=[],followersCount=0,followingCount=0,already=false,requestPending=false;
+    const canViewProfilePosts=!p.isPrivate||(await getDoc(doc(db,"follows",viewer.uid+"_"+targetUid))).exists();
     const results=await Promise.allSettled([
-      (!p.isPrivate||(await getDoc(doc(db,"follows",viewer.uid+"_"+targetUid))).exists())
-        ? getDocs(query(collection(db,"posts"),where("uid","==",targetUid),limit(60)))
-        : Promise.resolve({docs:[]}),
+      canViewProfilePosts?getDocs(query(collection(db,"posts"),where("uid","==",targetUid),limit(60))):Promise.resolve({docs:[]}),
+      canViewProfilePosts?getDocs(query(collection(db,"repostFeed"),where("uid","==",targetUid),limit(60))):Promise.resolve({docs:[]}),
       getDocs(query(collection(db,"follows"),where("followingUid","==",targetUid),limit(100))),
       getDocs(query(collection(db,"follows"),where("followerUid","==",targetUid),limit(100))),
       getDoc(doc(db,"follows",viewer.uid+"_"+targetUid)),
@@ -2443,10 +2443,12 @@ async function loadPublicProfile(viewer,targetUid){
     ]);
     if(profileLoadToken!==publicProfileLoadToken||!document.body.classList.contains("public-profile-open"))return;
     if(results[0].status==="fulfilled")posts=results[0].value.docs;
-    if(results[1].status==="fulfilled")followersCount=results[1].value.size;
-    if(results[2].status==="fulfilled")followingCount=results[2].value.size;
-    if(results[3].status==="fulfilled")already=results[3].value.exists();
-    if(results[4].status==="fulfilled")requestPending=results[4].value.exists();
+    const profileReposts=results[1].status==="fulfilled"?results[1].value.docs.map(item=>({id:"repost_"+item.id,data:()=>({...item.data(),_isRepost:true,_repostId:item.id})})):[];
+    if(results[2].status==="fulfilled")followersCount=results[2].value.size;
+    if(results[3].status==="fulfilled")followingCount=results[3].value.size;
+    if(results[4].status==="fulfilled")already=results[4].value.exists();
+    if(results[5].status==="fulfilled")requestPending=results[5].value.exists();
+    const profileItems=[...posts,...profileReposts].sort((x,y)=>(y.data().createdAt?.toMillis?.()||0)-(x.data().createdAt?.toMillis?.()||0));
     const panel=document.createElement("section");panel.className="ig-profile";
     const avatar=p.photoURL?'<img alt="" src="'+escapeHtml(p.photoURL)+'">':escapeHtml((p.displayName||"G").charAt(0).toUpperCase());
     panel.innerHTML='<div class="ig-profile-top"><div class="ig-avatar-wrap"><div class="ig-profile-avatar">'+avatar+'</div></div><div class="ig-profile-summary"><div class="ig-profile-username"><strong>@'+escapeHtml(p.username||"member")+'</strong></div><div class="ig-profile-stats"><span class="profile-stat"><b>'+((p.isPrivate&&!already)?"—":posts.length)+'</b><small>posts</small></span><button class="stat-open profile-stat" data-list="followers" type="button"><b>'+followersCount+'</b><small>followers</small></button><button class="stat-open profile-stat" data-list="following" type="button"><b>'+followingCount+'</b><small>following</small></button></div></div></div><div class="ig-profile-bio"><b>'+escapeHtml(p.displayName||"GRAMORA member")+'</b><p>'+escapeHtml(p.bio||"")+'</p></div><div class="ig-profile-actions"><button class="public-follow" type="button">'+(already?"Following":(requestPending?"Requested":"Follow"))+'</button><button class="public-message" type="button" aria-label="Message '+escapeHtml(p.displayName||"user")+'"><span aria-hidden="true">↗</span> Message</button><button class="public-block" type="button" aria-label="Block account">⋯</button></div><div class="ig-highlights public-profile-highlights"></div><div class="ig-profile-grid"></div>';
@@ -2495,8 +2497,35 @@ async function loadPublicProfile(viewer,targetUid){
       }catch(err){console.error("Follow action:",err);alert("Follow action failed. Check that the latest Firestore Rules are published.");}
     });
     const grid=panel.querySelector(".ig-profile-grid");
-    posts.forEach(d=>{const post={id:d.id,...d.data()};const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.textContent=post.text||"";tile.style.background=post.background||POST_BACKGROUNDS[4];tile.addEventListener("click",()=>openPostDetail(post,false));grid.append(tile);});
-    if(results.slice(1).some(x=>x.status==="rejected")){
+    profileItems.forEach(d=>{
+      const raw=d.data(),isRepost=!!raw._isRepost;
+      const authorUid=isRepost?raw.originalUid:raw.uid;
+      const originalId=isRepost?raw.originalPostId:d.id;
+      const post=isRepost?{id:originalId,uid:raw.originalUid,displayName:raw.originalDisplayName,username:raw.originalUsername,photoURL:raw.originalPhotoURL,text:raw.originalText,background:raw.originalBackground,createdAt:raw.originalCreatedAt}:{id:d.id,...raw};
+      const wrap=document.createElement("div");wrap.className="ig-post-wrap";
+      if(isRepost){const label=document.createElement("small");label.className="ig-profile-repost-label";label.textContent="↻ Reposted";wrap.append(label);}
+      const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.textContent=post.text||"";tile.style.background=post.background||POST_BACKGROUNDS[4];tile.addEventListener("click",()=>openPostDetail(post,false));wrap.append(tile);
+      const actions=document.createElement("div");actions.className="post-actions ig-profile-post-actions";
+      const like=document.createElement("button");like.className="like";like.type="button";like.dataset.likeCount="";like.dataset.postId=originalId;like.dataset.postUid=authorUid;
+      const comment=document.createElement("button");comment.className="post-comment-open";comment.type="button";comment.dataset.postId=originalId;comment.dataset.postUid=authorUid;comment.innerHTML='<span class="post-action-count"></span>';
+      const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.dataset.postId=originalId;repost.dataset.postUid=authorUid;repost.innerHTML='<span class="post-action-count"></span>';
+      const save=document.createElement("button");save.className="save";save.type="button";save.dataset.postUid=authorUid;save.innerHTML='<span class="post-action-count"></span>';
+      const likeCount=like.querySelector(".post-action-count"),commentCount=comment.querySelector(".post-action-count"),repostCount=repost.querySelector(".post-action-count"),saveCount=save.querySelector(".post-action-count");
+      like.setAttribute("aria-label","Like post");comment.setAttribute("aria-label","View comments");repost.setAttribute("aria-label","Repost");save.setAttribute("aria-label","Save post");
+      const likeHold=bindPostActionLongPress(like,()=>showPostLikesList(originalId,authorUid));
+      like.addEventListener("click",()=>{if(likeHold())return;togglePostLike(originalId,authorUid,like,likeCount);});
+      comment.addEventListener("click",()=>openPostDetail(post,false));
+      const repostHold=auth?.currentUser?.uid===authorUid?bindPostActionLongPress(repost,()=>showPostRepostsList(originalId,authorUid)):()=>false;
+      if(auth?.currentUser?.uid!==authorUid)repost.addEventListener("click",()=>{if(repostHold())return;createPostRepost(originalId,post,repost);});
+      else repost.setAttribute("aria-label","View reposts");
+      save.addEventListener("click",()=>togglePostSave(originalId,save,saveCount));
+      actions.append(like,comment,repost,save);wrap.append(actions);grid.append(wrap);
+      refreshPostLikeButton(originalId,authorUid,like,likeCount);
+      refreshPostSaveButton(originalId,save,saveCount);
+      refreshPostActionCounts(originalId,authorUid,{comment:commentCount,repost:repostCount,save:saveCount});
+      refreshPostRepostButton(originalId,authorUid,repost,repostCount);
+    });
+    if(results.slice(2).some(x=>x.status==="rejected")){
       const note=document.createElement("p");note.className="muted tiny";note.textContent="Some follower details could not be loaded. Check Firestore Rules.";panel.append(note);
     }
     if(results[0].status==="rejected"){
