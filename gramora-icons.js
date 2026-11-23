@@ -23,7 +23,16 @@ grid:'<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8
 const svg=n=>'<svg class="gramora-ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(p[n]||p.plus)+'</svg>';
 function set(node,name,label=false){
 if(!node)return;
-if(name==="heart"&&node.matches(".post-actions .like,.post-detail-like")){
+if(name==="heart"&&node.matches(".post-actions .like")){
+ // Feed count is rendered from data-like-count with ::after; keep the
+ // button DOM limited to the SVG so icon scans cannot remove the count.
+ if(!node.querySelector(":scope > svg.gramora-ui-icon"))node.insertAdjacentHTML("afterbegin",svg(name));
+ node.querySelectorAll(":scope > .post-action-count").forEach(count=>count.remove());
+ Array.from(node.childNodes).forEach(child=>{if(child.nodeType===3)child.remove();});
+ node.dataset.gramoraIcon=name;
+ return;
+}
+if(name==="heart"&&node.matches(".post-detail-like")){
  let countNode=node.querySelector(".post-action-count");
  if(!countNode){
   countNode=document.createElement("span");
