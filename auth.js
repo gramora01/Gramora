@@ -2442,7 +2442,6 @@ async function openStoryHighlightChooser(user,storyId){
       button.addEventListener("click",async()=>{
         button.disabled=true;
         try{
-          const storyDoc=activeStoryDocs.find(item=>item.id===storyId)|| (await getDoc(doc(db,"stories",storyId))).exists()?null:null;
           const raw=activeStoryDocs.find(item=>item.id===storyId)?.data();
           if(!raw)throw new Error("Story is no longer available.");
           const stories=[...(data.stories||[])];
