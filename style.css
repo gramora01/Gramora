@@ -1398,3 +1398,39 @@ body.public-profile-open .public-profile-tabs{border-top:0}
 /* Public profile follow button state colors */
 body.public-profile-open .ig-profile-actions .public-follow:not(.is-following):not(.is-requested){background:#1877f2!important;color:#fff!important;border-color:#1877f2!important}
 body.public-profile-open .ig-profile-actions .public-follow.is-following{background:#30333b!important;color:#f7f7f8!important;border-color:#454954!important}
+
+
+/* Own profile: Instagram-style header, identity row and portrait post grid. */
+body.profile-active .ig-profile{width:100%;max-width:760px;margin:0 auto;padding:0 0 24px}
+body.profile-active .ig-profile-header{padding:10px 14px 8px;border-bottom:0}
+body.profile-active .ig-profile-username{display:flex;width:100%;min-height:38px;align-items:center;gap:10px;margin:0}
+body.profile-active .ig-profile-username strong{font-size:18px;font-weight:700;letter-spacing:.1px}
+body.profile-active .ig-profile-top{grid-template-columns:92px minmax(0,1fr);align-items:center;gap:16px;padding:8px 14px 10px}
+body.profile-active .ig-avatar-wrap,body.profile-active .ig-profile-avatar{width:84px;height:84px}
+body.profile-active .ig-profile-avatar{font-size:32px}
+body.profile-active .ig-profile-summary{min-width:0}
+body.profile-active .ig-profile-stats{justify-content:space-around;gap:5px}
+body.profile-active .ig-profile-stats .profile-stat b{font-size:17px}
+body.profile-active .ig-profile-stats .profile-stat small{font-size:12px}
+body.profile-active .ig-profile-bio{padding:2px 14px 10px;font-size:14px;line-height:1.45}
+body.profile-active .ig-profile-actions{gap:7px;padding:6px 14px 12px}
+body.profile-active .ig-profile-actions button{min-height:36px;border-radius:8px;font-size:13px}
+body.profile-active .ig-highlights{gap:15px;padding:10px 14px 16px}
+body.profile-active .ig-profile-tabs{height:48px}
+body.profile-active .ig-profile-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:2px}
+body.profile-active .ig-post-wrap{aspect-ratio:3/4;min-height:0}
+body.profile-active .ig-post-wrap .ig-post-tile{width:100%;height:100%;min-height:0;padding:7px!important;border:0;border-radius:0;display:grid;place-items:center;overflow:hidden;font-size:12px!important;line-height:1.25}
+body.profile-active .ig-post-wrap .profile-edit-post{left:4px;bottom:4px;padding:4px 7px;font-size:10px}
+body.profile-active .ig-post-wrap .profile-delete-post{right:4px;top:4px}
+@media(max-width:680px){
+ body.profile-active .ig-profile{max-width:none;padding-top:0}
+ body.profile-active .ig-profile-header{padding:8px 14px 5px}
+ body.profile-active .ig-profile-username{min-height:36px}
+ body.profile-active .ig-profile-username strong{font-size:17px}
+ body.profile-active .ig-profile-top{grid-template-columns:88px minmax(0,1fr);gap:12px;padding:8px 14px 9px}
+ body.profile-active .ig-avatar-wrap,body.profile-active .ig-profile-avatar{width:78px;height:78px}
+ body.profile-active .ig-profile-stats .profile-stat b{font-size:16px}
+ body.profile-active .ig-profile-stats .profile-stat small{font-size:11px}
+ body.profile-active .ig-profile-actions{padding-left:14px;padding-right:14px}
+ body.profile-active .ig-profile-grid{gap:2px}
+}
