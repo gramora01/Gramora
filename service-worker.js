@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v113-remove-empty-public-highlights";
+const CACHE_NAME = "gramora-shell-v114-fullscreen-repost-profile";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=151",
+  "./style.css?v=152",
   "./script.js?v=74",
-  "./auth.js?v=226",
+  "./auth.js?v=227",
   "./auth.css?v=62",
   "./story-creator.css?v=3",
   "./story-creator.js?v=3",
