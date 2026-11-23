@@ -624,8 +624,14 @@ function openStoryViewer(docs,id){
   const isOwnStory=data.uid===auth?.currentUser?.uid&&!dialog._highlightStories?.length;
   stopStoryLikeLiveAnimation();
   document.querySelectorAll("#storyViewerStage .gramora-story-like-float-layer").forEach(layer=>layer.remove());
-  if(isOwnStory)animateStoryLikeHearts();
-  if(isOwnStory)watchStoryLikesForOwner(id,data.uid);
+  if(isOwnStory){
+    getDocs(query(collection(db,"storyLikes"),where("storyUid","==",data.uid))).then(snapshot=>{
+      if(dialog.dataset.storyId!==id)return;
+      const hasStoryLikes=snapshot.docs.some(like=>like.data().storyId===id);
+      if(hasStoryLikes)animateStoryLikeHearts();
+    }).catch(error=>console.warn("Story likes could not be checked for animation:",error));
+    watchStoryLikesForOwner(id,data.uid);
+  }
   const content=document.getElementById("storyViewerText");
   const deleteButton=document.getElementById("storyViewerDelete");
   const ownerActions=document.getElementById("storyOwnerActions");
