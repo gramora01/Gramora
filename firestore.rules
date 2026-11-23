@@ -245,8 +245,8 @@ service cloud.firestore {
       allow update: if false;
     }
 
-    // PRIVATE REPOST LISTS: only the original post owner can query this collection.
-    match /repostLists/{repostId} {
+    // PRIVATE REPOST RECORDS: only the reposter and original post owner can read them.
+    match /reposts/{repostId} {
       allow get: if signedIn()
         && (repostId.matches('.*_' + request.auth.uid)
           || resource.data.uid == request.auth.uid
@@ -255,16 +255,38 @@ service cloud.firestore {
         && resource.data.originalUid == request.auth.uid;
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
+        && request.resource.data.originalPostId is string
         && request.resource.data.originalUid is string
         && request.resource.data.originalUid != request.auth.uid
-        && request.resource.data.originalPostId is string
+        && canViewUserContent(request.resource.data.originalUid)
         && repostId == request.resource.data.originalPostId + '_' + request.auth.uid
+        && request.resource.data.originalText is string
+        && request.resource.data.originalText.size() <= 2000
+        && request.resource.data.keys().hasOnly(['uid','displayName','username','photoURL','originalPostId','originalUid','originalDisplayName','originalUsername','originalPhotoURL','originalText','originalBackground','originalCreatedAt','createdAt'])
+        && (!('username' in request.resource.data) || request.resource.data.username is string)
+        && (!('photoURL' in request.resource.data) || (request.resource.data.photoURL is string && request.resource.data.photoURL.size() <= 2000));
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
+    // PUBLIC FEED PROJECTION: contains repost cards, but not the private repost-list query.
+    match /repostFeed/{repostId} {
+      allow get, list: if signedIn() && canViewUserContent(resource.data.originalUid);
+      allow create: if signedIn()
+        && request.resource.data.originalPostId is string
+        && request.resource.data.originalUid is string
+        && request.resource.data.uid is string
+        && canViewUserContent(request.resource.data.originalUid)
+        && repostId == request.resource.data.originalPostId + '_' + request.resource.data.uid
+        && (
+          request.resource.data.uid == request.auth.uid
+          || request.resource.data.originalUid == request.auth.uid
+        )
         && request.resource.data.keys().hasOnly(['uid','displayName','username','photoURL','originalPostId','originalUid','originalDisplayName','originalUsername','originalPhotoURL','originalText','originalBackground','originalCreatedAt','createdAt']);
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
       allow update: if false;
     }
 
-    // REPOSTS
     match /reposts/{repostId} {
       // A signed-in user may check their own deterministic repost document
       // before creating it (including when that document does not exist yet).
