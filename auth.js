@@ -596,6 +596,7 @@ const storyActivitySheet=document.getElementById("storyActivitySheet");
 storyActivitySheet?.addEventListener("touchstart",event=>{storyActivityTouchY=event.changedTouches[0].clientY;},{passive:true});
 storyActivitySheet?.addEventListener("touchend",event=>{if(event.changedTouches[0].clientY-storyActivityTouchY>65)closeStoryActivitySheet();},{passive:true});
 document.getElementById("storyViewerDialog")?.addEventListener("close",()=>{
+  stopStoryLikeLiveAnimation();
   stopStoryViewerTimer();
   stopGramoraStoryAudio(true);
   closeStoryActivitySheet();
@@ -611,6 +612,8 @@ function openStoryViewer(docs,id){
   storyViewerSequence=dialog._highlightStories?.length?dialog._highlightStories:docs.filter(item=>item.data().uid===data.uid).sort((a,b)=>(a.data().createdAt?.toMillis?.()||0)-(b.data().createdAt?.toMillis?.()||0));
   storyViewerIndex=storyViewerSequence.findIndex(item=>item.id===id);if(storyViewerIndex<0)storyViewerIndex=0;
   dialog.dataset.storyId=id;
+  stopStoryLikeLiveAnimation();
+  if(isOwnStory)watchStoryLikesForOwner(id,data.uid);
   const content=document.getElementById("storyViewerText");
   const deleteButton=document.getElementById("storyViewerDelete");
   const isOwnStory=data.uid===auth?.currentUser?.uid&&!dialog._highlightStories?.length;
@@ -723,11 +726,9 @@ async function renderStoryActivityPreview(storyId,ownerUid){
       if(icon)icon.hidden=false;
       label.hidden=false;label.textContent="Activity";button.title="Story activity";return;
     }
-    const likesSnap=await getDocs(query(collection(db,"storyLikes"),where("storyUid","==",ownerUid)));
-    const likedViewerUids=new Set(likesSnap.docs.filter(item=>item.data().storyId===storyId).map(item=>item.data().uid));
     const viewers=await Promise.all(entries.slice(0,3).map(async item=>{
       const data=item.data(),profileSnap=await getDoc(doc(db,"userProfiles",data.uid)),profile=profileSnap.exists()?profileSnap.data():{};
-      return {uid:data.uid,photoURL:profile.photoURL||profile.photoUrl||profile.avatarUrl||"",name:profile.displayName||data.displayName||"Viewer",liked:likedViewerUids.has(data.uid)};
+      return {uid:data.uid,photoURL:profile.photoURL||profile.photoUrl||profile.avatarUrl||"",name:profile.displayName||data.displayName||"Viewer"};
     }));
     if(document.getElementById("storyViewerDialog")?.dataset.storyId!==storyId)return;
     let stack=button.querySelector(".gramora-activity-avatar-stack");
@@ -737,7 +738,6 @@ async function renderStoryActivityPreview(storyId,ownerUid){
       const avatar=document.createElement("span");avatar.className="gramora-activity-avatar";avatar.style.setProperty("--avatar-order",String(index));avatar.title=person.name;
       if(person.photoURL){const img=document.createElement("img");img.src=person.photoURL;img.alt="";img.loading="lazy";avatar.append(img);}
       else avatar.textContent=(person.name||"G").trim().charAt(0).toUpperCase();
-      if(person.liked){const heart=document.createElement("span");heart.className="gramora-activity-liked-heart";heart.textContent="♥";heart.setAttribute("aria-label","Liked your story");avatar.append(heart);}
       stack.append(avatar);
     });
     button.classList.add("has-viewer-avatars");
@@ -749,6 +749,39 @@ function closeStoryActivitySheet(){
   const sheet=document.getElementById("storyActivitySheet");
   if(sheet)sheet.hidden=true;
   storyViewerPaused=false;
+}
+let storyLikeLiveUnsubscribe=null;
+let storyLikeLiveStoryId="";
+function stopStoryLikeLiveAnimation(){
+  if(storyLikeLiveUnsubscribe){storyLikeLiveUnsubscribe();storyLikeLiveUnsubscribe=null;}
+  storyLikeLiveStoryId="";
+}
+function animateStoryLikeHearts(){
+  const stage=document.getElementById("storyViewerStage");if(!stage)return;
+  const layer=document.createElement("div");layer.className="gramora-story-like-float-layer";layer.setAttribute("aria-hidden","true");
+  stage.append(layer);
+  const symbols=["♥","❤","♥","💕"];
+  for(let i=0;i<9;i++){
+    const heart=document.createElement("span");heart.className="gramora-story-like-float";
+    heart.textContent=symbols[i%symbols.length];
+    heart.style.setProperty("--heart-x",(12+Math.random()*76)+"%");
+    heart.style.setProperty("--heart-delay",(Math.random()*650)+"ms");
+    heart.style.setProperty("--heart-size",(22+Math.random()*28)+"px");
+    layer.append(heart);
+  }
+  window.setTimeout(()=>layer.remove(),3600);
+}
+function watchStoryLikesForOwner(storyId,ownerUid){
+  stopStoryLikeLiveAnimation();
+  if(ownerUid!==auth?.currentUser?.uid)return;
+  storyLikeLiveStoryId=storyId;
+  let firstSnapshot=true;
+  storyLikeLiveUnsubscribe=onSnapshot(query(collection(db,"storyLikes"),where("storyUid","==",ownerUid)),snapshot=>{
+    if(firstSnapshot){firstSnapshot=false;return;}
+    if(storyLikeLiveStoryId!==storyId||document.getElementById("storyViewerDialog")?.dataset.storyId!==storyId)return;
+    const newLikes=snapshot.docChanges().filter(change=>change.type==="added"&&change.doc.data().storyId===storyId&&change.doc.data().uid!==ownerUid);
+    if(newLikes.length)animateStoryLikeHearts();
+  },error=>console.warn("Story like animation listener failed:",error));
 }
 async function openStoryActivitySheet(storyId,ownerUid){
   const dialog=document.getElementById("storyViewerDialog"),sheet=document.getElementById("storyActivitySheet");
@@ -775,6 +808,8 @@ async function openStoryActivitySheet(storyId,ownerUid){
       const name=document.createElement("strong");name.textContent=profile.displayName||data.displayName||"GRAMORA member";
       const id=document.createElement("small");id.textContent="@"+username;
       info.append(name,id);row.append(avatar,info);
+      const likeSnap=await getDoc(doc(db,"storyLikes",storyId+"_"+data.uid));
+      if(likeSnap.exists()){const heart=document.createElement("span");heart.className="gramora-story-viewer-like-heart";heart.textContent="♥";heart.setAttribute("aria-label","Liked your story");row.append(heart);}
       row.addEventListener("click",async()=>{closeStoryActivitySheet();dialog.close();await openPersonProfile(data.uid);});
       list.append(row);
     }
