@@ -183,6 +183,7 @@ function showGramoraNotificationToast(item){
   toast.append(avatar,copy,close);
   toast.addEventListener("click",async()=>{
     toast.remove();if(notificationToastTimer)clearTimeout(notificationToastTimer);
+    if(item.id&&!item.read){try{await updateDoc(doc(db,"notifications",item.id),{read:true});item.read=true;refreshNotificationBadge();}catch(error){console.warn("Toast notification read status failed:",error);}}
     if(item.postId){
       try{const postSnap=await getDoc(doc(db,"posts",item.postId));if(postSnap.exists())openPostDetail({id:postSnap.id,...postSnap.data()},false);else await openPersonProfile(item.fromUid);}
       catch(error){console.warn("Could not open notification target:",error);}
@@ -231,7 +232,15 @@ async function openGramoraNotifications(){
   dialog.append(header,list);document.body.append(dialog);dialog.addEventListener("close",()=>dialog.remove(),{once:true});dialog.showModal();
   try{
     const snap=await getDocs(query(collection(db,"notifications"),where("toUid","==",user.uid),limit(100)));
-    const items=snap.docs.map(item=>({id:item.id,...item.data()})).sort((x,y)=>(y.createdAt?.toMillis?.()||0)-(x.createdAt?.toMillis?.()||0));
+    // Opening the notification centre marks every notification currently shown as read.
+    const readStates=await Promise.all(snap.docs.map(async notificationDoc=>{
+      const data=notificationDoc.data();
+      if(data.read===true)return true;
+      try{await updateDoc(doc(db,"notifications",notificationDoc.id),{read:true});return true;}
+      catch(error){console.warn("Could not mark notification as read:",notificationDoc.id,error);return false;}
+    }));
+    const items=snap.docs.map((notificationDoc,index)=>({id:notificationDoc.id,...notificationDoc.data(),read:readStates[index]||notificationDoc.data().read===true})).sort((x,y)=>(y.createdAt?.toMillis?.()||0)-(x.createdAt?.toMillis?.()||0));
+    refreshNotificationBadge();
     list.replaceChildren();
     if(!items.length){list.textContent="You’re all caught up. No notifications yet.";return;}
     for(const item of items){
