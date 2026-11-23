@@ -2876,7 +2876,9 @@ async function loadProfilePage(user){
     photoInput.addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith("image/")){alert("Choose an image file.");return;}if(file.size>4*1024*1024){alert("Image must be under 4 MB.");e.target.value="";return;}try{const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file);});const img=await new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=reject;image.src=dataUrl;});const canvas=document.createElement("canvas");canvas.width=320;canvas.height=320;const side=Math.min(img.width,img.height);canvas.getContext("2d").drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,320,320);const photoURL=canvas.toDataURL("image/jpeg",0.68);await setDoc(doc(db,"userProfiles",user.uid),{photoURL,updatedAt:serverTimestamp()},{merge:true});panel.querySelector(".ig-profile-avatar").innerHTML='<img alt="Profile photo" src="'+photoURL+'">';}catch(err){console.error(err);alert("Profile photo could not be saved. Check Firestore Rules and image size.");}finally{e.target.value="";}});
     panel.querySelectorAll(".stat-open").forEach(btn=>btn.addEventListener("click",()=>showFollowList(user.uid,btn.dataset.list)));
     const grid=panel.querySelector(".ig-profile-grid");
+    let profileTabRequest=0;
     function showTab(tab){
+      const tabRequest=++profileTabRequest;
       panel.querySelectorAll("[data-profile-tab]").forEach(b=>b.classList.toggle("active",b.dataset.profileTab===tab));
       grid.replaceChildren();
       if(tab==="posts"){
@@ -2892,10 +2894,20 @@ async function loadProfilePage(user){
       }else if(tab==="reposts"){
         grid.innerHTML='<div class="ig-no-posts"><strong>⟳</strong><b>Loading reposts…</b></div>';
         getDocs(query(collection(db,"reposts"),where("uid","==",user.uid),limit(60))).then(snap=>{
-          if(!grid.isConnected)return;grid.replaceChildren();
+          if(!grid.isConnected||tabRequest!==profileTabRequest||!panel.querySelector('[data-profile-tab="reposts"]')?.classList.contains("active"))return;
+          grid.replaceChildren();
           if(snap.empty){grid.innerHTML='<div class="ig-no-posts"><strong>⟳</strong><b>No reposts yet</b><span>Posts you repost will appear here.</span></div>';return;}
-          snap.docs.sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(d=>{const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.textContent=d.data().originalText||"Reposted post";tile.addEventListener("click",()=>tile.classList.toggle("expanded"));grid.append(tile);});
-        }).catch(err=>{console.error("Profile reposts:",err);grid.textContent="Reposts could not be loaded. Check Firestore Rules.";});
+          snap.docs.sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(d=>{
+            const data=d.data(),tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";
+            tile.textContent=data.originalText||"Reposted post";tile.style.background=data.originalBackground||POST_BACKGROUNDS[4];
+            tile.setAttribute("aria-label","Open reposted post by "+(data.originalDisplayName||"GRAMORA member"));
+            tile.addEventListener("click",()=>{
+              if(!data.originalPostId||!data.originalUid)return;
+              openPostDetail({id:data.originalPostId,uid:data.originalUid,displayName:data.originalDisplayName||"GRAMORA member",username:data.originalUsername||"",photoURL:data.originalPhotoURL||"",text:data.originalText||"",background:data.originalBackground||POST_BACKGROUNDS[4],createdAt:data.originalCreatedAt||data.createdAt},false);
+            });
+            grid.append(tile);
+          });
+        }).catch(err=>{if(tabRequest!==profileTabRequest)return;console.error("Profile reposts:",err);grid.innerHTML='<div class="ig-no-posts"><strong>!</strong><b>Reposts could not be loaded</b><span>Check your connection and Firestore Rules.</span></div>';});
       }else{
         const empty=document.createElement("div");empty.className="ig-no-posts";empty.innerHTML='<strong>▧</strong><b>'+({reels:"No Reels yet",tagged:"No tagged posts yet"}[tab])+'</b><span>This section will show your '+tab+' here.</span>';grid.append(empty);
       }
