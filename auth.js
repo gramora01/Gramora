@@ -1401,7 +1401,7 @@ function bindPostActionLongPress(button,openList){
   return ()=>suppressClick;
 }
 async function showPostRepostsList(postId,postUid){
-  const viewer=auth?.currentUser;if(!viewer)return;
+  const viewer=auth?.currentUser;if(!viewer||viewer.uid!==postUid)return;
   const dialog=document.createElement("dialog");dialog.className="follow-list-dialog post-likes-dialog";
   const head=document.createElement("div");head.className="follow-list-head";
   const title=document.createElement("h3");title.textContent="Reposted by";
@@ -1410,7 +1410,7 @@ async function showPostRepostsList(postId,postUid){
   const body=document.createElement("div");body.className="follow-list-body";body.textContent="Loading…";dialog.append(body);
   document.body.append(dialog);dialog.addEventListener("close",()=>dialog.remove(),{once:true});dialog.showModal();
   try{
-    const reposts=await getDocs(query(collection(db,"reposts"),where("originalPostId","==",postId),where("originalUid","==",postUid),limit(500)));
+    const reposts=await getDocs(query(collection(db,"repostLists"),where("originalPostId","==",postId),where("originalUid","==",viewer.uid),limit(500)));
     body.replaceChildren();
     if(reposts.empty){const empty=document.createElement("p");empty.className="follow-list-empty";empty.textContent="No reposts yet.";body.append(empty);return;}
     const people=await Promise.all(reposts.docs.map(async repostDoc=>{
@@ -1432,7 +1432,7 @@ async function showPostRepostsList(postId,postUid){
       row.append(open);body.append(row);
     });
     if(!body.children.length)body.textContent="Repost karne wale profiles nahi mil paye.";
-  }catch(error){console.error("Post repost list failed:",error);body.textContent="Repost list load nahi hui. Latest Firestore Rules publish karein.";}
+  }catch(error){console.error("Private post repost list failed:",error);body.textContent="Repost list load nahi hui. Latest Firestore Rules Firebase mein publish karein.";}
 }
 async function getPostEngagement(postId,postUid){
   const user=auth?.currentUser;if(!user)return {liked:false,count:0};
@@ -1632,7 +1632,7 @@ function renderPosts(docs){
     like.addEventListener("click",()=>{if(likeHoldState())return;togglePostLike(originalId,authorUid,like,likeCount);});
     comment.addEventListener("click",()=>openPostDetail(postForDetail,false));
     repost.dataset.postId=originalId;repost.dataset.postUid=authorUid;
-    const repostHoldState=bindPostActionLongPress(repost,()=>showPostRepostsList(originalId,authorUid));
+    const repostHoldState=auth?.currentUser?.uid===authorUid?bindPostActionLongPress(repost,()=>showPostRepostsList(originalId,authorUid)):()=>false;
     if(auth?.currentUser?.uid!==authorUid)repost.addEventListener("click",()=>{if(repostHoldState())return;createPostRepost(originalId,originalData,repost);});
     else repost.setAttribute("aria-label","View reposts");
     actions.append(like,comment,repost,save);
@@ -1716,7 +1716,7 @@ function updateVisibleRepostButtons(postId,active,count){
 }
 async function createPostRepost(postId,original,button){
   const user=auth?.currentUser;if(!user||!button)return;
-  const repostId=postId+"_"+user.uid,ref=doc(db,"reposts",repostId);
+  const repostId=postId+"_"+user.uid,ref=doc(db,"reposts",repostId),privateRef=doc(db,"repostLists",repostId);
   const countNode=button.querySelector(".post-action-count");
   const wasReposted=button.classList.contains("reposted");
   const oldCount=Number(countNode?.textContent)||0;
@@ -1729,11 +1729,16 @@ async function createPostRepost(postId,original,button){
   try{
     const existing=await getDoc(ref);
     if(existing.exists()){
-      if(wasReposted)await deleteDoc(ref);
-      else {button.classList.add("reposted");}
+      if(wasReposted){
+        await deleteDoc(ref);
+        await deleteDoc(privateRef).catch(error=>{if(error.code!=="not-found")throw error;});
+      }else{
+        const saved=existing.data();
+        await setDoc(privateRef,{...saved,createdAt:saved.createdAt||serverTimestamp()});
+      }
     }else{
       const profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{};
-      await setDoc(ref,{
+      const repostData={
         uid:user.uid,
         displayName:profile.displayName||user.displayName||"GRAMORA member",
         username:profile.username||"",
@@ -1747,7 +1752,9 @@ async function createPostRepost(postId,original,button){
         originalBackground:original.background||POST_BACKGROUNDS[4],
         originalCreatedAt:original.createdAt||null,
         createdAt:serverTimestamp()
-      });
+      };
+      await setDoc(ref,repostData);
+      await setDoc(privateRef,repostData);
     }
     const latest=await getDocs(query(collection(db,"reposts"),where("originalPostId","==",postId),where("originalUid","==",original.uid),limit(500)));
     const ownNow=(await getDoc(ref)).exists();
