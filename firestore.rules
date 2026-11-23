@@ -298,9 +298,12 @@ service cloud.firestore {
       allow update: if false;
     }
 
-    // PUBLIC FEED PROJECTION: contains repost cards, but not the private repost-list query.
+    // PUBLIC FEED PROJECTION: a viewer must be allowed to see both the reposter
+    // and the original author's content. Profile queries constrain uid and originalUid.
     match /repostFeed/{repostId} {
-      allow get, list: if signedIn() && canViewUserContent(resource.data.originalUid);
+      allow get, list: if signedIn()
+        && canViewUserContent(resource.data.uid)
+        && canViewUserContent(resource.data.originalUid);
       allow create: if signedIn()
         && request.resource.data.originalPostId is string
         && request.resource.data.originalUid is string
