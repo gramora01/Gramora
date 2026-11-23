@@ -2531,7 +2531,25 @@ async function loadPublicProfile(viewer,targetUid){
         if(blockStatus.blockedByMe||blockStatus.blockedMe){alert("Blocked account ke saath follow nahi kar sakte.");return;}
 
         if((await getDoc(doc(db,"follows",viewer.uid+"_"+targetUid))).exists()){
-          await deleteDoc(doc(db,"follows",viewer.uid+"_"+targetUid));btn.textContent="Follow";btn.classList.remove("is-following");await loadPublicProfile(viewer,targetUid);return;
+          btn.disabled=true;
+          await deleteDoc(doc(db,"follows",viewer.uid+"_"+targetUid));
+          btn.textContent="Follow";
+          btn.classList.remove("is-following");
+          const followersStat=panel.querySelector('.ig-profile-stats [data-list="followers"] b');
+          if(followersStat)followersStat.textContent=String(Math.max(0,(Number(followersStat.textContent)||0)-1));
+          if(p.isPrivate){
+            const grid=panel.querySelector(".ig-profile-grid");
+            grid.replaceChildren();
+            const lock=document.createElement("div");lock.className="private-profile-notice";
+            lock.innerHTML='<strong>🔒 This account is private</strong><span>Follow this account to see their photos and posts.</span>';
+            grid.append(lock);
+            panel.querySelector(".public-profile-tabs").hidden=true;
+            panel.querySelector(".public-message").disabled=true;
+            const highlights=panel.querySelector(".public-profile-highlights");
+            if(highlights){highlights.replaceChildren();highlights.hidden=true;}
+          }
+          btn.disabled=false;
+          return;
         }
         if(p.isPrivate){
           const requestRef=doc(db,"followRequests",viewer.uid+"_"+targetUid);
