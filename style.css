@@ -1317,3 +1317,54 @@ body.public-profile-open .ig-profile-post-actions .gramora-ui-icon{width:17px;he
 body.public-profile-open .ig-profile-post-actions .post-action-count{font-size:10px}
 body.public-profile-open .ig-profile-repost-label{display:block;padding:3px 4px 2px;color:var(--muted);font-size:9px;font-weight:700;line-height:1.2}
 @media(max-width:380px){body.public-profile-open .ig-profile-post-actions .gramora-ui-icon{width:15px;height:15px;flex-basis:15px}body.public-profile-open .ig-profile-post-actions .post-action-count{font-size:9px}}
+
+
+/* Public profile redesign: compact Instagram-style identity, two tabs and portrait media grid. */
+body.public-profile-open .topbar{display:none!important}
+body.public-profile-open .public-profile-page-head{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:8px;min-height:52px;margin:0;padding:0 12px;border-bottom:1px solid var(--line);color:var(--text)}
+body.public-profile-open .public-profile-page-head strong{min-width:0;text-align:center;font-size:16px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.public-profile-open .public-profile-back,
+body.public-profile-open .public-profile-more{width:38px;height:38px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--text);padding:0}
+body.public-profile-open .public-profile-back .gramora-ui-icon,
+body.public-profile-open .public-profile-more .gramora-ui-icon{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:2}
+body.public-profile-open .ig-profile{padding:0 0 24px}
+body.public-profile-open .ig-profile-top{grid-template-columns:92px minmax(0,1fr);gap:16px;padding:18px 14px 8px}
+body.public-profile-open .ig-avatar-wrap,
+body.public-profile-open .ig-profile-avatar{width:84px;height:84px}
+body.public-profile-open .ig-profile-avatar{font-size:32px}
+body.public-profile-open .ig-profile-username{margin:0 0 12px}
+body.public-profile-open .ig-profile-username strong{font-size:16px;font-weight:800}
+body.public-profile-open .ig-profile-stats{gap:4px}
+body.public-profile-open .ig-profile-stats .profile-stat b{font-size:16px}
+body.public-profile-open .ig-profile-stats .profile-stat small{font-size:11px;color:var(--muted)}
+body.public-profile-open .ig-profile-bio{padding:5px 14px 12px;font-size:13px;line-height:1.4}
+body.public-profile-open .ig-profile-bio p{margin:0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+body.public-profile-open .ig-profile-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 42px;gap:8px;padding:4px 14px 12px}
+body.public-profile-open .ig-profile-actions button{min-height:38px;border-radius:9px;font-size:13px;font-weight:800}
+body.public-profile-open .ig-profile-actions .public-follow{background:#1877f2;color:#fff}
+body.public-profile-open .ig-profile-actions .public-message{background:#30333b;color:#f7f7f8}
+body.public-profile-open .ig-profile-actions .public-add-person{display:grid;place-items:center;padding:0;background:#30333b;color:#fff}
+body.public-profile-open .public-add-person .gramora-ui-icon{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
+body.public-profile-open .public-profile-tabs{height:46px;display:grid;grid-template-columns:1fr 1fr;justify-content:stretch;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+body.public-profile-open .public-profile-tabs button{display:grid;place-items:center;border:0;border-bottom:2px solid transparent;color:var(--muted);background:transparent}
+body.public-profile-open .public-profile-tabs button.active{border-bottom-color:#f5f5f5;color:#fff}
+body.public-profile-open .public-profile-tabs .gramora-ui-icon{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+body.public-profile-open .ig-profile-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:1px}
+body.public-profile-open .ig-post-wrap{aspect-ratio:4/5;min-width:0;overflow:hidden;background:#171922}
+body.public-profile-open .ig-post-wrap .ig-post-tile{position:relative;display:block;width:100%;height:100%;aspect-ratio:4/5;min-height:0;padding:8px;border:0;border-radius:0;overflow:hidden;color:#fff;text-align:center}
+body.public-profile-open .ig-post-tile-copy{display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;font-size:12px;line-height:1.35}
+body.public-profile-open .ig-post-view-badge{position:absolute;left:7px;bottom:7px;display:inline-flex;align-items:center;gap:4px;padding:3px 6px;border-radius:6px;background:rgba(0,0,0,.62);color:#fff;font-size:10px;font-weight:800;line-height:1.2;font-variant-numeric:tabular-nums}
+body.public-profile-open .ig-post-view-eye .gramora-ui-icon{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+body.public-profile-open .ig-post-pinned{position:absolute;top:7px;right:7px;display:grid;place-items:center;width:22px;height:22px;border-radius:6px;background:rgba(0,0,0,.58);color:#fff}
+body.public-profile-open .ig-post-pinned .gramora-ui-icon{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+body.public-profile-open .ig-profile-post-actions,
+body.public-profile-open .ig-profile-repost-label{display:none!important}
+body.light.public-profile-open .public-profile-tabs button.active{border-bottom-color:#20212a;color:#20212a}
+body.light.public-profile-open .ig-profile-actions .public-message,
+body.light.public-profile-open .ig-profile-actions .public-add-person{background:#e8e9ee;color:#242630}
+@media(max-width:380px){
+ body.public-profile-open .ig-profile-top{grid-template-columns:78px minmax(0,1fr);gap:11px;padding-left:11px;padding-right:11px}
+ body.public-profile-open .ig-avatar-wrap,body.public-profile-open .ig-profile-avatar{width:74px;height:74px}
+ body.public-profile-open .ig-profile-stats .profile-stat b{font-size:14px}
+ body.public-profile-open .ig-profile-stats .profile-stat small{font-size:10px}
+}
