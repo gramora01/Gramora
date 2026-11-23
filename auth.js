@@ -2438,11 +2438,18 @@ async function recordPostView(post){const viewer=auth?.currentUser;if(!viewer||!
 let publicProfileLoadToken=0;
 async function loadPublicProfile(viewer,targetUid){
   const profileLoadToken=++publicProfileLoadToken;
+  const feed=document.getElementById("feed");
+  if(targetUid===viewer.uid){
+    document.body.classList.remove("public-profile-open","view-home","view-explore","view-messages","view-saved");
+    document.body.classList.add("profile-active","view-profile");
+    document.querySelectorAll(".nav").forEach(item=>item.classList.toggle("active",item.dataset.view==="profile"));
+    const ownTitle=document.getElementById("viewTitle");if(ownTitle)ownTitle.textContent="My profile";
+    loadProfilePage(viewer);return;
+  }
   document.body.classList.add("public-profile-open");
+  document.body.classList.remove("profile-active","view-profile");
   document.querySelectorAll(".nav").forEach(item=>item.classList.remove("active"));
   const title=document.getElementById("viewTitle");if(title)title.textContent="Profile";
-  const feed=document.getElementById("feed");
-  if(targetUid===viewer.uid){loadProfilePage(viewer);return;}
   feed.innerHTML='<div class="profile-loading">Loading profile…</div>';
   try{
     const blockStatus=await getBlockStatus(viewer.uid,targetUid);
