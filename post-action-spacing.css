@@ -1,0 +1,9 @@
+/* Slightly increase spacing between every post action icon group. */
+.post-actions{
+  gap:20px!important;
+}
+@media(max-width:680px){
+  .post-actions{
+    gap:20px!important;
+  }
+}
