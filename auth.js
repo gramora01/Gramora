@@ -635,7 +635,7 @@ function openStoryViewer(docs,id){
       if(!isOwnStory)return;
       const action=button.dataset.storyOwnerAction;
       if(action==="activity"){openStoryActivitySheet(id,data.uid);return;}
-      if(action==="highlight"){openHighlightCreator(auth.currentUser);return;}
+      if(action==="highlight"){openHighlightCreator(auth.currentUser,id);return;}
       if(action==="more"){if(ownerMenu)ownerMenu.hidden=!ownerMenu.hidden;return;}
       if(action==="share"){
         const url=location.href.split("#")[0]+"#story-"+encodeURIComponent(id);
@@ -2360,63 +2360,146 @@ postForm.addEventListener("submit",async event=>{
 function renderProfile(user){
   // Navigation is handled once by script.js; do not attach a second profile click handler.
 }
+
+let highlightArchiveDocs=[],highlightSelectedIds=new Set(),highlightEditingId=null,highlightCoverImage="",highlightCoverStoryId="";
+async function getHighlightArchive(user){
+  const snap=await getDocs(query(collection(db,"stories"),where("uid","==",user.uid),limit(100)));
+  const docs=snap.docs.map(d=>({id:d.id,data:()=>d.data()}));
+  docs.sort((x,y)=>(y.data().createdAt?.toMillis?.()||0)-(x.data().createdAt?.toMillis?.()||0));
+  return docs;
+}
+function highlightStoryCard(item,selected){
+  const data=item.data(),button=document.createElement("button");button.type="button";
+  button.className="highlight-story-tile"+(selected?" selected":"");
+  button.style.background=data.background||POST_BACKGROUNDS[4];
+  const text=document.createElement("span");text.className="highlight-story-tile-text";text.textContent=(data.text||data.songTitle||"Story").slice(0,70);
+  const mark=document.createElement("i");mark.className="highlight-story-select-mark";mark.textContent=selected?"✓":"";
+  const date=document.createElement("small");date.textContent=data.createdAt?.toDate?.().toLocaleDateString?.()||"Story";
+  button.append(text,mark,date);button.addEventListener("click",()=>{
+    if(highlightSelectedIds.has(item.id))highlightSelectedIds.delete(item.id);else if(highlightSelectedIds.size<20)highlightSelectedIds.add(item.id);
+    renderHighlightArchive();
+  });return button;
+}
+function renderHighlightArchive(){
+  const grid=document.getElementById("highlightStoryChoices"),count=document.getElementById("highlightSelectedCount");
+  if(!grid)return;grid.replaceChildren();
+  const selected=highlightArchiveDocs.filter(item=>highlightSelectedIds.has(item.id));
+  if(count)count.textContent=selected.length+" selected";
+  if(!highlightArchiveDocs.length){grid.textContent="No stories are available in your archive yet.";return;}
+  highlightArchiveDocs.forEach(item=>grid.append(highlightStoryCard(item,highlightSelectedIds.has(item.id))));
+}
+function renderHighlightCoverChoices(){
+  const grid=document.getElementById("highlightCoverChoices");if(!grid)return;grid.replaceChildren();
+  const selected=highlightArchiveDocs.filter(item=>highlightSelectedIds.has(item.id));
+  selected.forEach(item=>{
+    const data=item.data(),button=document.createElement("button");button.type="button";button.className="highlight-cover-choice"+(highlightCoverStoryId===item.id?" selected":"");button.style.background=data.background||POST_BACKGROUNDS[4];
+    const label=document.createElement("span");label.textContent=(data.text||data.songTitle||"Story").slice(0,45);button.append(label);
+    button.addEventListener("click",()=>{highlightCoverStoryId=item.id;highlightCoverImage="";renderHighlightCoverChoices();updateHighlightCoverPreview();});grid.append(button);
+  });
+}
+function updateHighlightCoverPreview(){
+  const preview=document.getElementById("highlightCoverPreview");if(!preview)return;
+  preview.replaceChildren();
+  if(highlightCoverImage){const img=document.createElement("img");img.src=highlightCoverImage;img.alt="Highlight cover";preview.append(img);return;}
+  const item=highlightArchiveDocs.find(x=>x.id===highlightCoverStoryId)||highlightArchiveDocs.find(x=>highlightSelectedIds.has(x.id));
+  if(item){const d=item.data();preview.textContent=(d.text||d.songTitle||"G").slice(0,2).toUpperCase();preview.style.background=d.background||POST_BACKGROUNDS[4];}
+  else preview.textContent="G";
+}
+async function compressHighlightCover(file){
+  if(!file||!file.type.startsWith("image/"))throw new Error("Choose an image file.");
+  const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file);});
+  const img=await new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=reject;image.src=dataUrl;});
+  const canvas=document.createElement("canvas");canvas.width=400;canvas.height=400;
+  const side=Math.min(img.width,img.height);canvas.getContext("2d").drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,400,400);
+  const result=canvas.toDataURL("image/jpeg",0.72);if(result.length>420000)throw new Error("Cover image is too large. Choose another image.");return result;
+}
+async function openHighlightCreator(user,initialStoryId="",editingDoc=null){
+  const dialog=document.getElementById("highlightCreateDialog"),form=document.getElementById("highlightCreateForm"),status=document.getElementById("highlightCreateStatus");
+  if(!dialog||!form)return;
+  highlightEditingId=editingDoc?.id||null;highlightSelectedIds=new Set((editingDoc?.data()?.stories||[]).map(x=>x.storyId).filter(Boolean));highlightCoverImage=editingDoc?.data()?.coverImage||"";highlightCoverStoryId=editingDoc?.data()?.coverStoryId||"";
+  try{
+    highlightArchiveDocs=await getHighlightArchive(user);
+    (editingDoc?.data()?.stories||[]).forEach((story,index)=>{if(story.storyId&&!highlightArchiveDocs.some(x=>x.id===story.storyId))highlightArchiveDocs.push({id:story.storyId,data:()=>story});});
+    if(initialStoryId)highlightSelectedIds.add(initialStoryId);
+    const titleInput=form.elements.title;titleInput.value=editingDoc?.data()?.title||"";
+    document.getElementById("highlightWizardTitle").textContent=editingDoc?"Edit highlight":"New highlight";
+    document.getElementById("highlightStoryStep").hidden=false;document.getElementById("highlightDetailsStep").hidden=true;
+    document.getElementById("highlightBackBtn").hidden=true;document.getElementById("highlightNextBtn").hidden=false;document.getElementById("highlightSaveBtn").hidden=true;
+    status.textContent="";renderHighlightArchive();renderHighlightCoverChoices();updateHighlightCoverPreview();
+    dialog.showModal();
+  }catch(error){console.error("Highlight archive load failed:",error);status.textContent="Stories archive load nahi hua. Internet aur Firestore Rules check karein.";dialog.showModal();}
+}
 async function loadProfileHighlights(user,panel){
   const strip=panel.querySelector(".ig-highlights");if(!strip)return;
   try{
     const snap=await getDocs(query(collection(db,"storyHighlights"),where("uid","==",user.uid)));
     snap.docs.sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(highlightDoc=>{
       const data=highlightDoc.data(),button=document.createElement("button");button.type="button";button.className="ig-highlight saved-highlight";
-      const cover=document.createElement("span");cover.textContent=(data.coverText||data.title||"G").slice(0,2).toUpperCase();
-      const label=document.createElement("small");label.textContent=data.title||"Highlight";
-      button.append(cover,label);
-      button.addEventListener("click",()=>{
-        const stories=(data.stories||[]).map((item,index)=>({id:item.storyId||highlightDoc.id+"_"+index,data:()=>item}));
-        if(!stories.length)return;
-        const dialog=document.getElementById("storyViewerDialog");
-        dialog._highlightStories=stories;dialog.dataset.highlightIndex="0";
-        openStoryViewer(stories,stories[0].id);
-      });
+      const cover=document.createElement("span");if(data.coverImage){const img=document.createElement("img");img.src=data.coverImage;img.alt="";cover.append(img);}else{const item=(data.stories||[]).find(x=>x.storyId===data.coverStoryId)||(data.stories||[])[0];cover.textContent=(item?.text||data.coverText||data.title||"G").slice(0,2).toUpperCase();cover.style.background=item?.background||"";}
+      const label=document.createElement("small");label.textContent=data.title||"Highlight";button.append(cover,label);
+      const open=()=>{const stories=(data.stories||[]).map((item,index)=>({id:item.storyId||highlightDoc.id+"_"+index,data:()=>item}));if(!stories.length)return;const viewer=document.getElementById("storyViewerDialog");viewer._highlightStories=stories;viewer.dataset.highlightIndex="0";openStoryViewer(stories,stories[0].id);};
+      button.addEventListener("click",open);
+      let holdTimer=null,held=false;
+      button.addEventListener("pointerdown",()=>{held=false;holdTimer=setTimeout(()=>{held=true;showHighlightOptions(highlightDoc);},550);});
+      ["pointerup","pointerleave","pointercancel"].forEach(type=>button.addEventListener(type,()=>clearTimeout(holdTimer)));
+      button.addEventListener("contextmenu",event=>{event.preventDefault();showHighlightOptions(highlightDoc);});
+      button.addEventListener("click",event=>{if(held){event.preventDefault();event.stopImmediatePropagation();held=false;}},true);
       strip.append(button);
     });
   }catch(error){console.error("Highlights load failed:",error);}
 }
-function openHighlightCreator(user){
-  const dialog=document.getElementById("highlightCreateDialog"),list=document.getElementById("highlightStoryChoices"),status=document.getElementById("highlightCreateStatus");
-  if(!dialog||!list)return;
-  list.replaceChildren();status.textContent="";
-  const own=activeStoryDocs.filter(item=>item.data().uid===user.uid);
-  if(!own.length){status.textContent="Abhi aapki koi active story nahi hai. Pehle ek story lagayein."; }
-  own.forEach(item=>{
-    const data=item.data(),label=document.createElement("label");label.className="highlight-choice";
-    const check=document.createElement("input");check.type="checkbox";check.value=item.id;
-    const preview=document.createElement("span");preview.textContent=(data.text||"Story").slice(0,90);
-    label.append(check,preview);list.append(label);
-  });
-  dialog.showModal();
+function showHighlightOptions(highlightDoc){
+  const menu=document.createElement("dialog");menu.className="dp-action-dialog highlight-options-dialog";
+  const title=document.createElement("h3");title.textContent=highlightDoc.data().title||"Highlight";
+  const edit=document.createElement("button");edit.type="button";edit.textContent="✎  Edit highlight";edit.addEventListener("click",()=>{menu.close();openHighlightCreator(auth.currentUser,"",highlightDoc);});
+  const remove=document.createElement("button");remove.type="button";remove.textContent="Delete highlight";remove.addEventListener("click",async()=>{if(!confirm("Delete this highlight?"))return;remove.disabled=true;try{await deleteDoc(doc(db,"storyHighlights",highlightDoc.id));menu.close();await loadProfilePage(auth.currentUser);}catch(error){alert("Highlight delete nahi hua. Dobara try karein.");remove.disabled=false;}});
+  const cancel=document.createElement("button");cancel.type="button";cancel.className="dp-action-cancel";cancel.textContent="Cancel";cancel.addEventListener("click",()=>menu.close());
+  menu.append(title,edit,remove,cancel);document.body.append(menu);menu.addEventListener("close",()=>menu.remove(),{once:true});menu.showModal();
 }
 const highlightForm=document.getElementById("highlightCreateForm");
 highlightForm?.addEventListener("submit",async event=>{
-  event.preventDefault();
-  const user=auth?.currentUser;if(!user)return;
-  const title=highlightForm.elements.title.value.trim();
-  const selected=[...document.querySelectorAll("#highlightStoryChoices input:checked")].map(input=>input.value);
-  const status=document.getElementById("highlightCreateStatus"),button=highlightForm.querySelector('button[type="submit"]');
+  event.preventDefault();const user=auth?.currentUser;if(!user)return;
+  const title=highlightForm.elements.title.value.trim(),status=document.getElementById("highlightCreateStatus"),button=document.getElementById("highlightSaveBtn");
+  const selected=highlightArchiveDocs.filter(item=>highlightSelectedIds.has(item.id));
   if(!title||title.length>24){status.textContent="Highlight name 1–24 characters ka rakhein.";return;}
-  if(!selected.length){status.textContent="Kam se kam ek story select karein.";return;}
-  if(selected.length>20){status.textContent="Ek highlight mein maximum 20 stories select kar sakte hain.";return;}
-  const stories=selected.map(id=>activeStoryDocs.find(item=>item.id===id)).filter(Boolean).map(item=>{
-    const d=item.data();return {storyId:item.id,uid:d.uid,displayName:d.displayName||"GRAMORA member",text:d.text||"",lyrics:d.lyrics||"",background:d.background||POST_BACKGROUNDS[4],songTitle:d.songTitle||"",songArtist:d.songArtist||"",songUrl:d.songUrl||"",previewUrl:d.previewUrl||"",createdAt:d.createdAt||null};
-  });
-  if(!stories.length){status.textContent="Selected stories ab available nahi hain.";return;}
-  button.disabled=true;status.textContent="Highlight save ho raha hai…";
+  if(!selected.length||selected.length>20){status.textContent="1 se 20 stories select karein.";return;}
+  const stories=selected.map(item=>{const d=item.data();return {storyId:item.id,uid:d.uid||user.uid,displayName:d.displayName||user.displayName||"GRAMORA member",text:d.text||"",lyrics:d.lyrics||"",background:d.background||POST_BACKGROUNDS[4],songTitle:d.songTitle||"",songArtist:d.songArtist||"",songUrl:d.songUrl||"",previewUrl:d.previewUrl||"",songArtwork:d.songArtwork||"",songStart:Number(d.songStart||0),createdAt:d.createdAt||null};});
+  const coverStoryId=highlightCoverStoryId&&highlightSelectedIds.has(highlightCoverStoryId)?highlightCoverStoryId:selected[0].id;
+  const payload={title,coverText:(selected.find(x=>x.id===coverStoryId)?.data().text||title).slice(0,2),coverStoryId,coverImage:highlightCoverImage,stories};
+  button.disabled=true;status.textContent="Saving highlight…";
   try{
-    await addDoc(collection(db,"storyHighlights"),{uid:user.uid,title,coverText:stories[0].text.slice(0,2)||title.slice(0,2),stories,createdAt:serverTimestamp()});
-    highlightForm.reset();document.getElementById("highlightCreateDialog").close();
-    await loadProfilePage(user);
-  }catch(error){console.error("Highlight create failed:",error);status.textContent=error.code==="permission-denied"?"Firestore Rules publish karein.":"Highlight save nahi hua. Dobara try karein.";}
+    if(highlightEditingId)await updateDoc(doc(db,"storyHighlights",highlightEditingId),payload);
+    else await addDoc(collection(db,"storyHighlights"),{uid:user.uid,...payload,createdAt:serverTimestamp()});
+    dialogCloseHighlight();await loadProfilePage(user);
+  }catch(error){console.error("Highlight save failed:",error);status.textContent=error.code==="permission-denied"?"Firestore Rules update karne honge.":"Highlight save nahi hua. Dobara try karein.";}
   finally{button.disabled=false;}
 });
-document.getElementById("closeHighlightCreate")?.addEventListener("click",()=>document.getElementById("highlightCreateDialog").close());
+function dialogCloseHighlight(){document.getElementById("highlightCreateDialog")?.close();highlightEditingId=null;}
+document.getElementById("highlightNextBtn")?.addEventListener("click",()=>{
+  if(!highlightSelectedIds.size){document.getElementById("highlightCreateStatus").textContent="Select at least one story.";return;}
+  document.getElementById("highlightStoryStep").hidden=true;document.getElementById("highlightDetailsStep").hidden=false;
+  document.getElementById("highlightBackBtn").hidden=false;document.getElementById("highlightNextBtn").hidden=true;document.getElementById("highlightSaveBtn").hidden=false;
+  renderHighlightCoverChoices();updateHighlightCoverPreview();
+});
+document.getElementById("highlightBackBtn")?.addEventListener("click",()=>{
+  document.getElementById("highlightStoryStep").hidden=false;document.getElementById("highlightDetailsStep").hidden=true;
+  document.getElementById("highlightBackBtn").hidden=true;document.getElementById("highlightNextBtn").hidden=false;document.getElementById("highlightSaveBtn").hidden=true;
+});
+document.getElementById("highlightEditCoverBtn")?.addEventListener("click",()=>{
+  const picker=document.getElementById("highlightCoverEditor");picker.hidden=!picker.hidden;
+  if(!picker.hidden){renderHighlightCoverChoices();updateHighlightCoverPreview();}
+});
+document.getElementById("highlightCoverUpload")?.addEventListener("change",async event=>{
+  const file=event.target.files?.[0];if(!file)return;
+  try{highlightCoverImage=await compressHighlightCover(file);highlightCoverStoryId="";updateHighlightCoverPreview();}
+  catch(error){document.getElementById("highlightCreateStatus").textContent=error.message||"Cover image could not be used.";}
+  event.target.value="";
+});
+document.getElementById("closeHighlightCreate")?.addEventListener("click",dialogCloseHighlight);
+document.getElementById("storyViewerDialog")?.addEventListener("close",()=>{
+  const dialog=document.getElementById("storyViewerDialog");dialog._highlightStories=[];dialog.dataset.highlightIndex="";
+  const nav=document.getElementById("highlightStoryNav");if(nav)nav.hidden=true;
+});
 document.getElementById("storyViewerDialog")?.addEventListener("close",()=>{
   const dialog=document.getElementById("storyViewerDialog");dialog._highlightStories=[];dialog.dataset.highlightIndex="";
   const nav=document.getElementById("highlightStoryNav");if(nav)nav.hidden=true;
