@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v167-private-profile-empty-light";
+const CACHE_NAME = "gramora-shell-v168-private-no-highlight-row";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=173",
   "./script.js?v=74",
-  "./auth.js?v=257",
+  "./auth.js?v=258",
   "./auth.css?v=63",
   "./story-creator.css?v=8",
   "./story-creator.js?v=5",
