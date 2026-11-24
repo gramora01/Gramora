@@ -717,7 +717,7 @@ async function openStoryViewer(docs,id){
       viewerImage.hidden=true;
       viewerImage.onload=()=>{if(dialog.dataset.storyId!==id||openRequest!==storyOpenRequest)return;viewerImage.hidden=false;viewerStage?.classList.remove("story-image-loading");};
       viewerImage.onerror=()=>{if(dialog.dataset.storyId===id&&openRequest===storyOpenRequest)viewerStage?.classList.remove("story-image-loading");};
-      viewerImage.style.transform="translate(-50%,-50%) scale("+Math.max(1,Math.min(3,Number(data.imageScale)||1))+")";viewerImage.src=data.imageUrl;
+      viewerImage.style.setProperty("--story-image-scale",String(Math.max(1,Math.min(3,Number(data.imageScale)||1))));viewerImage.src=data.imageUrl;
       if(viewerImage.complete&&viewerImage.naturalWidth>0){viewerImage.hidden=false;viewerStage?.classList.remove("story-image-loading");}
     }else{
       viewerImage.hidden=true;viewerImage.onload=null;viewerImage.onerror=null;viewerImage.removeAttribute("src");
