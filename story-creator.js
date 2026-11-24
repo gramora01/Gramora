@@ -66,6 +66,14 @@
   const palette=el("div","gse-color-palette");
   textColors.forEach(color=>{const b=el("button","gse-color-swatch");b.type="button";b.style.background=color;b.setAttribute("aria-label","Text colour "+color);b.addEventListener("click",()=>{ta.style.setProperty("color",color,"important");colorInput.value=color;palette.classList.remove("is-open");});palette.append(b);});
   stage?.append(palette);
+  // Direct font preset handling, independent of legacy auth.js listeners.
+  const fontPresets={classic:"650 32px Arial,sans-serif",modern:"700 32px system-ui,sans-serif",elegant:"italic 500 32px Georgia,serif",strong:"800 32px Impact,sans-serif"};
+  dlg.querySelector(".gramora-story-style-strip")?.addEventListener("click",e=>{
+    const button=e.target.closest("[data-story-font]");
+    if(!button)return;
+    ta.style.setProperty("font",fontPresets[button.dataset.storyFont]||fontPresets.classic,"important");
+    dlg.querySelectorAll(".gramora-story-style-strip [data-story-font]").forEach(item=>item.classList.toggle("active",item===button));
+  });
   function toggleTextColors(){palette.classList.toggle("is-open");}
   window.gramoraApplyStoryTextColor=color=>{if(!color)return;ta.style.setProperty("color",color,"important");colorInput.value=color;};
 
@@ -108,7 +116,7 @@
     }else if(gesture.kind==="text"){
       const r=stage.getBoundingClientRect(),px=Math.max(5,Math.min(95,(e.clientX-r.left)/r.width*100)),py=Math.max(5,Math.min(95,(e.clientY-r.top)/r.height*100));
       ta.style.position="absolute";ta.style.inset="auto";ta.style.left=px+"%";ta.style.top=py+"%";ta.style.transform="translate(-50%,-50%)";ta.style.width="82%";
-      $("storyTextX").value=String(px);$("storyTextY").value=String(py);ta.blur();
+      $("storyTextX").value=String(px);$("storyTextY").value=String(py);
     }
     e.preventDefault();
   },{passive:false});
