@@ -1924,7 +1924,8 @@ body.light #notificationBtn>svg.notification-bell-svg{stroke:#252833!important;}
 body.light #notificationBtn>svg.notification-bell-svg path{stroke:#252833!important;}
 
 
-/* Reliable notification glyph fallback: render independently of SVG icon injection. */
-#notificationBtn{position:relative!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;padding:0!important;font-size:22px!important;line-height:1!important;}
-#notificationBtn::before{content:"🔔"!important;display:block!important;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif!important;font-size:22px!important;line-height:1!important;opacity:1!important;visibility:visible!important;}
+
+/* Notification fallback rendered as a real DOM element, not pseudo content. */
+#notificationBtn{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;padding:0!important;overflow:visible!important;}
+#notificationBtn>.notification-bell-fallback{display:inline-block!important;flex:0 0 auto!important;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif!important;font-size:23px!important;line-height:1!important;opacity:1!important;visibility:visible!important;}
 #notificationBtn>svg{display:none!important;}
