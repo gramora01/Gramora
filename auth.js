@@ -2,7 +2,6 @@ import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.10
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, Timestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs, where, deleteDoc, updateDoc, startAfter, increment, getCountFromServer } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 
 const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
   firebaseConfig.projectId !== "PASTE_YOUR_PROJECT_ID" &&
@@ -10,7 +9,6 @@ const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
 const app = configured ? initializeApp(firebaseConfig) : null;
 let auth = app ? getAuth(app) : null;
 let db = app ? getFirestore(app) : null;
-const supabaseClient = createClient("https://kyqkzrzrnkzjtefrnzmh.supabase.co","sb_publishable_6MqQiDs0p28H5Nk5vcdqrw_E9U6iqEK",{accessToken:async()=>auth?.currentUser?await auth.currentUser.getIdToken():null});
 let activeApp = app;
 let activeAuthUnsubscribe = null;
 const accountInstances = new Map();
@@ -1616,16 +1614,26 @@ async function loadPostEngagement(post,root){
 }
 async function uploadGramoraPostPhotos(files,uid,postId){
   const photoUrls=[],photoPaths=[];
+  const user=auth?.currentUser;
+  if(!user)throw new Error("Please sign in again before uploading photos.");
+  const token=await user.getIdToken();
+  const worker="https://gramora-photo-access.gramora01.workers.dev";
   for(let index=0;index<files.length;index++){
     const file=files[index];
     if(!["image/jpeg","image/png","image/webp"].includes(file.type))throw new Error("Only JPG, PNG and WebP photos are supported.");
     if(file.size>5*1024*1024)throw new Error("Each photo must be 5 MB or smaller.");
     const extension=file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg";
     const path=uid+"/"+postId+"/"+String(index+1)+"."+extension;
-    const {error}=await supabaseClient.storage.from("gramora-photos").upload(path,file,{cacheControl:"3600",contentType:file.type,upsert:false});
-    if(error)throw error;
-    const {data}=supabaseClient.storage.from("gramora-photos").getPublicUrl(path);
-    photoUrls.push(data.publicUrl);photoPaths.push(path);
+    const response=await fetch(worker+"/upload?path="+encodeURIComponent(path),{
+      method:"POST",
+      headers:{"Authorization":"Bearer "+token,"Content-Type":file.type},
+      body:file
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(result.error||"Secure photo upload failed ("+response.status+").");
+    photoPaths.push(path);
+    // The bucket remains Public during this integration stage. This URL will be replaced by short-lived signed URLs before the bucket is made Private.
+    photoUrls.push("https://kyqkzrzrnkzjtefrnzmh.supabase.co/storage/v1/object/public/gramora-photos/"+path.split("/").map(encodeURIComponent).join("/"));
   }
   return {photoUrls,photoPaths};
 }
