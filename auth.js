@@ -1738,14 +1738,25 @@ function createPostMusicElement(data){
   if("IntersectionObserver" in window){
     if(!postMusicObserver)postMusicObserver=new IntersectionObserver(entries=>{
       entries.forEach(entry=>{
-        const player=entry.target,button=player.closest(".gramora-post-music-overlay")?.querySelector(".gramora-post-music-sound");
-        if(entry.isIntersecting&&entry.intersectionRatio>=0.55){
-          if(activePostMusicAudio&&activePostMusicAudio!==player){activePostMusicAudio.pause();activePostMusicAudio.muted=true;const oldButton=activePostMusicAudio.closest(".gramora-post-music-overlay")?.querySelector(".gramora-post-music-sound");if(oldButton){oldButton.innerHTML=speakerOff;oldButton.setAttribute("aria-label","Turn sound on");oldButton.setAttribute("aria-pressed","false");oldButton.classList.remove("is-sound-on");}}
-          player.muted=true;if(button){button.innerHTML=speakerOff;button.setAttribute("aria-label","Turn sound on");button.setAttribute("aria-pressed","false");button.classList.remove("is-sound-on");}activePostMusicAudio=player;const attempt=player.play();if(attempt?.catch)attempt.catch(()=>{});
-        }else if(!entry.isIntersecting&&activePostMusicAudio===player){player.pause();player.muted=true;if(button){button.innerHTML=speakerOff;button.setAttribute("aria-label","Turn sound on");button.setAttribute("aria-pressed","false");button.classList.remove("is-sound-on");}}
+        const wrap=entry.target,player=wrap.querySelector("audio"),button=wrap.querySelector(".gramora-post-music-sound");
+        if(!player)return;
+        if(!(entry.isIntersecting&&entry.intersectionRatio>=0.55)){
+          if(activePostMusicAudio===player){
+            player.pause();player.muted=true;
+            if(button){button.innerHTML=speakerOff;button.setAttribute("aria-label","Turn sound on");button.setAttribute("aria-pressed","false");button.classList.remove("is-sound-on");}
+            activePostMusicAudio=null;
+          }
+          return;
+        }
+        // A visible post may preview silently, but scrolling it out of view always stops playback.
+        if(!activePostMusicAudio||activePostMusicAudio===player){
+          player.muted=true;
+          if(button){button.innerHTML=speakerOff;button.setAttribute("aria-label","Turn sound on");button.setAttribute("aria-pressed","false");button.classList.remove("is-sound-on");}
+          const attempt=player.play();if(attempt?.catch)attempt.catch(()=>{});
+        }
       });
     },{threshold:[0,0.55]});
-    postMusicObserver.observe(audio);
+    postMusicObserver.observe(wrap);
   }else{audio.autoplay=true;audio.muted=true;audio.play().catch(()=>{});}
   return wrap;
 }
@@ -2934,6 +2945,7 @@ function openPostEditor(post){
   document.getElementById("postStatus").textContent="";document.getElementById("createDialog").showModal();
 }
 function openPostDetail(post,canEdit=false){
+  stopActivePostMusic();
   currentViewedPost=post;const card=document.getElementById("postDetailCard");card.replaceChildren();card.classList.toggle("has-photo-post",!!post.photoUrls?.length);card.style.background=post.photoUrls?.length?"transparent":(post.background||POST_BACKGROUNDS[4]);const media=createPostMediaElement(post.photoUrls||[],"post-detail-media");const musicLabel=createPostMusicLabel(post);if(musicLabel){const byline=document.getElementById("postDetailByline");byline.append(document.createTextNode(" · "));byline.append(musicLabel);}const music=createPostMusicElement(post);if(media){if(music)media.append(music);card.append(media);}if(post.text){const caption=document.createElement("p");caption.textContent=post.text;caption.className="post-detail-caption";if(!media&&music)caption.append(music);card.append(caption);}
   document.getElementById("postDetailByline").textContent=(post.displayName||"GRAMORA member")+(post.username?" · @"+post.username:"")+" · "+formatPostDate(post.createdAt);
   document.getElementById("postDetailEdit").hidden=!canEdit;document.getElementById("postDetailDelete").hidden=!canEdit;
@@ -2954,6 +2966,7 @@ document.getElementById("postCommentForm")?.addEventListener("submit",async even
   catch(error){console.error("Post comment failed:",error);status.textContent=error.code==="permission-denied"?"Latest Firestore Rules publish karein.":"Comment post nahi hua. Dobara try karein.";}finally{button.disabled=false;}
 });
 document.getElementById("closePostDetail")?.addEventListener("click",()=>document.getElementById("postDetailDialog").close());
+document.getElementById("postDetailDialog")?.addEventListener("close",stopActivePostMusic);
 const postForm=document.getElementById("postForm");
 const createPhotoInput=document.getElementById("createPhotoInput");
 const createPhotoPreview=document.getElementById("createPhotoPreview");
