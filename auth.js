@@ -1219,6 +1219,7 @@ storyForm?.addEventListener("submit",async event=>{
 document.getElementById("closeStoryCreate")?.addEventListener("click",()=>document.getElementById("storyCreateDialog").close());
 document.getElementById("storyCreateDialog")?.addEventListener("close",()=>{
   stopStoryMusicPreview();
+  if(storyImageFile)storyImageFile.value="";if(storyImageUrlInput)storyImageUrlInput.value="";if(storyImagePathInput)storyImagePathInput.value="";setStoryImagePreview("");
   if(storyEditingId){storyEditingId=null;storyForm?.reset();}
   setStoryEditingMode(true);
   const heading=document.getElementById("storyCreateDialog").querySelector("h2");
