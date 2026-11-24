@@ -1952,3 +1952,33 @@ body.light.public-profile-open .public-profile-highlights .ig-highlight>span{
 body.light.public-profile-open .public-profile-highlights .ig-highlight small{color:#555967!important}
 body.light.public-profile-open .public-profile-highlights .highlight-load-note{color:#747987!important}
 body.light.public-profile-open .public-profile-tabs{background:transparent!important;border-color:#e5e6ec!important}
+
+
+/* GRAMORA LIGHT THEME: profile highlights (own and public profiles). */
+body.light .ig-highlights,
+body.light .public-profile-highlights,
+body.light .ig-profile-highlights{
+  background:#fff!important;
+  background-color:#fff!important;
+  color:#292b35!important;
+  border-top-color:#e5e6ec!important;
+  border-bottom-color:#e5e6ec!important;
+}
+body.light .ig-highlights .ig-highlight,
+body.light .public-profile-highlights .ig-highlight,
+body.light .ig-profile-highlights .ig-highlight{
+  background:transparent!important;
+  background-color:transparent!important;
+  color:#292b35!important;
+}
+body.light .ig-highlights .ig-highlight>span,
+body.light .public-profile-highlights .ig-highlight>span,
+body.light .ig-profile-highlights .ig-highlight>span{
+  background:#f3f1fa!important;
+  background-color:#f3f1fa!important;
+  border-color:#ded9ea!important;
+  color:#5146d8!important;
+}
+body.light .ig-highlights .ig-highlight small,
+body.light .public-profile-highlights .ig-highlight small,
+body.light .ig-profile-highlights .ig-highlight small{color:#555967!important}
