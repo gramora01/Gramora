@@ -140,3 +140,8 @@
 #storyCreateDialog.story-kind-image #storyText:not([hidden]){background:transparent!important}
 #storyCreateDialog .gse-tools button:focus-visible,#storyCreateDialog .gse-bottom button:focus-visible{outline:2px solid #fff!important;outline-offset:3px!important}
 @media(max-width:480px){#storyCreateDialog .gse-tools{right:8px!important;gap:10px!important}#storyCreateDialog .gse-tool{min-width:76px!important;min-height:52px!important}#storyCreateDialog .gse-c{width:44px!important;height:44px!important;flex-basis:44px!important}}
+
+/* Positioning overrides for direct drag and true pinch scaling */
+#storyCreateDialog #storyText{inset:auto!important}
+#storyCreateDialog.story-kind-image #storyPreviewCanvas > #storyImagePreview{transform:translate(-50%,-50%) scale(var(--story-image-scale,1))!important}
+#storyViewerStage.has-story-image > #storyViewerImage{transform:translate(-50%,-50%) scale(var(--story-image-scale,1))!important}
