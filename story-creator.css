@@ -37,3 +37,13 @@
 .gse-size{display:none}
 .gse-editing .gse-size{display:block;position:absolute;left:4px;top:110px;height:40%;width:32px;z-index:7;writing-mode:vertical-lr;direction:rtl;accent-color:#fff}
 .gse-editing .gse-tools,.gse-editing .gse-bottom,.gse-editing #storyCreateStatus,.gse-editing .gramora-story-tools{display:none!important}
+
+/* Image stories */
+#storyCreateDialog .gramora-story-preview{position:relative!important;overflow:hidden!important}
+#storyCreateDialog .gramora-story-image-preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+#storyCreateDialog #storyText{z-index:2;text-shadow:0 1px 5px #0009}
+#storyCreateDialog .gramora-story-image-remove{position:absolute;right:14px;top:70px;z-index:9;width:36px;height:36px;border:0;border-radius:50%;background:#111b;color:#fff;font-size:25px;line-height:1}
+#storyCreateDialog .gramora-story-viewer-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+#storyViewerStage.has-story-image #storyViewerText{background:transparent!important;position:relative;z-index:2;text-shadow:0 2px 8px #000b}
+#storyViewerStage.has-story-image #storyViewerLyrics{z-index:3}
+#storyViewerStage.has-story-image .gramora-story-tapzone{z-index:5}
