@@ -2,6 +2,7 @@ import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.10
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, runTransaction, serverTimestamp, Timestamp, collection, addDoc, query, orderBy, limit, onSnapshot, getDocs, where, deleteDoc, updateDoc, startAfter, increment, getCountFromServer } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 
 const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
   firebaseConfig.projectId !== "PASTE_YOUR_PROJECT_ID" &&
@@ -9,6 +10,7 @@ const configured = firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY" &&
 const app = configured ? initializeApp(firebaseConfig) : null;
 let auth = app ? getAuth(app) : null;
 let db = app ? getFirestore(app) : null;
+const supabaseClient = createClient("https://kyqkzrzrnkzjtefrnzmh.supabase.co","sb_publishable_6MqQiDs0p28H5Nk5vcdqrw_E9U6iqEK",{accessToken:async()=>auth?.currentUser?await auth.currentUser.getIdToken():null});
 let activeApp = app;
 let activeAuthUnsubscribe = null;
 const accountInstances = new Map();
@@ -1612,6 +1614,32 @@ async function loadPostEngagement(post,root){
   }catch(error){console.error("Post engagement load failed:",error);status.textContent=error.code==="permission-denied"?"Latest Firestore Rules publish karein.":"Likes/comments load nahi ho paye.";
   }
 }
+async function uploadGramoraPostPhotos(files,uid,postId){
+  const photoUrls=[],photoPaths=[];
+  for(let index=0;index<files.length;index++){
+    const file=files[index];
+    if(!["image/jpeg","image/png","image/webp"].includes(file.type))throw new Error("Only JPG, PNG and WebP photos are supported.");
+    if(file.size>5*1024*1024)throw new Error("Each photo must be 5 MB or smaller.");
+    const extension=file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg";
+    const path=uid+"/"+postId+"/"+String(index+1)+"."+extension;
+    const {error}=await supabaseClient.storage.from("gramora-photos").upload(path,file,{cacheControl:"3600",contentType:file.type,upsert:false});
+    if(error)throw error;
+    const {data}=supabaseClient.storage.from("gramora-photos").getPublicUrl(path);
+    photoUrls.push(data.publicUrl);photoPaths.push(path);
+  }
+  return {photoUrls,photoPaths};
+}
+function createPostMediaElement(urls,className="post-media-gallery"){
+  const list=Array.isArray(urls)?urls.filter(url=>typeof url==="string"&&url.startsWith("https://")):[];
+  if(!list.length)return null;
+  const gallery=document.createElement("div");gallery.className=className;
+  gallery.style.display="grid";gallery.style.gridTemplateColumns=list.length===1?"1fr":"repeat(2,minmax(0,1fr))";gallery.style.gap="4px";gallery.style.width="100%";gallery.style.overflow="hidden";gallery.style.borderRadius="12px";
+  list.forEach(url=>{
+    const image=document.createElement("img");image.src=url;image.alt="Post photo";image.loading="lazy";image.style.display="block";image.style.width="100%";image.style.height=list.length===1?"auto":"220px";image.style.maxHeight="560px";image.style.objectFit="cover";image.style.background="#171923";
+    gallery.append(image);
+  });
+  return gallery;
+}
 function renderPosts(docs){
   const feed=document.getElementById("feed");feed.replaceChildren();
   if(!docs.length){const empty=document.createElement("div");empty.className="empty-welcome";const heading=document.createElement("h2");heading.textContent="Your feed is ready.";const note=document.createElement("p");note.textContent="Be the first to share a moment with the GRAMORA community.";empty.append(heading,note);feed.append(empty);return;}
@@ -1638,14 +1666,14 @@ function renderPosts(docs){
     const name=document.createElement("b");name.textContent=authorName||"GRAMORA member";
     const meta=document.createElement("small");meta.textContent=(authorUsername?"@"+authorUsername+" · ":"")+formatPostDate(isRepost?data.originalCreatedAt:data.createdAt);
     identity.append(name,meta);head.append(avatar,identity);head.addEventListener("click",()=>{const viewer=auth?.currentUser;if(viewer&&authorUid)loadPublicProfile(viewer,authorUid);});
-    const content=document.createElement("p");content.className="post-text post-text-card";content.textContent=isRepost?(data.originalText||""):(data.text||"");content.style.background=isRepost?(data.originalBackground||POST_BACKGROUNDS[4]):(data.background||POST_BACKGROUNDS[4]);
+    const content=document.createElement("div");content.className="post-content";const postPhotos=isRepost?(data.originalPhotoUrls||[]):(data.photoUrls||[]);const media=createPostMediaElement(postPhotos);if(media)content.append(media);const caption=document.createElement("p");caption.className="post-text post-text-card";caption.textContent=isRepost?(data.originalText||""):(data.text||"");if(!postPhotos.length)caption.style.background=isRepost?(data.originalBackground||POST_BACKGROUNDS[4]):(data.background||POST_BACKGROUNDS[4]);if(caption.textContent)content.append(caption);
     const actions=document.createElement("div");actions.className="post-actions";
     const like=document.createElement("button");like.className="like";like.type="button";like.dataset.likeCount="";
     const comment=document.createElement("button");comment.className="post-comment-open";comment.type="button";comment.innerHTML='<span class="post-action-count"></span>';
     const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.innerHTML='<span class="post-action-count"></span>';
     const save=document.createElement("button");save.className="save";save.type="button";save.innerHTML='<span class="post-action-count"></span>';
     const originalId=isRepost?data.originalPostId:postDoc.id;
-    const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,background:data.originalBackground,createdAt:data.originalCreatedAt}:data;
+    const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,background:data.originalBackground,photoUrls:data.originalPhotoUrls||[],photoPaths:data.originalPhotoPaths||[],createdAt:data.originalCreatedAt}:data;
     const postForDetail={id:originalId,...originalData};
     const likeCount=like.querySelector(".post-action-count"),commentCount=comment.querySelector(".post-action-count"),repostCount=repost.querySelector(".post-action-count"),saveCount=save.querySelector(".post-action-count");
     like.setAttribute("aria-label","Like post");comment.setAttribute("aria-label","View comments");repost.setAttribute("aria-label","Repost");save.setAttribute("aria-label","Save post");
@@ -1794,6 +1822,8 @@ async function createPostRepost(postId,original,button){
         originalDisplayName:original.displayName||"GRAMORA member",
         originalUsername:original.username||"",
         originalPhotoURL:original.photoURL||"",
+        originalPhotoUrls:Array.isArray(original.photoUrls)?original.photoUrls:[],
+        originalPhotoPaths:Array.isArray(original.photoPaths)?original.photoPaths:[],
         originalText:original.text||"",
         originalBackground:original.background||POST_BACKGROUNDS[4],
         originalCreatedAt:original.createdAt||null,
@@ -2746,7 +2776,7 @@ function openPostEditor(post){
   document.getElementById("postStatus").textContent="";document.getElementById("createDialog").showModal();
 }
 function openPostDetail(post,canEdit=false){
-  currentViewedPost=post;const card=document.getElementById("postDetailCard");card.textContent=post.text||"";card.style.background=post.background||POST_BACKGROUNDS[4];
+  currentViewedPost=post;const card=document.getElementById("postDetailCard");card.replaceChildren();card.style.background=post.photoUrls?.length?"transparent":(post.background||POST_BACKGROUNDS[4]);const media=createPostMediaElement(post.photoUrls||[],"post-detail-media");if(media)card.append(media);if(post.text){const caption=document.createElement("p");caption.textContent=post.text;caption.className="post-detail-caption";card.append(caption);}
   document.getElementById("postDetailByline").textContent=(post.displayName||"GRAMORA member")+(post.username?" · @"+post.username:"")+" · "+formatPostDate(post.createdAt);
   document.getElementById("postDetailEdit").hidden=!canEdit;document.getElementById("postDetailDelete").hidden=!canEdit;
   const dialog=document.getElementById("postDetailDialog");dialog.dataset.postId=post.id;dialog.showModal();loadPostEngagement(post,dialog);
@@ -2847,9 +2877,9 @@ postForm.addEventListener("submit",async event=>{
   const status=document.getElementById("postStatus");
   
   if(!auth?.currentUser){status.textContent="Please log in to publish a post.";return;}
-  if(createPostMode==="photo"&&createPhotoFiles.length){status.textContent="Photo selection and preview are ready. Photo upload and Share will be connected in the next step; no photo has been uploaded yet.";return;}
   if(createPostMode==="photo"&&!createPhotoFiles.length){status.textContent="Select a photo or switch to Text to create a text-only post.";return;}
   const text=document.getElementById("caption").value.trim();
+  if(createPostMode==="text"&&!text){status.textContent="Write something before sharing.";return;}
   const background=document.getElementById("postBackground").value||POST_BACKGROUNDS[4];
   if(!text){status.textContent="Write something before sharing.";return;}
   const button=postForm.querySelector(".publish");
@@ -2858,7 +2888,15 @@ postForm.addEventListener("submit",async event=>{
     const user=auth.currentUser;
     const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
     const profile=profileSnap.exists()?profileSnap.data():{};
-    if(editingPostId){
+    if(createPostMode==="photo"){
+      if(editingPostId)throw new Error("Photo posts cannot be replaced while editing. Create a new photo post instead.");
+      const postRef=doc(collection(db,"posts"));
+      status.textContent="Uploading photos securely…";
+      const uploaded=await uploadGramoraPostPhotos(createPhotoFiles,user.uid,postRef.id);
+      await setDoc(postRef,{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",text,photoUrls:uploaded.photoUrls,photoPaths:uploaded.photoPaths,photoCount:uploaded.photoUrls.length,createdAt:serverTimestamp()});
+      document.getElementById("caption").value="";status.textContent="Photo post shared successfully!";dialog.close();activeView="home";
+      document.querySelector('.mobile-nav [data-view="home"], .sidebar [data-view="home"]')?.click();
+    }else if(editingPostId){
       await updateDoc(doc(db,"posts",editingPostId),{text,background});editingPostId=null;status.textContent="Post updated successfully!";dialog.close();
       if(activeView==="profile")await loadProfilePage(user);else await getDocsForFeed();
     }else{
