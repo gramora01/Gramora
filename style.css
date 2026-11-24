@@ -1897,3 +1897,11 @@ body.light #postDetailCard.has-photo-post .post-detail-caption{display:block;wid
 .gramora-post-music-sound.is-sound-on{background:#000b}
 .post-media-gallery,.post-detail-media{position:relative}
 @media(max-width:480px){.gramora-post-music-head{align-items:flex-start;flex-direction:column;gap:3px}.gramora-post-music-player{gap:8px;padding:8px}.gramora-post-music-player>img{width:42px;height:42px}}.gramora-post-music-player{flex-wrap:wrap}.gramora-post-music-player audio{width:100%}}
+
+
+/* Notification bell: keep the outline visible in both themes. */
+#notificationBtn{color:#f5f5f6!important;opacity:1!important;visibility:visible!important}
+#notificationBtn .gramora-ui-icon{display:block!important;width:26px!important;height:26px!important;fill:none!important;stroke:currentColor!important;stroke-width:2!important;opacity:1!important}
+#notificationBtn .gramora-ui-icon path{fill:none!important;stroke:currentColor!important}
+body.light #notificationBtn{color:#292b35!important;background:transparent!important}
+body.light #notificationBtn .gramora-ui-icon{stroke:#292b35!important}
