@@ -157,7 +157,7 @@ document.querySelectorAll(".nav").forEach(button=>button.addEventListener("click
     if(!started||!event.changedTouches.length)return;
     started=false;
     const dx=event.changedTouches[0].clientX-x,dy=event.changedTouches[0].clientY-y;
-    if(dx>65&&Math.abs(dx)>Math.abs(dy)*1.2){
+    if(dx< -65&&Math.abs(dx)>Math.abs(dy)*1.2){
       if(dialog.open)dialog.close();
       openGramoraPage("messages");
     }
