@@ -664,9 +664,17 @@ service cloud.firestore {
           && request.resource.data.type in ['text','sticker','gif']
           && request.resource.data.createdAt is timestamp
           && request.resource.data.keys().hasOnly([
-            'senderUid','text','type','createdAt','replyToId','replyToText','gifData','gifUrl','status'
+            'senderUid','text','type','createdAt','replyToId','replyToText','gifData','gifUrl','status',
+            'storyId','storyOwnerUid','storyImageUrl','storyText','storyBackground','storySongTitle'
           ])
           && (!('status' in request.resource.data) || request.resource.data.status == 'sent')
+          && (request.resource.data.type != 'story_reply'
+            || (request.resource.data.storyId is string
+              && request.resource.data.storyOwnerUid is string
+              && request.resource.data.storyText is string && request.resource.data.storyText.size() <= 300
+              && request.resource.data.storyImageUrl is string && request.resource.data.storyImageUrl.size() <= 2000
+              && request.resource.data.storyBackground is string && request.resource.data.storyBackground.size() <= 120
+              && request.resource.data.storySongTitle is string && request.resource.data.storySongTitle.size() <= 160))
           && (!('replyToId' in request.resource.data) || request.resource.data.replyToId is string)
           && (!('replyToText' in request.resource.data) || request.resource.data.replyToText is string)
           && (request.resource.data.type != 'gif'
