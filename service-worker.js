@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v123-public-profile-light-surfaces";
+const CACHE_NAME = "gramora-shell-v124-public-highlights-inline-theme";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=157",
   "./script.js?v=74",
-  "./auth.js?v=231",
+  "./auth.js?v=232",
   "./auth.css?v=62",
   "./story-creator.css?v=3",
   "./story-creator.js?v=3",
