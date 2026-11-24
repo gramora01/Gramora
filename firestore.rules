@@ -373,7 +373,7 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly([
           'uid','displayName','text','lyrics','songTitle','songArtist','songUrl','previewUrl',
-          'songArtwork','songStart','background','imageUrl','imagePath','textX','textY','createdAt','expiresAt'
+          'songArtwork','songStart','background','imageUrl','imagePath','textX','textY','imageScale','imageX','imageY','imageEffect','textColor','createdAt','expiresAt'
         ])
         && request.resource.data.background is string
         && request.resource.data.background.size() <= 200
@@ -388,6 +388,16 @@ service cloud.firestore {
         && (request.resource.data.get('textY',50) is int || request.resource.data.get('textY',50) is float)
         && request.resource.data.get('textX',50) >= 0 && request.resource.data.get('textX',50) <= 100
         && request.resource.data.get('textY',50) >= 0 && request.resource.data.get('textY',50) <= 100
+        && (request.resource.data.get('imageScale',1) is int || request.resource.data.get('imageScale',1) is float)
+        && request.resource.data.get('imageScale',1) >= 1 && request.resource.data.get('imageScale',1) <= 3
+        && (request.resource.data.get('imageX',0) is int || request.resource.data.get('imageX',0) is float)
+        && (request.resource.data.get('imageY',0) is int || request.resource.data.get('imageY',0) is float)
+        && request.resource.data.get('imageX',0) >= -2000 && request.resource.data.get('imageX',0) <= 2000
+        && request.resource.data.get('imageY',0) >= -2000 && request.resource.data.get('imageY',0) <= 2000
+        && request.resource.data.get('imageEffect',0) is int
+        && request.resource.data.get('imageEffect',0) >= 0 && request.resource.data.get('imageEffect',0) <= 5
+        && request.resource.data.get('textColor','#ffffff') is string
+        && request.resource.data.get('textColor','#ffffff').size() <= 20
         && request.resource.data.songTitle is string
         && request.resource.data.lyrics is string
         && request.resource.data.lyrics.size() <= 1200
@@ -410,7 +420,7 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'text','lyrics','background','songTitle','songArtist','songUrl','previewUrl','songArtwork','songStart','imageUrl','imagePath','textX','textY'
+          'text','lyrics','background','songTitle','songArtist','songUrl','previewUrl','songArtwork','songStart','imageUrl','imagePath','textX','textY','imageScale','imageX','imageY','imageEffect','textColor'
         ])
         && request.resource.data.text is string
         && request.resource.data.text.size() <= 500
@@ -418,6 +428,16 @@ service cloud.firestore {
         && (request.resource.data.get('textY',50) is int || request.resource.data.get('textY',50) is float)
         && request.resource.data.get('textX',50) >= 0 && request.resource.data.get('textX',50) <= 100
         && request.resource.data.get('textY',50) >= 0 && request.resource.data.get('textY',50) <= 100
+        && (request.resource.data.get('imageScale',1) is int || request.resource.data.get('imageScale',1) is float)
+        && request.resource.data.get('imageScale',1) >= 1 && request.resource.data.get('imageScale',1) <= 3
+        && (request.resource.data.get('imageX',0) is int || request.resource.data.get('imageX',0) is float)
+        && (request.resource.data.get('imageY',0) is int || request.resource.data.get('imageY',0) is float)
+        && request.resource.data.get('imageX',0) >= -2000 && request.resource.data.get('imageX',0) <= 2000
+        && request.resource.data.get('imageY',0) >= -2000 && request.resource.data.get('imageY',0) <= 2000
+        && request.resource.data.get('imageEffect',0) is int
+        && request.resource.data.get('imageEffect',0) >= 0 && request.resource.data.get('imageEffect',0) <= 5
+        && request.resource.data.get('textColor','#ffffff') is string
+        && request.resource.data.get('textColor','#ffffff').size() <= 20
         && request.resource.data.songTitle is string
         && request.resource.data.lyrics is string
         && request.resource.data.lyrics.size() <= 1200
