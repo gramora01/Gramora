@@ -99,7 +99,7 @@
     if(!points.has(e.pointerId))return;const g=gesture;points.delete(e.pointerId);
     if(points.size<2){gesture=null;pinchStart=0;}
     if(!g||g.id!==e.pointerId||g.moved)return;
-    if(g.kind==="place")revealText(e.clientX,e.clientY);else if(g.kind==="text")revealText();
+    if(g.kind==="place"||g.kind==="photo")revealText(e.clientX,e.clientY);else if(g.kind==="text")revealText();
   };
   stage?.addEventListener("pointerup",finishGesture);
   stage?.addEventListener("pointercancel",e=>{points.delete(e.pointerId);gesture=null;pinchStart=0;});
