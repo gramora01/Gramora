@@ -1,4 +1,4 @@
-const CACHE_NAME = "gramora-shell-v193-onboarding-guide";
+const CACHE_NAME = "gramora-shell-v194-remove-welcome-guide";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -13,7 +13,6 @@ const APP_SHELL = [
   "./public-profile-layout.css?v=3",
   "./gramora-3d-ui.css?v=2",
   "./gramora-onboarding.css?v=1",
-  "./gramora-onboarding.js?v=1",
   "./gramora-icons.js?v=10",
   "./gramora-layout-fix.css?v=1",
   "./icons/gramora.svg",
