@@ -200,3 +200,9 @@
 .gse-color-swatch:focus-visible{outline:2px solid #fff;outline-offset:3px}
 
 #storyViewerStage.has-story-image > #storyViewerImage{transform:translate(calc(-50% + var(--story-image-x,0px)),calc(-50% + var(--story-image-y,0px))) scale(var(--story-image-scale,1))!important;transform-origin:center center!important;will-change:transform}
+
+/* Final override: show the sixth icon (text colour) and keep the right rail visible. */
+#storyCreateDialog.story-kind-image #storyPreviewCanvas .gse-tools .gse-tool:nth-child(6){display:grid!important}
+#storyCreateDialog.story-kind-image #storyPreviewCanvas .gse-tools .gse-tool:nth-child(n+7){display:none!important}
+#storyCreateDialog.story-kind-image #storyPreviewCanvas .gse-tools .gse-tool:nth-child(4){display:grid!important}
+#storyCreateDialog.story-kind-image #storyPreviewCanvas .gse-tools .gse-tool:nth-child(6) .gse-c{background:rgba(25,25,30,.76)!important}
