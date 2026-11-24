@@ -2778,7 +2778,7 @@ async function loadPublicProfile(viewer,targetUid){
             panel.querySelector(".public-profile-tabs").hidden=true;
             panel.querySelector(".public-message").disabled=true;
             const highlights=panel.querySelector(".public-profile-highlights");
-            if(highlights){highlights.replaceChildren();highlights.hidden=true;}
+            if(highlights)highlights.remove();
           }
           btn.disabled=false;
           return;
@@ -2840,6 +2840,8 @@ async function loadPublicProfile(viewer,targetUid){
       }
     }
     if(p.isPrivate&&!already){
+      /* A private profile has no visible highlights row; remove it from layout entirely. */
+      panel.querySelector(".public-profile-highlights")?.remove();
       const lock=document.createElement("div");lock.className="private-profile-notice";lock.innerHTML='<strong>🔒 This account is private</strong><span>Follow this account to see their photos and posts.</span>';
       grid.append(lock);panel.querySelector(".public-message").disabled=true;
       panel.querySelector(".public-profile-tabs").hidden=true;
