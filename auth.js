@@ -1650,6 +1650,18 @@ async function uploadGramoraPostPhotos(files,uid,postId){
   }
   return {photoUrls,photoPaths};
 }
+function createPostMusicElement(data){
+  const preview=data?.musicPreviewUrl||"";
+  if(!/^https:\/\//.test(preview))return null;
+  const wrap=document.createElement("div");wrap.className="gramora-post-music-player";
+  const artwork=document.createElement("img");artwork.src=data.musicArtwork||"";artwork.alt="";artwork.loading="lazy";
+  const info=document.createElement("span");info.className="gramora-post-music-player-info";
+  const title=document.createElement("b");title.textContent=data.musicTitle||"Song";
+  const artist=document.createElement("small");artist.textContent=data.musicArtist||"";
+  info.append(title,artist);
+  const audio=document.createElement("audio");audio.controls=true;audio.preload="none";audio.src=preview;audio.setAttribute("aria-label","Play "+(data.musicTitle||"post music"));
+  wrap.append(artwork,info,audio);return wrap;
+}
 function createPostMediaElement(urls,className="post-media-gallery"){
   const list=Array.isArray(urls)?urls.filter(url=>typeof url==="string"&&url.startsWith("https://")):[];
   if(!list.length)return null;
@@ -1704,14 +1716,14 @@ function renderPosts(docs){
     const name=document.createElement("b");name.textContent=authorName||"GRAMORA member";
     const meta=document.createElement("small");meta.textContent=(authorUsername?"@"+authorUsername+" · ":"")+formatPostDate(isRepost?data.originalCreatedAt:data.createdAt);
     identity.append(name,meta);head.append(avatar,identity);head.addEventListener("click",()=>{const viewer=auth?.currentUser;if(viewer&&authorUid)loadPublicProfile(viewer,authorUid);});
-    const content=document.createElement("div");content.className="post-content";const postPhotos=isRepost?(data.originalPhotoUrls||[]):(data.photoUrls||[]);const media=createPostMediaElement(postPhotos);if(media)content.append(media);const caption=document.createElement("p");caption.className=postPhotos.length?"post-text post-caption-inline":"post-text post-text-card";caption.textContent=isRepost?(data.originalText||""):(data.text||"");if(!postPhotos.length)caption.style.background=isRepost?(data.originalBackground||POST_BACKGROUNDS[4]):(data.background||POST_BACKGROUNDS[4]);if(caption.textContent)content.append(caption);
+    const content=document.createElement("div");content.className="post-content";const postPhotos=isRepost?(data.originalPhotoUrls||[]):(data.photoUrls||[]);const media=createPostMediaElement(postPhotos);if(media)content.append(media);const music=createPostMusicElement(isRepost?{musicTitle:data.originalMusicTitle,musicArtist:data.originalMusicArtist,musicArtwork:data.originalMusicArtwork,musicPreviewUrl:data.originalMusicPreviewUrl}:data);if(music)content.append(music);const caption=document.createElement("p");caption.className=postPhotos.length?"post-text post-caption-inline":"post-text post-text-card";caption.textContent=isRepost?(data.originalText||""):(data.text||"");if(!postPhotos.length)caption.style.background=isRepost?(data.originalBackground||POST_BACKGROUNDS[4]):(data.background||POST_BACKGROUNDS[4]);if(caption.textContent)content.append(caption);
     const actions=document.createElement("div");actions.className="post-actions";
     const like=document.createElement("button");like.className="like";like.type="button";like.dataset.likeCount="";
     const comment=document.createElement("button");comment.className="post-comment-open";comment.type="button";comment.innerHTML='<span class="post-action-count"></span>';
     const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.innerHTML='<span class="post-action-count"></span>';
     const save=document.createElement("button");save.className="save";save.type="button";save.innerHTML='<span class="post-action-count"></span>';
     const originalId=isRepost?data.originalPostId:postDoc.id;
-    const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,background:data.originalBackground,photoUrls:data.originalPhotoUrls||[],photoPaths:data.originalPhotoPaths||[],createdAt:data.originalCreatedAt}:data;
+    const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,background:data.originalBackground,photoUrls:data.originalPhotoUrls||[],photoPaths:data.originalPhotoPaths||[],musicTitle:data.originalMusicTitle||"",musicArtist:data.originalMusicArtist||"",musicArtwork:data.originalMusicArtwork||"",musicPreviewUrl:data.originalMusicPreviewUrl||"",createdAt:data.originalCreatedAt}:data;
     const postForDetail={id:originalId,...originalData};
     const likeCount=like.querySelector(".post-action-count"),commentCount=comment.querySelector(".post-action-count"),repostCount=repost.querySelector(".post-action-count"),saveCount=save.querySelector(".post-action-count");
     like.setAttribute("aria-label","Like post");comment.setAttribute("aria-label","View comments");repost.setAttribute("aria-label","Repost");save.setAttribute("aria-label","Save post");
@@ -1859,6 +1871,10 @@ async function createPostRepost(postId,original,button){
         originalPhotoURL:original.photoURL||"",
         originalPhotoUrls:Array.isArray(original.photoUrls)?original.photoUrls:[],
         originalPhotoPaths:Array.isArray(original.photoPaths)?original.photoPaths:[],
+        originalMusicTitle:original.musicTitle||"",
+        originalMusicArtist:original.musicArtist||"",
+        originalMusicArtwork:original.musicArtwork||"",
+        originalMusicPreviewUrl:original.musicPreviewUrl||"",
         originalText:original.text||"",
         originalBackground:original.background||POST_BACKGROUNDS[4],
         originalCreatedAt:original.createdAt||null,
@@ -2811,7 +2827,7 @@ function openPostEditor(post){
   document.getElementById("postStatus").textContent="";document.getElementById("createDialog").showModal();
 }
 function openPostDetail(post,canEdit=false){
-  currentViewedPost=post;const card=document.getElementById("postDetailCard");card.replaceChildren();card.classList.toggle("has-photo-post",!!post.photoUrls?.length);card.style.background=post.photoUrls?.length?"transparent":(post.background||POST_BACKGROUNDS[4]);const media=createPostMediaElement(post.photoUrls||[],"post-detail-media");if(media)card.append(media);if(post.text){const caption=document.createElement("p");caption.textContent=post.text;caption.className="post-detail-caption";card.append(caption);}
+  currentViewedPost=post;const card=document.getElementById("postDetailCard");card.replaceChildren();card.classList.toggle("has-photo-post",!!post.photoUrls?.length);card.style.background=post.photoUrls?.length?"transparent":(post.background||POST_BACKGROUNDS[4]);const media=createPostMediaElement(post.photoUrls||[],"post-detail-media");if(media)card.append(media);const music=createPostMusicElement(post);if(music)card.append(music);if(post.text){const caption=document.createElement("p");caption.textContent=post.text;caption.className="post-detail-caption";card.append(caption);}
   document.getElementById("postDetailByline").textContent=(post.displayName||"GRAMORA member")+(post.username?" · @"+post.username:"")+" · "+formatPostDate(post.createdAt);
   document.getElementById("postDetailEdit").hidden=!canEdit;document.getElementById("postDetailDelete").hidden=!canEdit;
   const dialog=document.getElementById("postDetailDialog");dialog.dataset.postId=post.id;dialog.showModal();loadPostEngagement(post,dialog);
@@ -2902,10 +2918,48 @@ document.getElementById("createDialog")?.addEventListener("close",()=>{
   document.getElementById("createTagField").hidden=true;document.getElementById("createLocationField").hidden=true;
   document.getElementById("createTagInput").value="";document.getElementById("createLocationInput").value="";
   document.getElementById("createHideLikes").checked=false;document.getElementById("createTurnCommentsOff").checked=false;
+  clearPostMusicSelection();
   document.getElementById("createCaptionCount").textContent="0/2,200";
   setCreatePostMode("photo");
 });
 
+let selectedPostMusic=null;
+const postMusicAudio=new Audio();
+const postMusicSearch=document.getElementById("postMusicSearch");
+const postMusicResults=document.getElementById("postMusicResults");
+function clearPostMusicSelection(){
+  postMusicAudio.pause();postMusicAudio.removeAttribute("src");postMusicAudio.load();selectedPostMusic=null;
+  const selected=document.getElementById("postMusicSelected");if(selected)selected.hidden=true;
+  if(postMusicResults)postMusicResults.replaceChildren();if(postMusicSearch)postMusicSearch.value="";
+}
+document.getElementById("postMusicSearchButton")?.addEventListener("click",async()=>{
+  const term=postMusicSearch?.value.trim();if(!term){postMusicResults.textContent="Song ya artist ka naam likhein.";postMusicSearch?.focus();return;}
+  const button=document.getElementById("postMusicSearchButton");button.disabled=true;postMusicResults.textContent="Songs search ho rahe hain…";
+  try{
+    const response=await fetch("https://itunes.apple.com/search?term="+encodeURIComponent(term)+"&entity=song&limit=15&country=IN");
+    if(!response.ok)throw new Error("Song search unavailable");const result=await response.json();postMusicResults.replaceChildren();
+    if(!result.results?.length){postMusicResults.textContent="Koi song nahi mila. Dusra naam try karein.";return;}
+    result.results.forEach(track=>{
+      if(!track.previewUrl)return;
+      const option=document.createElement("button");option.type="button";option.className="gramora-post-music-result";
+      const image=document.createElement("img");image.src=track.artworkUrl100||"";image.alt="";image.loading="lazy";
+      const info=document.createElement("span"),name=document.createElement("b"),artist=document.createElement("small");
+      name.textContent=track.trackName||"Song";artist.textContent=track.artistName||"Artist";info.append(name,artist);option.append(image,info);
+      option.addEventListener("click",()=>{
+        selectedPostMusic={title:track.trackName||"Song",artist:track.artistName||"",artwork:track.artworkUrl100||"",previewUrl:track.previewUrl,trackUrl:track.trackViewUrl||""};
+        document.getElementById("postMusicArtwork").src=selectedPostMusic.artwork;document.getElementById("postMusicTitle").textContent=selectedPostMusic.title;document.getElementById("postMusicArtist").textContent=selectedPostMusic.artist;
+        document.getElementById("postMusicSelected").hidden=false;postMusicAudio.pause();postMusicAudio.src=selectedPostMusic.previewUrl;postMusicResults.replaceChildren();
+      });postMusicResults.append(option);
+    });
+    if(!postMusicResults.childElementCount)postMusicResults.textContent="Playable preview wala song nahi mila.";
+  }catch(error){console.error("Post music search failed:",error);postMusicResults.textContent="Song search nahi ho payi. Internet check karein.";}
+  finally{button.disabled=false;}
+});
+document.getElementById("postMusicPreview")?.addEventListener("click",async event=>{
+  if(!selectedPostMusic)return;try{if(postMusicAudio.paused){await postMusicAudio.play();event.currentTarget.textContent="Ⅱ Pause";}else{postMusicAudio.pause();event.currentTarget.textContent="▶ Preview";}}catch(error){postMusicResults.textContent="Preview play nahi ho paya. Dobara try karein.";}
+});
+postMusicAudio.addEventListener("ended",()=>{const button=document.getElementById("postMusicPreview");if(button)button.textContent="▶ Preview";});
+document.getElementById("postMusicRemove")?.addEventListener("click",clearPostMusicSelection);
 postForm.addEventListener("submit",async event=>{
   event.preventDefault();
   const dialog=document.getElementById("createDialog");
@@ -2916,6 +2970,7 @@ postForm.addEventListener("submit",async event=>{
   const text=document.getElementById("caption").value.trim();
   if(createPostMode==="text"&&!text){status.textContent="Write something before sharing.";return;}
   const background=document.getElementById("postBackground").value||POST_BACKGROUNDS[4];
+  const postMusic=selectedPostMusic?{musicTitle:selectedPostMusic.title,musicArtist:selectedPostMusic.artist,musicArtwork:selectedPostMusic.artwork,musicPreviewUrl:selectedPostMusic.previewUrl,musicUrl:selectedPostMusic.trackUrl,musicStart:0}:{musicTitle:"",musicArtist:"",musicArtwork:"",musicPreviewUrl:"",musicUrl:"",musicStart:0};
   if(!text){status.textContent="Write something before sharing.";return;}
   const button=postForm.querySelector(".publish");
   button.disabled=true;button.textContent=editingPostId?"Saving…":"Sharing…";status.textContent=editingPostId?"Post update ho rahi hai…":"Publishing your post…";
@@ -2928,14 +2983,14 @@ postForm.addEventListener("submit",async event=>{
       const postRef=doc(collection(db,"posts"));
       status.textContent="Uploading photos securely…";
       const uploaded=await uploadGramoraPostPhotos(createPhotoFiles,user.uid,postRef.id);
-      await setDoc(postRef,{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",text,photoUrls:uploaded.photoUrls,photoPaths:uploaded.photoPaths,photoCount:uploaded.photoUrls.length,createdAt:serverTimestamp()});
+      await setDoc(postRef,{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",text,photoUrls:uploaded.photoUrls,photoPaths:uploaded.photoPaths,photoCount:uploaded.photoUrls.length,...postMusic,createdAt:serverTimestamp()});
       document.getElementById("caption").value="";status.textContent="Photo post shared successfully!";dialog.close();activeView="home";
       document.querySelector('.mobile-nav [data-view="home"], .sidebar [data-view="home"]')?.click();
     }else if(editingPostId){
       await updateDoc(doc(db,"posts",editingPostId),{text,background});editingPostId=null;status.textContent="Post updated successfully!";dialog.close();
       if(activeView==="profile")await loadProfilePage(user);else await getDocsForFeed();
     }else{
-      await addDoc(collection(db,"posts"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",text,background,createdAt:serverTimestamp()});
+      await addDoc(collection(db,"posts"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",text,background,...postMusic,createdAt:serverTimestamp()});
       document.getElementById("caption").value="";status.textContent="Posted successfully!";dialog.close();activeView="home";
       document.querySelector('.mobile-nav [data-view="home"], .sidebar [data-view="home"]')?.click();
     }
