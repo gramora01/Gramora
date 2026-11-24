@@ -1982,3 +1982,39 @@ body.light .ig-profile-highlights .ig-highlight>span{
 body.light .ig-highlights .ig-highlight small,
 body.light .public-profile-highlights .ig-highlight small,
 body.light .ig-profile-highlights .ig-highlight small{color:#555967!important}
+
+
+/* Empty story-highlights area must never inherit the dark public-profile surface. */
+body.light.profile-active .ig-profile,
+body.light.profile-active .ig-profile > .ig-highlights,
+body.light.profile-active .ig-profile > .ig-profile-tabs,
+body.light.public-profile-open .ig-profile,
+body.light.public-profile-open .ig-profile > .public-profile-highlights,
+body.light.public-profile-open .ig-profile > .public-profile-tabs,
+body.light.public-profile-open .ig-profile > .ig-profile-actions,
+body.light.public-profile-open .ig-profile > .ig-profile-bio,
+body.light.public-profile-open .ig-profile > .ig-profile-top {
+  background:#fff!important;
+  background-color:#fff!important;
+  background-image:none!important;
+}
+body.light.profile-active .ig-profile > .ig-highlights:empty,
+body.light.public-profile-open .ig-profile > .public-profile-highlights:empty,
+body.light.public-profile-open .ig-profile > .public-profile-highlights[hidden] {
+  display:none!important;
+  height:0!important;
+  min-height:0!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  background:#fff!important;
+  background-color:#fff!important;
+}
+body.light.profile-active .ig-profile > .ig-highlights,
+body.light.public-profile-open .ig-profile > .public-profile-highlights {
+  background:#fff!important;
+  background-color:#fff!important;
+  background-image:none!important;
+  border-top-color:#e5e6eb!important;
+  border-bottom-color:#e5e6eb!important;
+}
