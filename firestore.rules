@@ -188,8 +188,25 @@ service cloud.firestore {
           'photoUrls',
           'photoPaths',
           'photoCount',
+          'musicTitle',
+          'musicArtist',
+          'musicArtwork',
+          'musicPreviewUrl',
+          'musicUrl',
+          'musicStart',
           'createdAt'
         ])
+        && request.resource.data.get('musicTitle', '') is string
+        && request.resource.data.get('musicTitle', '').size() <= 120
+        && request.resource.data.get('musicArtist', '') is string
+        && request.resource.data.get('musicArtist', '').size() <= 120
+        && request.resource.data.get('musicArtwork', '') is string
+        && request.resource.data.get('musicArtwork', '').size() <= 2000
+        && request.resource.data.get('musicPreviewUrl', '') is string
+        && request.resource.data.get('musicPreviewUrl', '').size() <= 2000
+        && request.resource.data.get('musicUrl', '') is string
+        && request.resource.data.get('musicUrl', '').size() <= 2000
+        && request.resource.data.get('musicStart', 0) is int
         && request.resource.data.text is string
         && request.resource.data.text.size() <= 2000
         && (
