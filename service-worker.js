@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v124-public-highlights-inline-theme";
+const CACHE_NAME = "gramora-shell-v125-create-post-photo-ui";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=157",
+  "./style.css?v=158",
   "./script.js?v=74",
-  "./auth.js?v=232",
+  "./auth.js?v=233",
   "./auth.css?v=62",
   "./story-creator.css?v=3",
   "./story-creator.js?v=3",
