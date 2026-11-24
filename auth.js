@@ -2765,12 +2765,65 @@ document.getElementById("postCommentForm")?.addEventListener("submit",async even
 });
 document.getElementById("closePostDetail")?.addEventListener("click",()=>document.getElementById("postDetailDialog").close());
 const postForm=document.getElementById("postForm");
+const createPhotoInput=document.getElementById("createPhotoInput");
+const createPhotoPreview=document.getElementById("createPhotoPreview");
+const createPhotoStage=document.getElementById("createPhotoStage");
+const createPhotoThumbs=document.getElementById("createPhotoThumbs");
+const createPhotoCount=document.getElementById("createPhotoCount");
+let createPhotoFiles=[],createPhotoUrls=[],createActivePhoto=0,createPhotoFilter="none",createPhotoRatio=0;
+function renderCreatePhotoSelection(){
+  if(!createPhotoPreview||!createPhotoStage)return;
+  createPhotoThumbs.replaceChildren();
+  createPhotoCount.textContent=createPhotoFiles.length+" photo"+(createPhotoFiles.length===1?"":"s");
+  const empty=createPhotoStage.querySelector(".create-photo-empty");
+  empty.hidden=createPhotoFiles.length>0;createPhotoPreview.hidden=!createPhotoFiles.length;
+  createPhotoPreview.replaceChildren();
+  if(createPhotoFiles.length){
+    const img=document.createElement("img");img.src=createPhotoUrls[createActivePhoto];img.alt="Selected photo preview";img.className=createPhotoFilter==="none"?"":"filter-"+createPhotoFilter;
+    createPhotoPreview.append(img);
+    createPhotoFiles.forEach((file,index)=>{
+      const thumb=document.createElement("button");thumb.type="button";thumb.className="create-thumb"+(index===createActivePhoto?" active":"");thumb.setAttribute("aria-label","Show photo "+(index+1));
+      const image=document.createElement("img");image.src=createPhotoUrls[index];image.alt="";
+      const remove=document.createElement("span");remove.className="create-thumb-remove";remove.textContent="×";
+      thumb.append(image,remove);thumb.addEventListener("click",()=>{if(index===createActivePhoto)return;createActivePhoto=index;renderCreatePhotoSelection();});
+      remove.addEventListener("click",event=>{event.stopPropagation();URL.revokeObjectURL(createPhotoUrls[index]);createPhotoFiles.splice(index,1);createPhotoUrls.splice(index,1);createActivePhoto=Math.max(0,Math.min(createActivePhoto,createPhotoFiles.length-1));renderCreatePhotoSelection();});
+      createPhotoThumbs.append(thumb);
+    });
+  }
+}
+createPhotoInput?.addEventListener("change",()=>{
+  const incoming=[...(createPhotoInput.files||[])].filter(file=>file.type.startsWith("image/"));
+  incoming.forEach(file=>{if(createPhotoFiles.length<10){createPhotoFiles.push(file);createPhotoUrls.push(URL.createObjectURL(file));}});
+  createActivePhoto=Math.max(0,createPhotoFiles.length-1);createPhotoInput.value="";renderCreatePhotoSelection();
+});
+document.getElementById("createCaptionCount")?.parentElement?.previousElementSibling;
+document.getElementById("caption")?.addEventListener("input",event=>{const count=document.getElementById("createCaptionCount");if(count)count.textContent=event.target.value.length+"/2,200";});
+document.querySelectorAll(".create-filter").forEach(button=>button.addEventListener("click",()=>{createPhotoFilter=button.dataset.filter;document.querySelectorAll(".create-filter").forEach(item=>item.classList.toggle("active",item===button));renderCreatePhotoSelection();}));
+document.getElementById("createRatioBtn")?.addEventListener("click",()=>{
+  const ratios=["Original","1:1","4:5","16:9"];createPhotoRatio=(createPhotoRatio+1)%ratios.length;
+  const stage=document.getElementById("createPhotoStage");stage.style.aspectRatio=["auto","1/1","4/5","16/9"][createPhotoRatio];
+  document.getElementById("createRatioLabel").textContent=ratios[createPhotoRatio];
+});
+document.getElementById("createTagToggle")?.addEventListener("click",()=>{const field=document.getElementById("createTagField");field.hidden=!field.hidden;if(!field.hidden)document.getElementById("createTagInput").focus();});
+document.getElementById("createLocationToggle")?.addEventListener("click",()=>{const field=document.getElementById("createLocationField");field.hidden=!field.hidden;if(!field.hidden)document.getElementById("createLocationInput").focus();});
+document.getElementById("createDialog")?.addEventListener("close",()=>{
+  createPhotoUrls.forEach(url=>URL.revokeObjectURL(url));createPhotoFiles=[];createPhotoUrls=[];createActivePhoto=0;createPhotoFilter="none";createPhotoRatio=0;
+  if(createPhotoStage)createPhotoStage.style.aspectRatio="";
+  document.querySelectorAll(".create-filter").forEach((item,index)=>item.classList.toggle("active",index===0));
+  renderCreatePhotoSelection();
+  document.getElementById("createTagField").hidden=true;document.getElementById("createLocationField").hidden=true;
+  document.getElementById("createTagInput").value="";document.getElementById("createLocationInput").value="";
+  document.getElementById("createHideLikes").checked=false;document.getElementById("createTurnCommentsOff").checked=false;
+  document.getElementById("createCaptionCount").textContent="0/2,200";
+});
+
 postForm.addEventListener("submit",async event=>{
   event.preventDefault();
   const dialog=document.getElementById("createDialog");
   const status=document.getElementById("postStatus");
   
   if(!auth?.currentUser){status.textContent="Please log in to publish a post.";return;}
+  if(createPhotoFiles.length){status.textContent="Photo selection and preview are ready. Photo upload and Share will be connected in the next step; no photo has been uploaded yet.";return;}
   const text=document.getElementById("caption").value.trim();
   const background=document.getElementById("postBackground").value||POST_BACKGROUNDS[4];
   if(!text){status.textContent="Write something before sharing.";return;}
