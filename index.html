@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=164">
   <link rel="stylesheet" href="auth.css?v=62">
-  <link rel="stylesheet" href="story-creator.css?v=4">
+  <link rel="stylesheet" href="story-creator.css?v=5">
   <link rel="stylesheet" href="gramora-icons.css?v=2">
   <link rel="stylesheet" href="post-action-spacing.css?v=1">
   <link rel="stylesheet" href="public-profile-layout.css?v=2">
@@ -144,14 +144,22 @@
 
   <dialog id="storyCreateDialog" class="story-dialog gramora-story-editor">
     <form id="storyForm">
+      <section id="storyTypeChooser" class="gramora-story-type-chooser">
+        <h2>What would you like to share?</h2>
+        <p>Choose a story format</p>
+        <button id="storyChooseText" type="button"><span>Aa</span><b>Text story</b><small>Background, fonts and text styles</small></button>
+        <button id="storyChooseImage" type="button"><span>▧</span><b>Image story</b><small>Photo, movable text and music</small></button>
+      </section>
+      <div id="storyEditorWorkspace" hidden>
       <h2 class="gramora-story-sr-only">Create a text story</h2>
       <div class="gramora-story-topbar">
+        <button id="storyBackToChooser" class="gramora-story-cancel" type="button" aria-label="Back to story types">‹</button>
         <button id="closeStoryCreate" class="gramora-story-cancel" type="button">Cancel</button>
-        <span class="gramora-story-mode">TEXT STORY</span>
+        <span id="storyModeLabel" class="gramora-story-mode">TEXT STORY</span>
         <button id="storyEditorDone" class="gramora-story-done" type="button">Done</button>
       </div>
       <div class="gramora-story-stage"><div id="storyPreviewCanvas" class="gramora-story-preview"><img id="storyImagePreview" class="gramora-story-image-preview" alt="Story photo preview" hidden><button id="storyImageRemove" class="gramora-story-image-remove" type="button" aria-label="Remove photo" hidden>×</button><textarea id="storyText" maxlength="500" rows="4" placeholder="Write something… (optional if you add a song)" aria-label="Your story text"></textarea><div id="storyLyricsPreview" class="gramora-story-lyrics-preview" hidden></div></div><div class="gramora-story-style-strip" role="group" aria-label="Text font style"><button type="button" class="active" data-story-font="classic">Classic</button><button type="button" data-story-font="modern">Modern</button><button type="button" data-story-font="elegant">Elegant</button><button type="button" data-story-font="strong">Strong</button></div><div class="gramora-story-counter"><span id="storyTextHint">Story preview</span><span><b id="storyCharCount">0</b>/500</span></div></div>
-      <input id="storyBackground" type="hidden" value="linear-gradient(135deg,#ff9966,#ff5e62)"><input id="storyImageFile" type="file" accept="image/jpeg,image/png,image/webp" hidden><input id="storyImageUrl" type="hidden"><input id="storyImagePath" type="hidden">
+      <input id="storyBackground" type="hidden" value="linear-gradient(135deg,#ff9966,#ff5e62)"><input id="storyTextX" type="hidden" value="50"><input id="storyTextY" type="hidden" value="50"><button id="storyMoveText" class="gramora-story-move-text" type="button">↕ Move text</button><button id="storyImagePickButton" class="gramora-story-image-pick" type="button">▧ Choose photo</button><input id="storyImageFile" type="file" accept="image/jpeg,image/png,image/webp" hidden><input id="storyImageUrl" type="hidden"><input id="storyImagePath" type="hidden">
       <aside class="gramora-story-tools" aria-label="Story editing tools"><div class="gramora-story-tools-label">EDIT</div><button id="openStoryMusic" class="gramora-story-tool gramora-story-music" type="button" aria-label="Add music">♫<small>Music</small></button><button id="storyTextStyleToggle" class="gramora-story-tool" type="button" aria-label="Change text style">Aa<small>Text</small></button><button id="storyTextColorToggle" class="gramora-story-tool" type="button" aria-label="Change text colour">◉<small>Colour</small></button><button id="storyTextAlignToggle" class="gramora-story-tool" type="button" aria-label="Change text alignment">≡<small>Align</small></button><div class="gramora-story-tools-divider"></div><span class="gramora-story-tools-label">BACKGROUND</span><div id="storyBackgroundPicker" class="background-picker" aria-label="Story background colours"><button type="button" data-bg="linear-gradient(135deg,#ff9966,#ff5e62)" style="background:linear-gradient(135deg,#ff9966,#ff5e62)" aria-label="Coral background"></button><button type="button" data-bg="linear-gradient(135deg,#7f7fd5,#86a8e7,#91eae4)" style="background:linear-gradient(135deg,#7f7fd5,#86a8e7,#91eae4)" aria-label="Blue background"></button><button type="button" data-bg="linear-gradient(135deg,#654ea3,#eaafc8)" style="background:linear-gradient(135deg,#654ea3,#eaafc8)" aria-label="Purple background"></button><button type="button" data-bg="linear-gradient(135deg,#11998e,#38ef7d)" style="background:linear-gradient(135deg,#11998e,#38ef7d)" aria-label="Green background"></button><button type="button" data-bg="linear-gradient(135deg,#232526,#414345)" style="background:linear-gradient(135deg,#232526,#414345)" aria-label="Dark background"></button><button type="button" data-bg="linear-gradient(135deg,#f7971e,#ffd200)" style="background:linear-gradient(135deg,#f7971e,#ffd200)" aria-label="Yellow background"></button><button type="button" data-bg="linear-gradient(135deg,#fc466b,#3f5efb)" style="background:linear-gradient(135deg,#fc466b,#3f5efb)" aria-label="Pink blue background"></button><button type="button" data-bg="linear-gradient(135deg,#eeaeca,#94bbe9)" style="background:linear-gradient(135deg,#eeaeca,#94bbe9)" aria-label="Pastel background"></button></div><div id="storyMusicAttached" class="gramora-attached-music" hidden><div class="gramora-attached-track"><img id="storySongArtworkPreview" alt=""><span><b id="storySongAttachedTitle"></b><small id="storySongAttachedArtist"></small></span></div><div class="gramora-attached-actions"><button id="storyMusicPreviewToggle" type="button">▶ Preview</button><button id="storyMusicRemove" type="button" aria-label="Remove music">×</button></div></div></aside>
       <div class="story-song-fields gramora-music-sheet" id="storyMusicSheet" hidden>
         <div class="gramora-sheet-handle"></div>
@@ -166,6 +174,7 @@
       </div>
       <button id="storyShareSubmit" class="gramora-story-share" type="submit">Share story</button>
       <p id="storyCreateStatus" class="post-status" role="status"></p>
+      </div>
     </form>
   </dialog>
   <dialog id="storyViewerDialog" class="story-dialog story-viewer gramora-story-viewer">
@@ -259,7 +268,7 @@
   </div>
   <script src="script.js?v=74"></script>
   <script src="gramora-icons.js?v=8" defer></script>
-  <script type="module" src="auth.js?v=250"></script>
+  <script type="module" src="auth.js?v=251"></script>
   <script src="story-creator.js?v=4" defer></script>
   <script>
     // Startup failsafe: never leave GRAMORA hidden behind an endless loading state.
