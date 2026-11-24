@@ -124,7 +124,7 @@ document.querySelectorAll(".nav").forEach(button=>button.addEventListener("click
 (()=>{
   const surface=document.querySelector(".main-content")||document.getElementById("feed");if(!surface)return;
   let startX=0,startY=0,startAt=0;
-  const blocked=target=>!!target.closest('input,textarea,select,button,a,[contenteditable="true"],dialog,.post,.story,.story-viewer,.story-dialog,.post-detail-dialog,.gramora-chat-dialog,.gramora-conversation,.ig-post-tile,.create-photo-stage');
+  const blocked=target=>!!target.closest('input,textarea,select,button,a,[contenteditable="true"],dialog,.story,.story-viewer,.story-dialog,.post-detail-dialog,.gramora-chat-dialog,.gramora-conversation,.ig-post-tile,.create-photo-stage');
   surface.addEventListener("touchstart",event=>{if(event.touches.length!==1||blocked(event.target))return;const touch=event.touches[0];startX=touch.clientX;startY=touch.clientY;startAt=Date.now();},{passive:true});
   surface.addEventListener("touchend",event=>{
     if(!startAt||!event.changedTouches.length)return;
