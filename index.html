@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=168">
+  <link rel="stylesheet" href="style.css?v=169">
   <link rel="stylesheet" href="auth.css?v=63">
   <link rel="stylesheet" href="story-creator.css?v=8">
   <link rel="stylesheet" href="gramora-icons.css?v=2">
@@ -123,9 +123,9 @@
         </div>
         <div class="create-editor-links">
           <button type="button" id="createTagToggle"><span>♙</span> Tag people <span>＋</span></button>
-          <div id="createTagField" hidden><input id="createTagInput" type="text" placeholder="Enter @username"></div>
+          <div id="createTagField" class="gramora-tag-field" hidden><input id="createTagInput" type="search" placeholder="Search name or @username" autocomplete="off"><div id="createTagSelected" class="gramora-tag-selected"></div><div id="createTagResults" class="gramora-tag-results" role="listbox"></div><small>Maximum 10 people can be tagged.</small></div>
           <button type="button" id="createLocationToggle"><span>⌖</span> Add location <span>＋</span></button>
-          <div id="createLocationField" hidden><input id="createLocationInput" type="text" placeholder="Add a location"></div>
+          <div id="createLocationField" class="gramora-location-field" hidden><input id="createLocationInput" type="text" maxlength="120" placeholder="Search or type a location" list="gramoraLocationSuggestions" autocomplete="off"><datalist id="gramoraLocationSuggestions"><option value="Gajraula, Uttar Pradesh"></option><option value="Nagaliya Mev, Gajraula"></option><option value="Amroha, Uttar Pradesh"></option><option value="Moradabad, Uttar Pradesh"></option><option value="Aligarh, Uttar Pradesh"></option><option value="Delhi, India"></option></datalist><small>Place ka naam type karke bhi add kar sakte hain.</small></div>
         </div>
         <details class="create-advanced">
           <summary>Advanced settings <span>⌄</span></summary>
@@ -268,7 +268,7 @@
   </div>
   <script src="script.js?v=74"></script>
   <script src="gramora-icons.js?v=10" defer></script>
-  <script type="module" src="auth.js?v=256"></script>
+  <script type="module" src="auth.js?v=257"></script>
   <script src="story-creator.js?v=5" defer></script>
   <script>
     // Startup failsafe: never leave GRAMORA hidden behind an endless loading state.
