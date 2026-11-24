@@ -206,3 +206,12 @@
 #storyCreateDialog.story-kind-image #storyPreviewCanvas .gse-tools .gse-tool:nth-child(n+7){display:none!important}
 #storyCreateDialog.story-kind-image #storyPreviewCanvas .gse-tools .gse-tool:nth-child(4){display:grid!important}
 #storyCreateDialog.story-kind-image #storyPreviewCanvas .gse-tools .gse-tool:nth-child(6) .gse-c{background:rgba(25,25,30,.76)!important}
+
+
+/* Final gesture/editor correction: let the stage own photo gestures and text own direct dragging. */
+#storyCreateDialog.story-kind-image #storyPreviewCanvas{position:relative!important;touch-action:none!important;overscroll-behavior:contain!important}
+#storyCreateDialog.story-kind-image #storyImagePreview{pointer-events:none!important;position:absolute!important;left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;inset:50% auto auto 50%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;transform:translate(calc(-50% + var(--story-image-x,0px)),calc(-50% + var(--story-image-y,0px))) scale(var(--story-image-scale,1))!important;transform-origin:center center!important}
+#storyCreateDialog.story-kind-image #storyText{inset:auto!important;touch-action:none!important;user-select:none!important}
+#storyCreateDialog.story-kind-image .gramora-story-style-strip{display:flex!important;position:absolute!important;left:10px!important;right:68px!important;bottom:10px!important;z-index:15!important;overflow-x:auto!important;gap:7px!important;padding:7px!important;background:rgba(0,0,0,.42)!important;border-radius:14px!important}
+#storyCreateDialog.story-kind-image .gramora-story-style-strip button{flex:0 0 auto!important;padding:9px 12px!important;white-space:nowrap!important}
+#storyCreateDialog.story-kind-image .gse-color-palette{z-index:25!important;bottom:66px!important}
