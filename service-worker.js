@@ -1,4 +1,4 @@
-const CACHE_NAME = "gramora-shell-v133-profile-grid-caption-fix";
+const CACHE_NAME = "gramora-shell-v134-profile-detail-caption-light";
 const APP_SHELL = [
   "./",
   "./index.html",
