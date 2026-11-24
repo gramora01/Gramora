@@ -1,4 +1,4 @@
-const CACHE_NAME = "gramora-shell-v146-story-editors";
+const CACHE_NAME = "gramora-shell-v147-story-editors";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,7 +6,7 @@ const APP_SHELL = [
   "./script.js?v=74",
   "./auth.js?v=253",
   "./auth.css?v=62",
-  "./story-creator.css?v=5",
+  "./story-creator.css?v=6",
   "./story-creator.js?v=5",
   "./gramora-icons.css?v=2",
   "./post-action-spacing.css?v=1",
