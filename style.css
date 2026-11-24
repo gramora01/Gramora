@@ -1825,3 +1825,7 @@ body.light .create-post-mode.active{color:#fff}
 .ig-post-tile{position:relative;overflow:hidden}
 .ig-post-tile-copy{position:relative;z-index:1}
 .ig-post-view-badge{z-index:2}
+
+
+/* Compact Instagram-style caption below photo posts */
+.post-caption-inline{margin:0!important;padding:0 2px 2px!important;min-height:0!important;border-radius:0!important;display:block!important;place-items:initial!important;text-align:left!important;color:var(--text)!important;font-size:14px!important;font-weight:400!important;line-height:1.45!important;box-shadow:none!important;background:transparent!important;white-space:pre-wrap;overflow-wrap:anywhere}
