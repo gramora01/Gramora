@@ -985,9 +985,13 @@ storyReplyForm?.addEventListener("submit",async event=>{
           participantUids:[user.uid,ownerUid],createdBy:user.uid,createdAt:serverTimestamp(),
           updatedAt:serverTimestamp(),lastMessage:"",lastMessageAt:serverTimestamp(),lastMessageSenderUid:user.uid
         });
+        const storyData=story.data();
         const chatText="↪ Story reply: "+text;
         await addDoc(collection(db,"conversations",conversationRef.id,"messages"),{
-          senderUid:user.uid,text:chatText,type:"text",status:"sent",createdAt:serverTimestamp()
+          senderUid:user.uid,text,type:"story_reply",status:"sent",
+          storyId,storyOwnerUid:ownerUid,storyImageUrl:storyData.imageUrl||"",
+          storyText:storyData.text||"",storyBackground:storyData.background||"#292b33",
+          storySongTitle:storyData.songTitle||"",createdAt:serverTimestamp()
         });
         await updateDoc(conversationRef,{
           lastMessage:chatText,lastMessageAt:serverTimestamp(),lastMessageSenderUid:user.uid,updatedAt:serverTimestamp()
@@ -2389,7 +2393,15 @@ style.textContent += '.gramora-chat-find-panel{position:absolute;z-index:40;inse
         const m={id:messageDoc.id,...messageDoc.data()},mine=m.senderUid===viewer.uid;
         const bubble=document.createElement("div");bubble.className="gramora-chat-bubble "+(mine?"mine":"theirs")+(m.type==="gif"?" gramora-gif-message":"");
         if(m.replyToText){const quoted=document.createElement("span");quoted.className="gramora-chat-quoted";quoted.textContent="↪ "+m.replyToText;bubble.append(quoted);}
-        if(m.type==="sticker"){bubble.style.fontSize="42px";bubble.textContent=m.text||"❤️";}
+        if(m.type==="story_reply"){
+          bubble.classList.add("gramora-story-reply-bubble");
+          const tag=document.createElement("div");tag.className="gramora-story-reply-tag";tag.textContent="↪ Replied to your story";bubble.append(tag);
+          const preview=document.createElement("div");preview.className="gramora-story-reply-preview";
+          if(m.storyImageUrl){const img=document.createElement("img");img.src=m.storyImageUrl;img.alt="Story preview";img.loading="lazy";preview.append(img);}
+          else{preview.style.background=m.storyBackground||"linear-gradient(135deg,#d9469a,#8b5cf6)";const storyText=document.createElement("span");storyText.textContent=m.storyText||m.storySongTitle||"Your story";preview.append(storyText);}
+          const overlay=document.createElement("span");overlay.className="gramora-story-reply-overlay";overlay.textContent="Your story";preview.append(overlay);bubble.append(preview);
+          const reply=document.createElement("div");reply.className="gramora-story-reply-text";reply.textContent=m.text||"";bubble.append(reply);
+        }else if(m.type==="sticker"){bubble.style.fontSize="42px";bubble.textContent=m.text||"❤️";}
         else if(m.type==="gif"&&(m.gifUrl||m.gifData)){const img=document.createElement("img");img.className="gramora-chat-gif";img.src=m.gifUrl||m.gifData;img.alt="GIF";img.loading="lazy";img.style.cssText="border:0;outline:0;box-shadow:none";bubble.append(img);}
         else bubble.append(document.createTextNode(m.text||""));
         if(m.editedAt){const edited=document.createElement("small");edited.textContent=" · edited";edited.style.fontSize="9px";bubble.append(edited);}
