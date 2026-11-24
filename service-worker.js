@@ -1,9 +1,9 @@
-const CACHE_NAME = "gramora-shell-v175-create-inbox-swipe";
+const CACHE_NAME = "gramora-shell-v176-repost-swipe-fix";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=173",
-  "./script.js?v=7",
+  "./script.js?v=8",
   "./auth.js?v=260",
   "./auth.css?v=63",
   "./story-creator.css?v=8",
