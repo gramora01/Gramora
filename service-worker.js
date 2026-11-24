@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v162-live-notification-toast";
+const CACHE_NAME = "gramora-shell-v163-post-tags-location";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=168",
+  "./style.css?v=169",
   "./script.js?v=74",
-  "./auth.js?v=256",
+  "./auth.js?v=257",
   "./auth.css?v=63",
   "./story-creator.css?v=8",
   "./story-creator.js?v=5",
