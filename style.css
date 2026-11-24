@@ -1935,3 +1935,20 @@ body.light #notificationBtn>svg.gramora-ui-icon path{stroke:#252833!important;}
 
 /* GRAMORA post tag and location controls */
 .gramora-tag-field,.gramora-location-field{padding:10px 0 12px}.gramora-tag-field input,.gramora-location-field input{width:100%;box-sizing:border-box;border:1px solid var(--line,#dedee5);border-radius:12px;padding:11px 12px;background:var(--surface,#fff);color:var(--text,#222)}.gramora-tag-field small,.gramora-location-field small{display:block;color:var(--muted,#858595);font-size:11px;margin:7px 2px}.gramora-tag-results{display:grid;gap:5px;max-height:180px;overflow:auto;margin-top:8px}.gramora-tag-results:empty{display:none}.gramora-tag-result{display:flex;justify-content:space-between;gap:8px;align-items:center;text-align:left;padding:10px;border:0;border-radius:10px;background:var(--surface-2,#f3f3f6);color:var(--text,#222);cursor:pointer}.gramora-tag-result small{margin:0}.gramora-tag-selected{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.gramora-tag-chip{display:inline-flex;align-items:center;gap:6px;border-radius:20px;padding:5px 9px;background:var(--surface-2,#eee);color:var(--text,#222);font-size:12px}.gramora-tag-chip button{border:0;background:none;color:inherit;font-size:17px;line-height:1;cursor:pointer}.gramora-post-meta{display:flex;flex-wrap:wrap;gap:7px 14px;padding:7px 2px;color:var(--muted,#777);font-size:12px}.gramora-post-location{color:var(--muted,#777)}.gramora-post-tags{display:inline-flex;flex-wrap:wrap;gap:2px}.gramora-post-tags button{border:0;padding:0;background:none;color:var(--accent,#8b68dc);font:inherit;font-weight:700;cursor:pointer}
+
+
+/* Public profile highlights follow the active light theme. */
+body.light.public-profile-open .public-profile-highlights{
+  background:transparent!important;
+  border-top-color:#e5e6ec!important;
+  border-bottom-color:#e5e6ec!important;
+}
+body.light.public-profile-open .public-profile-highlights .ig-highlight{color:#292b35!important}
+body.light.public-profile-open .public-profile-highlights .ig-highlight>span{
+  background:#f6f3fb!important;
+  border-color:#ded9ea!important;
+  color:#5146d8!important;
+}
+body.light.public-profile-open .public-profile-highlights .ig-highlight small{color:#555967!important}
+body.light.public-profile-open .public-profile-highlights .highlight-load-note{color:#747987!important}
+body.light.public-profile-open .public-profile-tabs{background:transparent!important;border-color:#e5e6ec!important}
