@@ -143,8 +143,36 @@ document.querySelectorAll(".nav").forEach(button=>button.addEventListener("click
     else if(dx>0&&current>0)openGramoraPage(pages[current-1]);
   },{passive:true,capture:true});
   surface.addEventListener("touchcancel",()=>{tracking=false;startAt=0;},{passive:true,capture:true});
-})();;
-
+})();
+(()=>{
+  const dialog=document.getElementById("createDialog");
+  if(!dialog)return;
+  let x=0,y=0,started=false;
+  dialog.addEventListener("touchstart",event=>{
+    started=event.touches.length===1;
+    if(!started)return;
+    x=event.touches[0].clientX;y=event.touches[0].clientY;
+  },{passive:true});
+  dialog.addEventListener("touchend",event=>{
+    if(!started||!event.changedTouches.length)return;
+    started=false;
+    const dx=event.changedTouches[0].clientX-x,dy=event.changedTouches[0].clientY-y;
+    if(dx>65&&Math.abs(dx)>Math.abs(dy)*1.2){
+      if(dialog.open)dialog.close();
+      openGramoraPage("messages");
+    }
+  },{passive:true});
+  dialog.addEventListener("touchcancel",()=>{started=false;},{passive:true});
+})();
+document.addEventListener("DOMContentLoaded",()=>{
+  const cleanStrayEscapedNewlines=()=>{
+    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+    const remove=[];
+    while(walker.nextNode())if(/^\s*\\n\s*$/.test(walker.currentNode.nodeValue||""))remove.push(walker.currentNode);
+    remove.forEach(node=>node.remove());
+  };
+  cleanStrayEscapedNewlines();
+}); 
 document.addEventListener("click",event=>{
   const like=event.target.closest(".like");
   if(like){like.classList.toggle("liked");like.innerHTML="<span>"+(like.classList.contains("liked")?"Liked":"Like")+"</span>";}
