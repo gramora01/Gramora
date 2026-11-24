@@ -198,3 +198,5 @@
 .gse-color-palette.is-open{display:grid}
 .gse-color-swatch{width:32px;height:32px;border-radius:50%;border:2px solid #ffffffaa;box-shadow:0 1px 5px #0008;cursor:pointer;padding:0}
 .gse-color-swatch:focus-visible{outline:2px solid #fff;outline-offset:3px}
+
+#storyViewerStage.has-story-image > #storyViewerImage{transform:translate(calc(-50% + var(--story-image-x,0px)),calc(-50% + var(--story-image-y,0px))) scale(var(--story-image-scale,1))!important;transform-origin:center center!important;will-change:transform}
