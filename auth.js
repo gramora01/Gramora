@@ -17,6 +17,8 @@ let activeFeedUnsubscribe=null;
 let activeNotificationUnsubscribe=null;
 let notificationToastTimer=null;
 let activeView="home";
+let activePostMusicAudio=null;
+let postMusicObserver=null;
 try { savedAccounts = JSON.parse(localStorage.getItem("gramoraAccounts") || "[]"); } catch { savedAccounts = []; }
 function saveAccountList(){ localStorage.setItem("gramoraAccounts", JSON.stringify(savedAccounts)); }
 function accountAppName(uid){ return "gramora-account-" + uid; }
@@ -1659,8 +1661,36 @@ function createPostMusicElement(data){
   const title=document.createElement("b");title.textContent=data.musicTitle||"Song";
   const artist=document.createElement("small");artist.textContent=data.musicArtist||"";
   info.append(title,artist);
-  const audio=document.createElement("audio");audio.controls=true;audio.preload="none";audio.src=preview;audio.setAttribute("aria-label","Play "+(data.musicTitle||"post music"));
-  wrap.append(artwork,info,audio);return wrap;
+  const audio=document.createElement("audio");audio.preload="none";audio.src=preview;audio.muted=true;audio.loop=true;audio.playsInline=true;audio.setAttribute("aria-label","Post music: "+(data.musicTitle||"song"));
+  const sound=document.createElement("button");sound.type="button";sound.className="gramora-post-music-sound";sound.setAttribute("aria-label","Turn sound on");sound.setAttribute("aria-pressed","false");
+  const speakerOff='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"></path><path d="m16 9 5 6m0-6-5 6"></path></svg>';
+  const speakerOn='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7m3-10a9 9 0 0 1 0 13"></path></svg>';
+  sound.innerHTML=speakerOff;
+  const setSound=enabled=>{audio.muted=!enabled;sound.innerHTML=enabled?speakerOn:speakerOff;sound.setAttribute("aria-label",enabled?"Turn sound off":"Turn sound on");sound.setAttribute("aria-pressed",String(enabled));sound.classList.toggle("is-sound-on",enabled);};
+  sound.addEventListener("click",async()=>{
+    const enable=audio.muted;
+    if(enable){
+      if(activePostMusicAudio&&activePostMusicAudio!==audio){activePostMusicAudio.pause();const oldButton=activePostMusicAudio.closest(".gramora-post-music-player")?.querySelector(".gramora-post-music-sound");if(oldButton){oldButton.innerHTML=speakerOff;oldButton.setAttribute("aria-label","Turn sound on");oldButton.setAttribute("aria-pressed","false");oldButton.classList.remove("is-sound-on");}}
+      activePostMusicAudio=audio;setSound(true);
+      try{await audio.play();}catch(error){setSound(false);}
+    }else{setSound(false);}
+  });
+  audio.addEventListener("play",()=>{activePostMusicAudio=audio;});
+  audio.addEventListener("pause",()=>{if(activePostMusicAudio===audio)activePostMusicAudio=null;});
+  wrap.append(artwork,info,sound,audio);
+  if("IntersectionObserver" in window){
+    if(!postMusicObserver)postMusicObserver=new IntersectionObserver(entries=>{
+      entries.forEach(entry=>{
+        const player=entry.target,button=player.closest(".gramora-post-music-player")?.querySelector(".gramora-post-music-sound");
+        if(entry.isIntersecting&&entry.intersectionRatio>=0.55){
+          if(activePostMusicAudio&&activePostMusicAudio!==player){activePostMusicAudio.pause();const oldButton=activePostMusicAudio.closest(".gramora-post-music-player")?.querySelector(".gramora-post-music-sound");if(oldButton){oldButton.innerHTML=speakerOff;oldButton.setAttribute("aria-label","Turn sound on");oldButton.setAttribute("aria-pressed","false");oldButton.classList.remove("is-sound-on");}}
+          if(player.muted){activePostMusicAudio=player;const attempt=player.play();if(attempt?.catch)attempt.catch(()=>{});}
+        }else if(!entry.isIntersecting&&activePostMusicAudio===player){player.pause();if(button){button.innerHTML=speakerOff;button.setAttribute("aria-label","Turn sound on");button.setAttribute("aria-pressed","false");button.classList.remove("is-sound-on");}}
+      });
+    },{threshold:[0,0.55]});
+    postMusicObserver.observe(audio);
+  }else{audio.autoplay=true;audio.muted=true;audio.play().catch(()=>{});}
+  return wrap;
 }
 function createPostMediaElement(urls,className="post-media-gallery"){
   const list=Array.isArray(urls)?urls.filter(url=>typeof url==="string"&&url.startsWith("https://")):[];
