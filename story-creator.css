@@ -223,3 +223,15 @@
 #storyCreateDialog.story-kind-image #storyText{pointer-events:auto!important;user-select:text!important;-webkit-user-select:text!important;touch-action:manipulation!important;z-index:5!important}
 #storyCreateDialog.story-kind-image #storyText[hidden]{display:none!important;pointer-events:none!important}
 #storyCreateDialog.story-kind-image .gse-tools,#storyCreateDialog.story-kind-image .gse-color-palette{touch-action:manipulation!important}
+
+
+/* Gesture ownership fix: stage handles touches over the overlay; text stays programmatically focusable. */
+#storyCreateDialog.story-kind-image #storyText:not([hidden]){
+  pointer-events:none!important;
+  user-select:none!important;
+  -webkit-user-select:none!important;
+  touch-action:none!important;
+  width:82%!important;height:auto!important;min-height:44px!important;max-height:65%!important;padding:0!important;
+}
+#storyCreateDialog.story-kind-image #storyPreviewCanvas{touch-action:none!important}
+#storyCreateDialog.story-kind-image .gramora-story-style-strip{pointer-events:auto!important}
