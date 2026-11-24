@@ -1877,3 +1877,16 @@ body.light #postDetailCard.has-photo-post .post-detail-caption{display:block;wid
 
 /* Performance: skip layout/paint work for feed cards far below the screen. */
 #feed>.post{content-visibility:auto;contain-intrinsic-size:620px 1px}
+
+/* GRAMORA post music picker and player */
+.gramora-post-music{margin:16px 0;padding:13px;border:1px solid var(--border-color,rgba(128,128,128,.25));border-radius:14px;background:var(--surface-2,rgba(128,128,128,.06))}
+.gramora-post-music-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:10px}.gramora-post-music-head small,.gramora-post-music-note{color:var(--muted,#888);font-size:11px}
+.gramora-post-music-search{display:flex;gap:7px}.gramora-post-music-search input{min-width:0;flex:1;padding:10px;border:1px solid var(--border-color,rgba(128,128,128,.3));border-radius:9px;background:var(--input-bg,transparent);color:inherit}
+.gramora-post-music-search button,.gramora-post-music-selected button{border:0;border-radius:9px;padding:8px 11px;background:var(--accent,#8b68dc);color:#fff;font-weight:700}
+.gramora-post-music-results{display:grid;gap:6px;max-height:210px;overflow:auto;margin-top:8px}.gramora-post-music-result{display:flex;align-items:center;gap:10px;width:100%;padding:7px;border:0;border-radius:9px;background:transparent;color:inherit;text-align:left}
+.gramora-post-music-result:active,.gramora-post-music-result:hover{background:rgba(128,128,128,.12)}.gramora-post-music-result img{width:42px;height:42px;object-fit:cover;border-radius:7px}.gramora-post-music-result span,.gramora-post-music-selected span{display:grid;gap:3px;min-width:0}
+.gramora-post-music-result small,.gramora-post-music-selected small{color:var(--muted,#888);font-size:11px}.gramora-post-music-selected{display:flex;align-items:center;gap:9px;margin-top:10px}.gramora-post-music-selected[hidden]{display:none}
+.gramora-post-music-selected img{width:42px;height:42px;object-fit:cover;border-radius:7px}.gramora-post-music-selected span{flex:1}.gramora-post-music-selected button:last-child{background:transparent;color:inherit;font-size:20px;padding:4px 8px}.gramora-post-music-note{display:block;margin-top:8px}
+.gramora-post-music-player{display:flex;align-items:center;gap:10px;margin:10px 0;padding:9px;border-radius:12px;background:var(--surface-2,rgba(128,128,128,.08));min-width:0}
+.gramora-post-music-player>img{width:46px;height:46px;object-fit:cover;border-radius:8px}.gramora-post-music-player-info{display:grid;gap:3px;flex:1;min-width:0}.gramora-post-music-player-info small{color:var(--muted,#888);font-size:11px}.gramora-post-music-player audio{width:min(42%,190px);height:34px}
+@media(max-width:480px){.gramora-post-music-head{align-items:flex-start;flex-direction:column;gap:3px}.gramora-post-music-player{flex-wrap:wrap}.gramora-post-music-player audio{width:100%}}
