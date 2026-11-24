@@ -1,4 +1,4 @@
-const CACHE_NAME = "gramora-shell-v192-global-post-sound";
+const CACHE_NAME = "gramora-shell-v193-onboarding-guide";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -12,6 +12,8 @@ const APP_SHELL = [
   "./post-action-spacing.css?v=1",
   "./public-profile-layout.css?v=3",
   "./gramora-3d-ui.css?v=2",
+  "./gramora-onboarding.css?v=1",
+  "./gramora-onboarding.js?v=1",
   "./gramora-icons.js?v=10",
   "./gramora-layout-fix.css?v=1",
   "./icons/gramora.svg",
