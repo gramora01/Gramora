@@ -1,12 +1,12 @@
-const CACHE_NAME = "gramora-shell-v143-image-story-reset";
+const CACHE_NAME = "gramora-shell-v144-story-editors";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=164",
   "./script.js?v=74",
-  "./auth.js?v=250",
+  "./auth.js?v=251",
   "./auth.css?v=62",
-  "./story-creator.css?v=4",
+  "./story-creator.css?v=5",
   "./story-creator.js?v=4",
   "./gramora-icons.css?v=2",
   "./post-action-spacing.css?v=1",
