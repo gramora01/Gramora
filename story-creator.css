@@ -215,3 +215,11 @@
 #storyCreateDialog.story-kind-image .gramora-story-style-strip{display:flex!important;position:absolute!important;left:10px!important;right:68px!important;bottom:10px!important;z-index:15!important;overflow-x:auto!important;gap:7px!important;padding:7px!important;background:rgba(0,0,0,.42)!important;border-radius:14px!important}
 #storyCreateDialog.story-kind-image .gramora-story-style-strip button{flex:0 0 auto!important;padding:9px 12px!important;white-space:nowrap!important}
 #storyCreateDialog.story-kind-image .gse-color-palette{z-index:25!important;bottom:66px!important}
+
+
+/* Touch interaction hardening: stage receives photo taps/drags; textarea remains directly editable and draggable. */
+#storyCreateDialog.story-kind-image #storyPreviewCanvas{position:relative!important;overflow:hidden!important;touch-action:none!important;pointer-events:auto!important}
+#storyCreateDialog.story-kind-image #storyImagePreview{pointer-events:none!important;user-select:none!important;-webkit-user-drag:none!important}
+#storyCreateDialog.story-kind-image #storyText{pointer-events:auto!important;user-select:text!important;-webkit-user-select:text!important;touch-action:manipulation!important;z-index:5!important}
+#storyCreateDialog.story-kind-image #storyText[hidden]{display:none!important;pointer-events:none!important}
+#storyCreateDialog.story-kind-image .gse-tools,#storyCreateDialog.story-kind-image .gse-color-palette{touch-action:manipulation!important}
