@@ -1922,3 +1922,9 @@ body.light #notificationBtn .gramora-ui-icon path{stroke:#252833!important;fill:
 body.light #notificationBtn{color:#252833!important;}
 body.light #notificationBtn>svg.notification-bell-svg{stroke:#252833!important;}
 body.light #notificationBtn>svg.notification-bell-svg path{stroke:#252833!important;}
+
+
+/* Reliable notification glyph fallback: render independently of SVG icon injection. */
+#notificationBtn{position:relative!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;padding:0!important;font-size:22px!important;line-height:1!important;}
+#notificationBtn::before{content:"🔔"!important;display:block!important;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif!important;font-size:22px!important;line-height:1!important;opacity:1!important;visibility:visible!important;}
+#notificationBtn>svg{display:none!important;}
