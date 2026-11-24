@@ -83,3 +83,52 @@ body.profile-active .ig-profile-actions .public-unblock{
 .private-profile-notice{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:9px;padding:36px 18px;text-align:center;color:var(--muted)}
 .private-profile-notice strong{font-size:16px;color:var(--text)}
 .private-profile-notice span{font-size:13px;max-width:260px;line-height:1.5}
+
+
+/* Instagram-style live notification popup */
+.gramora-live-toast{
+  position:fixed!important;
+  z-index:20000!important;
+  top:calc(env(safe-area-inset-top, 0px) + 12px)!important;
+  left:50%!important;
+  width:min(430px,calc(100vw - 24px))!important;
+  min-height:68px!important;
+  box-sizing:border-box!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  padding:12px 14px!important;
+  border:1px solid rgba(128,128,128,.24)!important;
+  border-radius:16px!important;
+  background:#202126!important;
+  color:#fff!important;
+  box-shadow:0 12px 34px rgba(0,0,0,.28)!important;
+  text-align:left!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  transform:translate(-50%,-145%)!important;
+  transition:transform .28s ease,opacity .28s ease,visibility .28s ease!important;
+  cursor:pointer!important;
+}
+.gramora-live-toast.visible{
+  opacity:1!important;
+  visibility:visible!important;
+  transform:translate(-50%,0)!important;
+}
+.gramora-live-toast-avatar{
+  width:42px!important;height:42px!important;min-width:42px!important;
+  display:grid!important;place-items:center!important;
+  border-radius:50%!important;
+  background:linear-gradient(135deg,#7c3aed,#e1306c)!important;
+  color:#fff!important;font-size:17px!important;font-weight:800!important;
+}
+.gramora-live-toast-copy{min-width:0!important;flex:1!important;display:flex!important;flex-direction:column!important;gap:2px!important}
+.gramora-live-toast-copy b{font-size:11px!important;letter-spacing:.7px!important;color:#bfc3ce!important}
+.gramora-live-toast-copy>span{font-size:14px!important;line-height:1.35!important;color:#fff!important;overflow-wrap:anywhere!important}
+.gramora-live-toast-copy small{font-size:11px!important;color:#a9acb5!important}
+.gramora-live-toast-close{font-size:22px!important;line-height:1!important;color:#c9cbd2!important}
+body.light .gramora-live-toast{background:#fff!important;color:#202127!important;border-color:#e5e5eb!important;box-shadow:0 12px 34px rgba(0,0,0,.16)!important}
+body.light .gramora-live-toast-copy b{color:#6e7280!important}
+body.light .gramora-live-toast-copy>span{color:#202127!important}
+body.light .gramora-live-toast-copy small,body.light .gramora-live-toast-close{color:#777b85!important}
+@media(prefers-reduced-motion:reduce){.gramora-live-toast{transition:none!important}}
