@@ -15,7 +15,7 @@ body.public-profile-open #feed .ig-profile > .ig-highlights.public-profile-highl
   min-height:88px!important;
   margin:0!important;
   padding:12px 14px 14px!important;
-  background:#0e1016!important;
+  background:var(--panel)!important;color:var(--text)!important;
   overflow-x:auto!important;
   scrollbar-width:none!important;
 }
