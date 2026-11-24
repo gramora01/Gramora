@@ -1375,7 +1375,7 @@ async function loadSavedPosts(){
 }
 async function openPersonProfile(uid){
   const viewer=auth?.currentUser;if(!viewer||!uid)return;
-  if(uid===viewer.uid)await loadProfilePage(viewer);else await loadPublicProfile(viewer,uid);
+  await loadPublicProfile(viewer,uid);
 }
 async function showPostLikesList(postId,postUid){
   const viewer=auth?.currentUser;if(!viewer)return;
