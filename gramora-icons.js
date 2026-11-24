@@ -70,27 +70,29 @@ keep.forEach(child=>node.append(child));
 node.dataset.gramoraIcon=name;
 }
 function scan(root=document){
-root.querySelectorAll?.(".nav-icon:not(.mobile-profile-avatar)").forEach(n=>{const v=n.closest(".nav")?.dataset.view;const m={home:"home",explore:"search",messages:"messages",saved:"bookmark",profile:"profile"}[v];if(m)set(n,m);});
-root.querySelectorAll?.("#topCreate,.mobile-create > span,.sidebar-create > span:first-child").forEach(n=>set(n,"plus"));
-root.querySelectorAll?.("#notificationBtn").forEach(n=>set(n,"bell"));
-root.querySelectorAll?.("#settingsBtn").forEach(n=>set(n,"menu"));
-root.querySelectorAll?.("#themeBtn").forEach(n=>set(n,document.body.classList.contains("light")?"moon":"sun"));
-root.querySelectorAll?.(".post-actions .like,.post-detail-like").forEach(n=>set(n,"heart",true));
-root.querySelectorAll?.(".post-actions .save").forEach(n=>set(n,"bookmark",true));
-root.querySelectorAll?.(".post-actions .repost").forEach(n=>set(n,"repeat",true));
-root.querySelectorAll?.(".post-comment-open").forEach(n=>set(n,"comment",true));
-root.querySelectorAll?.(".ig-profile-tabs [data-profile-tab='posts']").forEach(n=>set(n,"grid"));
-root.querySelectorAll?.(".ig-profile-tabs [data-profile-tab='reposts']").forEach(n=>set(n,"repeat"));
-root.querySelectorAll?.(".public-profile-back").forEach(n=>set(n,"back"));
-root.querySelectorAll?.(".public-profile-more").forEach(n=>set(n,"menu"));
-root.querySelectorAll?.(".public-add-person").forEach(n=>set(n,"userPlus"));
-root.querySelectorAll?.(".public-profile-tabs [data-public-profile-tab='posts']").forEach(n=>set(n,"grid"));
-root.querySelectorAll?.(".public-profile-tabs [data-public-profile-tab='reposts']").forEach(n=>set(n,"repeat"));
-root.querySelectorAll?.(".ig-post-view-eye").forEach(n=>set(n,"eye"));
-root.querySelectorAll?.(".ig-post-pinned").forEach(n=>set(n,"pin"));
-root.querySelectorAll?.(".close-btn,.follow-list-close").forEach(n=>set(n,"close"));
-root.querySelectorAll?.(".gramora-chat-back,.profile-edit-back").forEach(n=>set(n,"back"));
-root.querySelectorAll?.(".gramora-chat-find-head button").forEach(n=>set(n,"close"));
+const nodes=root?.nodeType===1?[root,...root.querySelectorAll("*")]:[...root.querySelectorAll("*")];
+const find=selector=>nodes.filter(node=>node.matches(selector));
+find(".nav-icon:not(.mobile-profile-avatar)").forEach(n=>{const v=n.closest(".nav")?.dataset.view;const m={home:"home",explore:"search",messages:"messages",saved:"bookmark",profile:"profile"}[v];if(m)set(n,m);});
+find("#topCreate,.mobile-create > span,.sidebar-create > span:first-child").forEach(n=>set(n,"plus"));
+find("#notificationBtn").forEach(n=>set(n,"bell"));
+find("#settingsBtn").forEach(n=>set(n,"menu"));
+find("#themeBtn").forEach(n=>set(n,document.body.classList.contains("light")?"moon":"sun"));
+find(".post-actions .like,.post-detail-like").forEach(n=>set(n,"heart",true));
+find(".post-actions .save").forEach(n=>set(n,"bookmark",true));
+find(".post-actions .repost").forEach(n=>set(n,"repeat",true));
+find(".post-comment-open").forEach(n=>set(n,"comment",true));
+find(".ig-profile-tabs [data-profile-tab='posts']").forEach(n=>set(n,"grid"));
+find(".ig-profile-tabs [data-profile-tab='reposts']").forEach(n=>set(n,"repeat"));
+find(".public-profile-back").forEach(n=>set(n,"back"));
+find(".public-profile-more").forEach(n=>set(n,"menu"));
+find(".public-add-person").forEach(n=>set(n,"userPlus"));
+find(".public-profile-tabs [data-public-profile-tab='posts']").forEach(n=>set(n,"grid"));
+find(".public-profile-tabs [data-public-profile-tab='reposts']").forEach(n=>set(n,"repeat"));
+find(".ig-post-view-eye").forEach(n=>set(n,"eye"));
+find(".ig-post-pinned").forEach(n=>set(n,"pin"));
+find(".close-btn,.follow-list-close").forEach(n=>set(n,"close"));
+find(".gramora-chat-back,.profile-edit-back").forEach(n=>set(n,"back"));
+find(".gramora-chat-find-head button").forEach(n=>set(n,"close"));
 }
 function removeStrayEscapedLineBreaks(){
  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
@@ -102,7 +104,27 @@ function removeStrayEscapedLineBreaks(){
  }
  remove.forEach(node=>node.remove());
 }
-let pending=false;const queue=()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;removeStrayEscapedLineBreaks();scan();});};
-const start=()=>{removeStrayEscapedLineBreaks();scan();new MutationObserver(queue).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:["class"]});};
+const start=()=>{
+ removeStrayEscapedLineBreaks();
+ scan();
+ let pending=[];
+ let scheduled=false;
+ const flush=()=>{
+  scheduled=false;
+  const batch=pending;pending=[];
+  const changedBodyClass=batch.some(m=>m.type==="attributes"&&m.target===document.body&&m.attributeName==="class");
+  if(changedBodyClass)scan(document.getElementById("themeBtn"));
+  const roots=new Set();
+  batch.forEach(m=>{
+   if(m.type==="childList")m.addedNodes.forEach(node=>{if(node.nodeType===1)roots.add(node);});
+   else if(m.type==="attributes"&&m.attributeName==="class"&&m.target!==document.body)roots.add(m.target);
+  });
+  roots.forEach(node=>scan(node));
+ };
+ new MutationObserver(records=>{
+  pending.push(...records);
+  if(!scheduled){scheduled=true;requestAnimationFrame(flush);}
+ }).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class"]});
+};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});else start();
 })();
