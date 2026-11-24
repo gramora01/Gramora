@@ -1836,3 +1836,20 @@ body.light #caption,
 body.light .gramora-create-details #caption{color:#202127!important;background:#f7f8fb!important;border-color:#dfe2e9!important;caret-color:#202127!important}
 body.light #caption::placeholder{color:#737782!important;opacity:1}
 body.light .post-caption-inline{color:#202127!important;background:transparent!important}
+
+
+/* Force visible typed caption text in light theme across mobile browsers */
+body.light textarea#caption,
+body.light .gramora-create-dialog textarea#caption,
+html body.light #caption{
+ color:#202127!important;
+ -webkit-text-fill-color:#202127!important;
+ caret-color:#202127!important;
+ background:#f7f8fb!important;
+ opacity:1!important;
+}
+html body.light #caption::placeholder{
+ color:#737782!important;
+ -webkit-text-fill-color:#737782!important;
+ opacity:1!important;
+}
