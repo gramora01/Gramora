@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v134-profile-detail-caption-light";
+const CACHE_NAME = "gramora-shell-v135-public-profile-copy-scope-fix";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=161",
   "./script.js?v=74",
-  "./auth.js?v=241",
+  "./auth.js?v=242",
   "./auth.css?v=62",
   "./story-creator.css?v=3",
   "./story-creator.js?v=3",
