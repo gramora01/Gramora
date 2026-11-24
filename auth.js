@@ -1242,13 +1242,25 @@ document.getElementById("createDialog")?.addEventListener("close",()=>{
 });
 document.getElementById("closeStoryViewer")?.addEventListener("click",()=>{const audio=document.getElementById("storyViewerAudio");audio?.pause();document.getElementById("storyViewerDialog").close();});
 document.getElementById("storyViewerDialog")?.addEventListener("close",()=>{const audio=document.getElementById("storyViewerAudio");audio?.pause();});
+const visibleContentUidCache=new Map();
+const visibleContentUidPending=new Map();
 async function getVisibleContentUids(user){
-  const [profilesSnap,followsSnap]=await Promise.all([
-    getDocs(query(collection(db,"userProfiles"),limit(100))),
-    getDocs(query(collection(db,"follows"),where("followerUid","==",user.uid),limit(200)))
-  ]);
-  const followed=new Set(followsSnap.docs.map(item=>item.data().followingUid));
-  return [...new Set([user.uid,...profilesSnap.docs.filter(item=>item.id===user.uid||item.data().isPrivate!==true||followed.has(item.id)).map(item=>item.id)])];
+  if(!user?.uid)return [];
+  const cached=visibleContentUidCache.get(user.uid);
+  if(cached&&cached.expiresAt>Date.now())return cached.uids;
+  if(visibleContentUidPending.has(user.uid))return visibleContentUidPending.get(user.uid);
+  const pending=(async()=>{
+    const [profilesSnap,followsSnap]=await Promise.all([
+      getDocs(query(collection(db,"userProfiles"),limit(100))),
+      getDocs(query(collection(db,"follows"),where("followerUid","==",user.uid),limit(200)))
+    ]);
+    const followed=new Set(followsSnap.docs.map(item=>item.data().followingUid));
+    const uids=[...new Set([user.uid,...profilesSnap.docs.filter(item=>item.id===user.uid||item.data().isPrivate!==true||followed.has(item.id)).map(item=>item.id)])];
+    visibleContentUidCache.set(user.uid,{uids,expiresAt:Date.now()+60000});
+    return uids;
+  })();
+  visibleContentUidPending.set(user.uid,pending);
+  try{return await pending;}finally{visibleContentUidPending.delete(user.uid);}
 }
 async function migrateOwnedRepostsToFeed(user){
   if(!user?.uid)return;
@@ -1260,8 +1272,12 @@ async function migrateOwnedRepostsToFeed(user){
     }
   }catch(error){console.warn("Legacy repost feed migration is waiting for the latest Firestore Rules:",error.code||error);}
 }
+const repostMigrationStarted=new Set();
 function startPostsFeed(user){
-  migrateOwnedRepostsToFeed(user);
+  if(!repostMigrationStarted.has(user.uid)){
+    repostMigrationStarted.add(user.uid);
+    setTimeout(()=>{if(auth?.currentUser?.uid===user.uid)migrateOwnedRepostsToFeed(user);},6000);
+  }
   if(activeFeedUnsubscribe)activeFeedUnsubscribe();
   let posts=[],reposts=[],ready=0,total=0,offs=[],cancelled=false,completed=false;
   const feedLoadTimer=setTimeout(()=>{
@@ -1317,10 +1333,7 @@ async function refreshPostSaveButton(postId,button,countNode){
     button.classList.toggle("saved",snap.exists());
     button.setAttribute("aria-pressed",String(snap.exists()));
     button.setAttribute("aria-label",snap.exists()?"Remove saved post":"Save post");
-    if(countNode?.isConnected){
-      const all=await getDocs(query(collection(db,"postSaves"),where("postId","==",postId),where("postUid","==",button.dataset.postUid||""),limit(500)));
-      if(countNode.isConnected)countNode.textContent=displayPostActionCount(all.size);
-    }
+
   }catch(error){console.warn("Saved post state unavailable:",error);}
 }
 async function togglePostSave(postId,button,countNode){
@@ -1648,8 +1661,25 @@ function createPostMediaElement(urls,className="post-media-gallery"){
   });
   return gallery;
 }
+let feedPostHydrationObserver=null;
+function scheduleFeedPostHydration(article,hydrate){
+  if(!("IntersectionObserver" in window)){hydrate();return;}
+  if(!feedPostHydrationObserver){
+    feedPostHydrationObserver=new IntersectionObserver(entries=>{
+      entries.forEach(entry=>{
+        if(!entry.isIntersecting)return;
+        feedPostHydrationObserver.unobserve(entry.target);
+        const run=entry.target._gramoraHydrate;
+        delete entry.target._gramoraHydrate;
+        if(entry.target.isConnected&&typeof run==="function")run();
+      });
+    },{rootMargin:"500px 0px"});
+  }
+  article._gramoraHydrate=hydrate;
+  feedPostHydrationObserver.observe(article);
+}
 function renderPosts(docs){
-  const feed=document.getElementById("feed");feed.replaceChildren();
+  const feed=document.getElementById("feed");if(feedPostHydrationObserver){feedPostHydrationObserver.disconnect();feedPostHydrationObserver=null;}feed.replaceChildren();
   if(!docs.length){const empty=document.createElement("div");empty.className="empty-welcome";const heading=document.createElement("h2");heading.textContent="Your feed is ready.";const note=document.createElement("p");note.textContent="Be the first to share a moment with the GRAMORA community.";empty.append(heading,note);feed.append(empty);return;}
   docs.forEach(postDoc=>{
     const data=postDoc.data(),isRepost=!!data._isRepost;
@@ -1669,7 +1699,7 @@ function renderPosts(docs){
     const avatar=document.createElement("div");avatar.className="avatar";avatar.textContent=(authorName||"G").trim().charAt(0).toUpperCase();
      bindAvatarLongPress(avatar,authorUid,{displayName:authorName||"GRAMORA member",photoURL:authorPhoto||""});
     if(authorPhoto){const img=document.createElement("img");img.src=authorPhoto;img.alt="";avatar.textContent="";avatar.append(img);}
-    else if(authorUid){getDoc(doc(db,"userProfiles",authorUid)).then(profileSnap=>{if(profileSnap.exists()){const photo=profileSnap.data().photoURL;if(photo&&avatar.isConnected){const img=document.createElement("img");img.src=photo;img.alt="";avatar.textContent="";avatar.append(img);}}}).catch(error=>console.warn("Post author photo unavailable:",error));}
+    
     const identity=document.createElement("span");identity.className="post-author-identity";
     const name=document.createElement("b");name.textContent=authorName||"GRAMORA member";
     const meta=document.createElement("small");meta.textContent=(authorUsername?"@"+authorUsername+" · ":"")+formatPostDate(isRepost?data.originalCreatedAt:data.createdAt);
@@ -1703,39 +1733,40 @@ function renderPosts(docs){
       const del=document.createElement("button");del.className="delete-post";del.type="button";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(postDoc.id,del,()=>getDocsForFeed()));actions.append(del);
     }
     feed.append(article);
-    // Load like state only after the card is attached; otherwise a fast cached read can leave “Loading likes…” stuck.
-    refreshPostLikeButton(originalId,authorUid,like,likeCount);
-    refreshPostSaveButton(originalId,save,saveCount);
-    refreshPostActionCounts(originalId,authorUid,{comment:commentCount,repost:repostCount,save:saveCount});
-    refreshPostRepostButton(originalId,authorUid,repost,repostCount);
-    // Resolve the latest profile details instead of relying on old names saved in post documents.
-    const profileUids=[authorUid,isRepost?data.uid:null].filter(Boolean);
-    Promise.all(profileUids.map(uid=>getDoc(doc(db,"userProfiles",uid)).then(snap=>({uid,data:snap.exists()?snap.data():null}))))
-      .then(results=>{
-        if(!article.isConnected)return;
-        const profiles=new Map(results.map(item=>[item.uid,item.data]));
-        const latestAuthor=profiles.get(authorUid);
-        if(latestAuthor){
-          const latestName=latestAuthor.displayName||authorName||"GRAMORA member";
-          const latestUsername=latestAuthor.username||authorUsername||"";
-          name.textContent=latestName;
-          meta.textContent=(latestUsername?"@"+latestUsername+" · ":"")+formatPostDate(isRepost?data.originalCreatedAt:data.createdAt);
-          avatar.textContent=latestName.trim().charAt(0).toUpperCase()||"G";
-          if(latestAuthor.photoURL){
-            const img=document.createElement("img");img.src=latestAuthor.photoURL;img.alt="";avatar.replaceChildren(img);
+    // Load engagement/profile data only as a card approaches the viewport.
+    scheduleFeedPostHydration(article,()=>{
+      refreshPostLikeButton(originalId,authorUid,like,likeCount);
+      refreshPostSaveButton(originalId,save,saveCount);
+      refreshPostActionCounts(originalId,authorUid,{comment:commentCount,repost:repostCount,save:saveCount});
+      refreshPostRepostButton(originalId,authorUid,repost,repostCount);
+      const profileUids=[];
+      if(authorUid&&(!authorPhoto||!authorUsername||!authorName))profileUids.push(authorUid);
+      if(isRepost&&data.uid&&(!data.photoURL||!data.username||!data.displayName))profileUids.push(data.uid);
+      if(!profileUids.length)return;
+      Promise.all([...new Set(profileUids)].map(uid=>getDoc(doc(db,"userProfiles",uid)).then(snap=>({uid,data:snap.exists()?snap.data():null}))))
+        .then(results=>{
+          if(!article.isConnected)return;
+          const profiles=new Map(results.map(item=>[item.uid,item.data]));
+          const latestAuthor=profiles.get(authorUid);
+          if(latestAuthor){
+            const latestName=latestAuthor.displayName||authorName||"GRAMORA member";
+            const latestUsername=latestAuthor.username||authorUsername||"";
+            name.textContent=latestName;
+            meta.textContent=(latestUsername?"@"+latestUsername+" · ":"")+formatPostDate(isRepost?data.originalCreatedAt:data.createdAt);
+            avatar.textContent=latestName.trim().charAt(0).toUpperCase()||"G";
+            if(latestAuthor.photoURL){const img=document.createElement("img");img.src=latestAuthor.photoURL;img.alt="";img.decoding="async";avatar.replaceChildren(img);}
           }
-        }
-        if(isRepost){
-          const latestReposter=profiles.get(data.uid);
-          const repostLabel=article.querySelector(".post-reposted-by");
-          if(latestReposter&&repostText)repostText.textContent=(latestReposter.displayName||data.displayName||"GRAMORA member")+" reposted";
-          if(latestReposter&&repostAvatar){
-            repostAvatar.replaceChildren();
-            if(latestReposter.photoURL){const img=document.createElement("img");img.src=latestReposter.photoURL;img.alt="";repostAvatar.append(img);}
-            else repostAvatar.textContent=(latestReposter.displayName||data.displayName||"G").trim().charAt(0).toUpperCase();
+          if(isRepost){
+            const latestReposter=profiles.get(data.uid);
+            if(latestReposter&&repostText)repostText.textContent=(latestReposter.displayName||data.displayName||"GRAMORA member")+" reposted";
+            if(latestReposter&&repostAvatar){
+              repostAvatar.replaceChildren();
+              if(latestReposter.photoURL){const img=document.createElement("img");img.src=latestReposter.photoURL;img.alt="";img.decoding="async";repostAvatar.append(img);}
+              else repostAvatar.textContent=(latestReposter.displayName||data.displayName||"G").trim().charAt(0).toUpperCase();
+            }
           }
-        }
-      }).catch(error=>console.warn("Latest feed profile lookup failed:",error));
+        }).catch(error=>console.warn("Latest feed profile lookup failed:",error));
+    });
   });
 }
 async function getVisibleRepostCount(postId,postUid,user){
@@ -1770,15 +1801,11 @@ async function refreshPostActionCounts(postId,postUid,nodes){
 async function refreshPostRepostButton(postId,postUid,button,countNode){
   const user=auth?.currentUser;if(!user||!button)return;
   try{
-    const [own,count]=await Promise.all([
-      getDoc(doc(db,"reposts",postId+"_"+user.uid)),
-      getVisibleRepostCount(postId,postUid,user)
-    ]);
+    const own=await getDoc(doc(db,"reposts",postId+"_"+user.uid));
     if(!button.isConnected)return;
     button.classList.toggle("reposted",own.exists());
     button.setAttribute("aria-pressed",String(own.exists()));
     button.setAttribute("aria-label",own.exists()?"Unrepost":"Repost");
-    if(countNode?.isConnected)countNode.textContent=displayPostActionCount(count);
   }catch(error){console.warn("Repost state/count unavailable:",error);}
 }
 function updateVisibleRepostButtons(postId,active,count){
