@@ -1,4 +1,4 @@
-const CACHE_NAME = "gramora-shell-v177-story-viewers-fix";
+const CACHE_NAME = "gramora-shell-v178-profile-menu-pages";
 const APP_SHELL = [
   "./",
   "./index.html",
