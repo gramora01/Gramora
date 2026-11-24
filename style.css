@@ -1925,7 +1925,10 @@ body.light #notificationBtn>svg.notification-bell-svg path{stroke:#252833!import
 
 
 
-/* Notification fallback rendered as a real DOM element, not pseudo content. */
-#notificationBtn{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;padding:0!important;overflow:visible!important;}
-#notificationBtn>.notification-bell-fallback{display:inline-block!important;flex:0 0 auto!important;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif!important;font-size:23px!important;line-height:1!important;opacity:1!important;visibility:visible!important;}
-#notificationBtn>svg{display:none!important;}
+/* Keep only the Instagram-style outline notification bell visible. */
+#notificationBtn{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;padding:0!important;overflow:visible!important;color:#f5f5f6!important;opacity:1!important;visibility:visible!important;}
+#notificationBtn>svg.gramora-ui-icon{display:block!important;flex:0 0 26px!important;width:26px!important;height:26px!important;max-width:26px!important;max-height:26px!important;overflow:visible!important;fill:none!important;stroke:currentColor!important;stroke-width:2!important;stroke-linecap:round!important;stroke-linejoin:round!important;opacity:1!important;visibility:visible!important;}
+#notificationBtn>svg.gramora-ui-icon path{fill:none!important;stroke:currentColor!important;stroke-width:2!important;}
+body.light #notificationBtn{color:#252833!important;}
+body.light #notificationBtn>svg.gramora-ui-icon{stroke:#252833!important;}
+body.light #notificationBtn>svg.gramora-ui-icon path{stroke:#252833!important;}
