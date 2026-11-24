@@ -661,7 +661,7 @@ service cloud.firestore {
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0
           && request.resource.data.text.size() <= 2000
-          && request.resource.data.type in ['text','sticker','gif']
+          && request.resource.data.type in ['text','sticker','gif','story_reply']
           && request.resource.data.createdAt is timestamp
           && request.resource.data.keys().hasOnly([
             'senderUid','text','type','createdAt','replyToId','replyToText','gifData','gifUrl','status',
