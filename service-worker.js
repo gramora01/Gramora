@@ -1,13 +1,13 @@
-const CACHE_NAME = "gramora-shell-v194-remove-welcome-guide";
+const CACHE_NAME = "gramora-shell-v195-story-editor-pro";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=180",
   "./script.js?v=8",
-  "./auth.js?v=274",
+  "./auth.js?v=275",
   "./auth.css?v=63",
-  "./story-creator.css?v=10",
-  "./story-creator.js?v=5",
+  "./story-creator.css?v=11",
+  "./story-creator.js?v=6",
   "./gramora-icons.css?v=2",
   "./post-action-spacing.css?v=1",
   "./public-profile-layout.css?v=3",
