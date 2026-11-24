@@ -1819,13 +1819,22 @@ document.addEventListener("visibilitychange",()=>{
 window.addEventListener("pagehide",stopActivePostMusic);
 window.addEventListener("freeze",stopActivePostMusic);
 window.addEventListener("beforeunload",stopActivePostMusic);
-function createPostMediaElement(urls,className="post-media-gallery"){
+function createPostMediaElement(urls,className="post-media-gallery",priority=false){
   const list=Array.isArray(urls)?urls.filter(url=>typeof url==="string"&&url.startsWith("https://")):[];
   if(!list.length)return null;
   const gallery=document.createElement("div");gallery.className=className;
   gallery.style.display="grid";gallery.style.gridTemplateColumns=list.length===1?"1fr":"repeat(2,minmax(0,1fr))";gallery.style.gap="4px";gallery.style.width="100%";gallery.style.overflow="hidden";gallery.style.borderRadius="12px";
-  list.forEach(url=>{
-    const image=document.createElement("img");image.src=url;image.alt="Post photo";image.loading="lazy";image.style.display="block";image.style.width="100%";image.style.height=list.length===1?"auto":"220px";image.style.maxHeight="560px";image.style.objectFit="cover";image.style.background="#171923";
+  list.forEach((url,index)=>{
+    const image=document.createElement("img");
+    image.className="gramora-feed-photo is-loading";
+    image.alt="Post photo";image.decoding="async";
+    image.loading=priority?"eager":"lazy";
+    if(priority&&index===0)image.fetchPriority="high";
+    image.style.display="block";image.style.width="100%";image.style.height=list.length===1?"auto":"220px";image.style.maxHeight="560px";image.style.objectFit="contain";image.style.background="#111";
+    image.addEventListener("load",()=>{image.classList.remove("is-loading");image.classList.add("is-loaded");},{once:true});
+    image.addEventListener("error",()=>{image.classList.remove("is-loading");image.classList.add("has-error");},{once:true});
+    image.src=url;
+    if(image.complete&&image.naturalWidth>0){image.classList.remove("is-loading");image.classList.add("is-loaded");}
     gallery.append(image);
   });
   return gallery;
@@ -1873,7 +1882,7 @@ function renderPosts(docs){
     const name=document.createElement("b");name.textContent=authorName||"GRAMORA member";
     const meta=document.createElement("small");meta.textContent=(authorUsername?"@"+authorUsername+" · ":"")+formatPostDate(isRepost?data.originalCreatedAt:data.createdAt);
     const postMusicData=isRepost?{musicTitle:data.originalMusicTitle,musicArtist:data.originalMusicArtist,musicArtwork:data.originalMusicArtwork,musicPreviewUrl:data.originalMusicPreviewUrl}:data;identity.append(name,meta);const musicLabel=createPostMusicLabel(postMusicData);if(musicLabel)identity.append(musicLabel);head.append(avatar,identity);head.addEventListener("click",()=>{const viewer=auth?.currentUser;if(viewer&&authorUid)loadPublicProfile(viewer,authorUid);});
-    const content=document.createElement("div");content.className="post-content";const postPhotos=isRepost?(data.originalPhotoUrls||[]):(data.photoUrls||[]);const media=createPostMediaElement(postPhotos);const music=createPostMusicElement(postMusicData);if(media){if(music)media.append(music);content.append(media);}const caption=document.createElement("p");caption.className=postPhotos.length?"post-text post-caption-inline":"post-text post-text-card";caption.textContent=isRepost?(data.originalText||""):(data.text||"");if(!postPhotos.length)caption.style.background=isRepost?(data.originalBackground||POST_BACKGROUNDS[4]):(data.background||POST_BACKGROUNDS[4]);if(caption.textContent){if(!postPhotos.length&&music)caption.append(music);content.append(caption);}
+    const content=document.createElement("div");content.className="post-content";const postPhotos=isRepost?(data.originalPhotoUrls||[]):(data.photoUrls||[]);const media=createPostMediaElement(postPhotos,"post-media-gallery",postIndex<2);const music=createPostMusicElement(postMusicData);if(media){if(music)media.append(music);content.append(media);}const caption=document.createElement("p");caption.className=postPhotos.length?"post-text post-caption-inline":"post-text post-text-card";caption.textContent=isRepost?(data.originalText||""):(data.text||"");if(!postPhotos.length)caption.style.background=isRepost?(data.originalBackground||POST_BACKGROUNDS[4]):(data.background||POST_BACKGROUNDS[4]);if(caption.textContent){if(!postPhotos.length&&music)caption.append(music);content.append(caption);}
     const postLocation=isRepost?(data.originalLocation||""):(data.location||"");
     const postTags=isRepost?(data.originalTaggedUsers||[]):(data.taggedUsers||[]);
     if(postLocation||postTags.length){const metaLine=document.createElement("div");metaLine.className="gramora-post-meta";if(postLocation){const place=document.createElement("span");place.className="gramora-post-location";place.textContent="⌖ "+postLocation;metaLine.append(place);}if(postTags.length){const tags=document.createElement("span");tags.className="gramora-post-tags";tags.append(document.createTextNode("Tagged: "));postTags.slice(0,10).forEach((person,index)=>{if(index)tags.append(document.createTextNode(", "));const link=document.createElement("button");link.type="button";link.textContent="@"+(person.username||person.displayName||"user");link.addEventListener("click",event=>{event.stopPropagation();if(person.uid&&auth?.currentUser)loadPublicProfile(auth.currentUser,person.uid);});tags.append(link);});metaLine.append(tags);}content.append(metaLine);}
