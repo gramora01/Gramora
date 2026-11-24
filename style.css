@@ -1888,5 +1888,12 @@ body.light #postDetailCard.has-photo-post .post-detail-caption{display:block;wid
 .gramora-post-music-result small,.gramora-post-music-selected small{color:var(--muted,#888);font-size:11px}.gramora-post-music-selected{display:flex;align-items:center;gap:9px;margin-top:10px}.gramora-post-music-selected[hidden]{display:none}
 .gramora-post-music-selected img{width:42px;height:42px;object-fit:cover;border-radius:7px}.gramora-post-music-selected span{flex:1}.gramora-post-music-selected button:last-child{background:transparent;color:inherit;font-size:20px;padding:4px 8px}.gramora-post-music-note{display:block;margin-top:8px}
 .gramora-post-music-player{display:flex;align-items:center;gap:10px;margin:10px 0;padding:9px;border-radius:12px;background:var(--surface-2,rgba(128,128,128,.08));min-width:0}
-.gramora-post-music-player>img{width:46px;height:46px;object-fit:cover;border-radius:8px}.gramora-post-music-player-info{display:grid;gap:3px;flex:1;min-width:0}.gramora-post-music-player-info small{color:var(--muted,#888);font-size:11px}.gramora-post-music-player audio{width:min(42%,190px);height:34px}
-@media(max-width:480px){.gramora-post-music-head{align-items:flex-start;flex-direction:column;gap:3px}.gramora-post-music-player{flex-wrap:wrap}.gramora-post-music-player audio{width:100%}}
+.gramora-post-music-player>img{width:46px;height:46px;object-fit:cover;border-radius:8px}
+.gramora-post-music-player-info{display:grid;gap:3px;flex:1;min-width:0}
+.gramora-post-music-player-info b,.gramora-post-music-player-info small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gramora-post-music-player-info small{color:var(--muted,#888);font-size:11px}
+.gramora-post-music-player audio{display:none}
+.gramora-post-music-sound{width:36px;height:36px;flex:0 0 36px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--text,#f6f6f7);padding:7px}
+.gramora-post-music-sound svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.gramora-post-music-sound.is-sound-on{background:var(--surface-3,rgba(128,128,128,.18))}
+@media(max-width:480px){.gramora-post-music-head{align-items:flex-start;flex-direction:column;gap:3px}.gramora-post-music-player{gap:8px;padding:8px}.gramora-post-music-player>img{width:42px;height:42px}}.gramora-post-music-player{flex-wrap:wrap}.gramora-post-music-player audio{width:100%}}
