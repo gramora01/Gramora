@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v184-story-activity-lock";
+const CACHE_NAME = "gramora-shell-v185-story-preload";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=179",
   "./script.js?v=8",
-  "./auth.js?v=266",
+  "./auth.js?v=267",
   "./auth.css?v=63",
   "./story-creator.css?v=9",
   "./story-creator.js?v=5",
