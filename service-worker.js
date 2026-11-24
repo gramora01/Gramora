@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v126-create-post-photo-text";
+const CACHE_NAME = "gramora-shell-v127-supabase-photo-posts";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=159",
+  "./style.css?v=160",
   "./script.js?v=74",
-  "./auth.js?v=234",
+  "./auth.js?v=235",
   "./auth.css?v=62",
   "./story-creator.css?v=3",
   "./story-creator.js?v=3",
