@@ -2059,3 +2059,8 @@ body.light.public-profile-open .ig-profile > .public-profile-highlights[hidden] 
 /* Keep the hidden Settings back control from appearing beside the close button. */
 .settings-dialog .settings-back[hidden]{display:none!important}
 .settings-dialog .settings-back:not([hidden]){font-size:22px!important}
+
+
+/* Make the section navigation unmistakably a Back control, not a second close cross. */
+.settings-dialog .settings-back{width:auto!important;min-width:64px!important;height:34px!important;padding:0 10px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;margin-left:auto!important;margin-right:8px!important;border:1px solid var(--line,#444)!important;border-radius:18px!important;background:transparent!important;color:var(--text,#fff)!important;font-size:13px!important;font-weight:700!important;line-height:1!important;}
+.settings-dialog .settings-back[hidden]{display:none!important}
