@@ -1,9 +1,9 @@
-const CACHE_NAME = "gramora-shell-v174-profile-theme";
+const CACHE_NAME = "gramora-shell-v175-create-inbox-swipe";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=173",
-  "./script.js?v=6",
+  "./script.js?v=7",
   "./auth.js?v=260",
   "./auth.css?v=63",
   "./story-creator.css?v=8",
