@@ -366,8 +366,8 @@ service cloud.firestore {
         && (request.resource.data.get('imagePath','') == '' || request.resource.data.imagePath.matches(request.auth.uid + '/stories/.*'))
         && request.resource.data.text is string
         && request.resource.data.text.size() <= 500
-        && request.resource.data.get('textX',50) is number
-        && request.resource.data.get('textY',50) is number
+        && (request.resource.data.get('textX',50) is int || request.resource.data.get('textX',50) is float)
+        && (request.resource.data.get('textY',50) is int || request.resource.data.get('textY',50) is float)
         && request.resource.data.get('textX',50) >= 0 && request.resource.data.get('textX',50) <= 100
         && request.resource.data.get('textY',50) >= 0 && request.resource.data.get('textY',50) <= 100
         && request.resource.data.songTitle is string
@@ -396,8 +396,8 @@ service cloud.firestore {
         ])
         && request.resource.data.text is string
         && request.resource.data.text.size() <= 500
-        && request.resource.data.get('textX',50) is number
-        && request.resource.data.get('textY',50) is number
+        && (request.resource.data.get('textX',50) is int || request.resource.data.get('textX',50) is float)
+        && (request.resource.data.get('textY',50) is int || request.resource.data.get('textY',50) is float)
         && request.resource.data.get('textX',50) >= 0 && request.resource.data.get('textX',50) <= 100
         && request.resource.data.get('textY',50) >= 0 && request.resource.data.get('textY',50) <= 100
         && request.resource.data.songTitle is string
