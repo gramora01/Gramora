@@ -717,7 +717,7 @@ async function openStoryViewer(docs,id){
       viewerImage.hidden=true;
       viewerImage.onload=()=>{if(dialog.dataset.storyId!==id||openRequest!==storyOpenRequest)return;viewerImage.hidden=false;viewerStage?.classList.remove("story-image-loading");};
       viewerImage.onerror=()=>{if(dialog.dataset.storyId===id&&openRequest===storyOpenRequest)viewerStage?.classList.remove("story-image-loading");};
-      viewerImage.src=data.imageUrl;
+      viewerImage.style.transform="translate(-50%,-50%) scale("+Math.max(1,Math.min(3,Number(data.imageScale)||1))+")";viewerImage.src=data.imageUrl;
       if(viewerImage.complete&&viewerImage.naturalWidth>0){viewerImage.hidden=false;viewerStage?.classList.remove("story-image-loading");}
     }else{
       viewerImage.hidden=true;viewerImage.onload=null;viewerImage.onerror=null;viewerImage.removeAttribute("src");
@@ -1332,7 +1332,7 @@ storyForm?.addEventListener("submit",async event=>{
   try{
     const user=auth.currentUser,profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{},storyId=storyEditingId||doc(collection(db,"stories")).id;
     if(selectedImage){const uploaded=await uploadGramoraStoryImage(selectedImage,user.uid,storyId);imageUrl=uploaded.imageUrl;imagePath=uploaded.imagePath;}
-    const storyData={text,lyrics,background,songTitle,songArtist,songUrl,previewUrl,songArtwork,songStart,imageUrl,imagePath,textX:Number(storyTextXInput?.value||50),textY:Number(storyTextYInput?.value||50)};
+    const storyData={text,lyrics,background,songTitle,songArtist,songUrl,previewUrl,songArtwork,songStart,imageUrl,imagePath,textX:Number(storyTextXInput?.value||50),textY:Number(storyTextYInput?.value||50),imageScale:Number(document.getElementById("storyImageScale")?.value||1)};
     if(storyEditingId){await updateDoc(doc(db,"stories",storyEditingId),storyData);storyEditingId=null;status.textContent="Story update ho gayi!";}
     else{await setDoc(doc(db,"stories",storyId),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",...storyData,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)});status.textContent="Story share ho gayi!";}
     storyForm.reset();if(storyImageUrlInput)storyImageUrlInput.value="";if(storyImagePathInput)storyImagePathInput.value="";setStoryImagePreview("");setStoryEditingMode(true);if(storyEditorDone)storyEditorDone.textContent="Done";if(storyCharCount)storyCharCount.textContent="0";if(storyTextArea){storyTextArea.style.font="";storyTextArea.style.color="#fff";storyTextArea.style.textAlign="center";}document.querySelectorAll(".gramora-story-style-strip [data-story-font]").forEach((item,index)=>item.classList.toggle("active",index===0));stopStoryMusicPreview();if(storyMusicAttached)storyMusicAttached.hidden=true;if(storyMusicSelection)storyMusicSelection.hidden=true;document.getElementById("storyLyricsEditor").hidden=true;document.getElementById("storyLyricsPreview").hidden=true;storySongResults?.replaceChildren();document.getElementById("storyCreateDialog").close();document.getElementById("storyCreateDialog").querySelector("h2").textContent="Create a story";
