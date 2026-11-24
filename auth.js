@@ -503,7 +503,7 @@ function renderStories(docs){
   const openCreator=event=>{
     event?.stopPropagation();
     storyEditingId=null;storyForm?.reset();
-    setStoryEditingMode(true);if(storyCharCount)storyCharCount.textContent="0";
+    setStoryEditingMode(true);showStoryTypeChooser();setStoryEditorKind("text");showStoryTypeChooser();if(storyCharCount)storyCharCount.textContent="0";
     document.getElementById("storyCreateDialog").querySelector("h2").textContent="Create a text story";
     document.querySelector("#storyForm button[type=submit]").textContent="Share story";
     document.getElementById("storyCreateDialog")?.showModal();
@@ -657,6 +657,7 @@ function openStoryViewer(docs,id){
   const ownerEditAction=ownerMenu?.querySelector('[data-story-menu-action="edit"]');if(ownerEditAction)ownerEditAction.onclick=()=>{ownerMenu.hidden=true;editStoryButton?.click();};
   const ownerDeleteAction=ownerMenu?.querySelector('[data-story-menu-action="delete"]');if(ownerDeleteAction)ownerDeleteAction.onclick=()=>{ownerMenu.hidden=true;deleteButton?.click();};
   content.textContent=data.text||"";
+  content.style.left=(Number(data.textX??50))+"%";content.style.top=(Number(data.textY??50))+"%";content.style.transform="translate(-50%,-50%)";content.style.position="absolute";content.style.width="82%";
   content.style.background=data.imageUrl?"transparent":(data.background||POST_BACKGROUNDS[4]);
   const viewerImage=document.getElementById("storyViewerImage");if(viewerImage){viewerImage.src=data.imageUrl||"";viewerImage.hidden=!data.imageUrl;}
   document.getElementById("storyViewerStage")?.classList.toggle("has-story-image",!!data.imageUrl);
@@ -702,7 +703,7 @@ function openStoryViewer(docs,id){
     editStoryButton.onclick=()=>{
       if(data.uid!==auth?.currentUser?.uid)return;
       storyEditingId=id;setStoryEditingMode(true);document.getElementById("storyText").value=data.text||"";if(storyImageUrlInput)storyImageUrlInput.value=data.imageUrl||"";if(storyImagePathInput)storyImagePathInput.value=data.imagePath||"";if(storyImageFile)storyImageFile.value="";setStoryImagePreview(data.imageUrl||"");if(storyCharCount)storyCharCount.textContent=String((data.text||"").length);
-      const bg=data.background||POST_BACKGROUNDS[4];document.getElementById("storyBackground").value=bg;document.getElementById("storyPreviewCanvas").style.background=bg;
+      setStoryEditorKind(data.imageUrl?"image":"text");applyStoryTextPosition(data.textX??50,data.textY??50);const bg=data.background||POST_BACKGROUNDS[4];document.getElementById("storyBackground").value=bg;document.getElementById("storyPreviewCanvas").style.background=bg;
       document.querySelectorAll("#storyBackgroundPicker [data-bg]").forEach(button=>button.classList.toggle("selected",button.dataset.bg===bg));
       document.getElementById("storySongTitle").value=data.songTitle||"";document.getElementById("storySongLyrics").value=data.lyrics||"";document.getElementById("storyLyricsEditor").hidden=!data.songTitle;document.getElementById("storyLyricsPreview").textContent=data.lyrics||"";document.getElementById("storyLyricsPreview").hidden=!(data.lyrics||"").trim();document.getElementById("storySongArtist").value=data.songArtist||"";document.getElementById("storySongUrl").value=data.songUrl||"";document.getElementById("storySongPreviewUrl").value=data.previewUrl||"";document.getElementById("storySongArtwork").value=data.songArtwork||"";document.getElementById("storySongStart").value=String(data.songStart||0);document.getElementById("storyMusicAttached").hidden=!data.songTitle;document.getElementById("storySongAttachedTitle").textContent=data.songTitle||"";document.getElementById("storySongAttachedArtist").textContent=data.songArtist||"";document.getElementById("storySongArtworkPreview").src=data.songArtwork||"";
       document.getElementById("storyCreateDialog").querySelector("h2").textContent="Edit your story";document.querySelector("#storyForm button[type=submit]").textContent="Save story";
@@ -1196,8 +1197,56 @@ document.querySelectorAll(".gramora-music-tabs [data-music-tab]").forEach(tab=>t
 const storyForm=document.getElementById("storyForm");
 const storyImageFile=document.getElementById("storyImageFile"),storyImagePreview=document.getElementById("storyImagePreview"),storyImageUrlInput=document.getElementById("storyImageUrl"),storyImagePathInput=document.getElementById("storyImagePath"),storyImageRemove=document.getElementById("storyImageRemove");
 function setStoryImagePreview(url){if(storyImagePreview){storyImagePreview.src=url||"";storyImagePreview.hidden=!url;}if(storyImageRemove)storyImageRemove.hidden=!url;}
-storyImageFile?.addEventListener("change",()=>{const file=storyImageFile.files?.[0];if(!file)return;if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>5*1024*1024){const status=document.getElementById("storyCreateStatus");if(status)status.textContent="JPG, PNG ya WebP photo select karein (maximum 5 MB).";storyImageFile.value="";return;}setStoryImagePreview(URL.createObjectURL(file));if(storyImageUrlInput)storyImageUrlInput.value="";if(storyImagePathInput)storyImagePathInput.value="";});
-storyImageRemove?.addEventListener("click",()=>{if(storyImageFile)storyImageFile.value="";if(storyImageUrlInput)storyImageUrlInput.value="";if(storyImagePathInput)storyImagePathInput.value="";setStoryImagePreview("");});
+
+let storyEditorKind="text",storyTextDragEnabled=false;
+const storyTypeChooser=document.getElementById("storyTypeChooser"),storyEditorWorkspace=document.getElementById("storyEditorWorkspace"),storyTextXInput=document.getElementById("storyTextX"),storyTextYInput=document.getElementById("storyTextY");
+function setStoryEditorKind(kind){
+  storyEditorKind=kind==="image"?"image":"text";
+  const dialog=document.getElementById("storyCreateDialog");
+  dialog.dataset.storyKind=storyEditorKind;
+  dialog.classList.toggle("story-kind-image",storyEditorKind==="image");
+  dialog.classList.toggle("story-kind-text",storyEditorKind==="text");
+  const label=document.getElementById("storyModeLabel");if(label)label.textContent=storyEditorKind==="image"?"IMAGE STORY":"TEXT STORY";
+  if(storyTypeChooser)storyTypeChooser.hidden=true;
+  if(storyEditorWorkspace)storyEditorWorkspace.hidden=false;
+  const pick=document.getElementById("storyImagePickButton");if(pick)pick.hidden=storyEditorKind!=="image"||!!(storyImageUrlInput?.value||storyImageFile?.files?.length);
+  const move=document.getElementById("storyMoveText");if(move)move.hidden=storyEditorKind!=="image"||!storyTextArea?.value.trim();
+}
+function showStoryTypeChooser(){
+  if(storyTypeChooser)storyTypeChooser.hidden=false;
+  if(storyEditorWorkspace)storyEditorWorkspace.hidden=true;
+  document.getElementById("storyCreateDialog").classList.remove("story-kind-image","story-kind-text");
+}
+document.getElementById("storyChooseText")?.addEventListener("click",()=>setStoryEditorKind("text"));
+document.getElementById("storyChooseImage")?.addEventListener("click",()=>{setStoryEditorKind("image");storyImageFile?.click();});
+document.getElementById("storyImagePickButton")?.addEventListener("click",()=>storyImageFile?.click());
+document.getElementById("storyBackToChooser")?.addEventListener("click",()=>{stopStoryMusicPreview();showStoryTypeChooser();});
+document.getElementById("storyMoveText")?.addEventListener("click",event=>{
+  storyTextDragEnabled=!storyTextDragEnabled;event.currentTarget.classList.toggle("active",storyTextDragEnabled);
+  event.currentTarget.textContent=storyTextDragEnabled?"✓ Move text: ON":"↕ Move text";
+  document.getElementById("storyPreviewCanvas")?.classList.toggle("story-text-move-mode",storyTextDragEnabled);
+});
+function applyStoryTextPosition(x,y){
+  const left=Math.max(8,Math.min(92,Number(x)||50)),top=Math.max(8,Math.min(92,Number(y)||50));
+  if(storyTextXInput)storyTextXInput.value=String(left);if(storyTextYInput)storyTextYInput.value=String(top);
+  if(storyTextArea){storyTextArea.style.position="absolute";storyTextArea.style.left=left+"%";storyTextArea.style.top=top+"%";storyTextArea.style.transform="translate(-50%,-50%)";storyTextArea.style.width="82%";}
+}
+let storyDragPointer=null;
+document.getElementById("storyPreviewCanvas")?.addEventListener("pointerdown",event=>{
+  if(!storyTextDragEnabled||!storyTextArea||!storyTextArea.value.trim())return;
+  if(event.target!==storyTextArea&&!storyTextArea.contains(event.target))return;
+  event.preventDefault();storyDragPointer=event.pointerId;event.currentTarget.setPointerCapture(event.pointerId);
+});
+document.getElementById("storyPreviewCanvas")?.addEventListener("pointermove",event=>{
+  if(!storyTextDragEnabled||storyDragPointer!==event.pointerId)return;
+  const rect=event.currentTarget.getBoundingClientRect();
+  applyStoryTextPosition((event.clientX-rect.left)/rect.width*100,(event.clientY-rect.top)/rect.height*100);
+});
+document.getElementById("storyPreviewCanvas")?.addEventListener("pointerup",event=>{if(storyDragPointer===event.pointerId)storyDragPointer=null;});
+document.getElementById("storyPreviewCanvas")?.addEventListener("pointercancel",()=>{storyDragPointer=null;});
+storyTextArea?.addEventListener("input",()=>{const move=document.getElementById("storyMoveText");if(move)move.hidden=storyEditorKind!=="image"||!storyTextArea.value.trim();});
+storyImageFile?.addEventListener("change",()=>{const file=storyImageFile.files?.[0];if(!file)return;if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>5*1024*1024){const status=document.getElementById("storyCreateStatus");if(status)status.textContent="JPG, PNG ya WebP photo select karein (maximum 5 MB).";storyImageFile.value="";return;}setStoryEditorKind("image");setStoryImagePreview(URL.createObjectURL(file));if(storyImageUrlInput)storyImageUrlInput.value="";if(storyImagePathInput)storyImagePathInput.value="";});
+storyImageRemove?.addEventListener("click",()=>{if(storyImageFile)storyImageFile.value="";if(storyImageUrlInput)storyImageUrlInput.value="";if(storyImagePathInput)storyImagePathInput.value="";setStoryImagePreview("");const pick=document.getElementById("storyImagePickButton");if(pick)pick.hidden=false;storyTextDragEnabled=false;applyStoryTextPosition(50,50);const pick=document.getElementById("storyImagePickButton");if(pick)pick.hidden=false;});
 storyForm?.addEventListener("submit",async event=>{
   event.preventDefault();const status=document.getElementById("storyCreateStatus"),button=storyForm.querySelector('button[type="submit"]');
   const text=document.getElementById("storyText").value.trim(),background=document.getElementById("storyBackground").value||POST_BACKGROUNDS[4],songTitle=document.getElementById("storySongTitle").value.trim(),lyrics=document.getElementById("storySongLyrics").value.trim(),songArtist=document.getElementById("storySongArtist").value.trim(),songUrl=document.getElementById("storySongUrl").value.trim(),previewUrl=storyPreviewInput?.value.trim()||"",songArtwork=document.getElementById("storySongArtwork").value.trim(),songStart=Number(document.getElementById("storySongStart").value||0),selectedImage=storyImageFile?.files?.[0]||null;
@@ -1209,7 +1258,7 @@ storyForm?.addEventListener("submit",async event=>{
   try{
     const user=auth.currentUser,profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{},storyId=storyEditingId||doc(collection(db,"stories")).id;
     if(selectedImage){const uploaded=await uploadGramoraStoryImage(selectedImage,user.uid,storyId);imageUrl=uploaded.imageUrl;imagePath=uploaded.imagePath;}
-    const storyData={text,lyrics,background,songTitle,songArtist,songUrl,previewUrl,songArtwork,songStart,imageUrl,imagePath};
+    const storyData={text,lyrics,background,songTitle,songArtist,songUrl,previewUrl,songArtwork,songStart,imageUrl,imagePath,textX:Number(storyTextXInput?.value||50),textY:Number(storyTextYInput?.value||50)};
     if(storyEditingId){await updateDoc(doc(db,"stories",storyEditingId),storyData);storyEditingId=null;status.textContent="Story update ho gayi!";}
     else{await setDoc(doc(db,"stories",storyId),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",...storyData,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)});status.textContent="Story share ho gayi!";}
     storyForm.reset();if(storyImageUrlInput)storyImageUrlInput.value="";if(storyImagePathInput)storyImagePathInput.value="";setStoryImagePreview("");setStoryEditingMode(true);if(storyEditorDone)storyEditorDone.textContent="Done";if(storyCharCount)storyCharCount.textContent="0";if(storyTextArea){storyTextArea.style.font="";storyTextArea.style.color="#fff";storyTextArea.style.textAlign="center";}document.querySelectorAll(".gramora-story-style-strip [data-story-font]").forEach((item,index)=>item.classList.toggle("active",index===0));stopStoryMusicPreview();if(storyMusicAttached)storyMusicAttached.hidden=true;if(storyMusicSelection)storyMusicSelection.hidden=true;document.getElementById("storyLyricsEditor").hidden=true;document.getElementById("storyLyricsPreview").hidden=true;storySongResults?.replaceChildren();document.getElementById("storyCreateDialog").close();document.getElementById("storyCreateDialog").querySelector("h2").textContent="Create a story";
