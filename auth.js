@@ -1652,15 +1652,18 @@ async function uploadGramoraPostPhotos(files,uid,postId){
   }
   return {photoUrls,photoPaths};
 }
+function createPostMusicLabel(data){
+  if(!data?.musicTitle)return null;
+  const track=document.createElement("span");track.className="post-music-track";
+  const icon=document.createElement("span");icon.className="post-music-track-icon";icon.textContent="♫";
+  const details=document.createElement("span");details.className="post-music-track-title";
+  details.textContent=data.musicTitle+(data.musicArtist?" · "+data.musicArtist:"");
+  track.append(icon,details);return track;
+}
 function createPostMusicElement(data){
   const preview=data?.musicPreviewUrl||"";
   if(!/^https:\/\//.test(preview))return null;
-  const wrap=document.createElement("div");wrap.className="gramora-post-music-player";
-  const artwork=document.createElement("img");artwork.src=data.musicArtwork||"";artwork.alt="";artwork.loading="lazy";
-  const info=document.createElement("span");info.className="gramora-post-music-player-info";
-  const title=document.createElement("b");title.textContent=data.musicTitle||"Song";
-  const artist=document.createElement("small");artist.textContent=data.musicArtist||"";
-  info.append(title,artist);
+  const wrap=document.createElement("div");wrap.className="gramora-post-music-overlay";
   const audio=document.createElement("audio");audio.preload="none";audio.src=preview;audio.muted=true;audio.loop=true;audio.playsInline=true;audio.setAttribute("aria-label","Post music: "+(data.musicTitle||"song"));
   const sound=document.createElement("button");sound.type="button";sound.className="gramora-post-music-sound";sound.setAttribute("aria-label","Turn sound on");sound.setAttribute("aria-pressed","false");
   const speakerOff='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"></path><path d="m16 9 5 6m0-6-5 6"></path></svg>';
@@ -1670,21 +1673,21 @@ function createPostMusicElement(data){
   sound.addEventListener("click",async()=>{
     const enable=audio.muted;
     if(enable){
-      if(activePostMusicAudio&&activePostMusicAudio!==audio){activePostMusicAudio.pause();activePostMusicAudio.muted=true;const oldButton=activePostMusicAudio.closest(".gramora-post-music-player")?.querySelector(".gramora-post-music-sound");if(oldButton){oldButton.innerHTML=speakerOff;oldButton.setAttribute("aria-label","Turn sound on");oldButton.setAttribute("aria-pressed","false");oldButton.classList.remove("is-sound-on");}}
+      if(activePostMusicAudio&&activePostMusicAudio!==audio){activePostMusicAudio.pause();activePostMusicAudio.muted=true;const oldButton=activePostMusicAudio.closest(".gramora-post-music-overlay")?.querySelector(".gramora-post-music-sound");if(oldButton){oldButton.innerHTML=speakerOff;oldButton.setAttribute("aria-label","Turn sound on");oldButton.setAttribute("aria-pressed","false");oldButton.classList.remove("is-sound-on");}}
       activePostMusicAudio=audio;setSound(true);
       try{await audio.play();}catch(error){setSound(false);}
     }else{setSound(false);}
   });
   audio.addEventListener("play",()=>{activePostMusicAudio=audio;});
   audio.addEventListener("pause",()=>{if(activePostMusicAudio===audio)activePostMusicAudio=null;});
-  wrap.append(artwork,info,sound,audio);
+  wrap.append(sound,audio);
   if("IntersectionObserver" in window){
     if(!postMusicObserver)postMusicObserver=new IntersectionObserver(entries=>{
       entries.forEach(entry=>{
-        const player=entry.target,button=player.closest(".gramora-post-music-player")?.querySelector(".gramora-post-music-sound");
+        const player=entry.target,button=player.closest(".gramora-post-music-overlay")?.querySelector(".gramora-post-music-sound");
         if(entry.isIntersecting&&entry.intersectionRatio>=0.55){
-          if(activePostMusicAudio&&activePostMusicAudio!==player){activePostMusicAudio.pause();const oldButton=activePostMusicAudio.closest(".gramora-post-music-player")?.querySelector(".gramora-post-music-sound");if(oldButton){oldButton.innerHTML=speakerOff;oldButton.setAttribute("aria-label","Turn sound on");oldButton.setAttribute("aria-pressed","false");oldButton.classList.remove("is-sound-on");}}
-          player.muted=true;button?.classList.remove("is-sound-on");if(button){button.innerHTML=speakerOff;button.setAttribute("aria-label","Turn sound on");button.setAttribute("aria-pressed","false");}activePostMusicAudio=player;const attempt=player.play();if(attempt?.catch)attempt.catch(()=>{});
+          if(activePostMusicAudio&&activePostMusicAudio!==player){activePostMusicAudio.pause();activePostMusicAudio.muted=true;const oldButton=activePostMusicAudio.closest(".gramora-post-music-overlay")?.querySelector(".gramora-post-music-sound");if(oldButton){oldButton.innerHTML=speakerOff;oldButton.setAttribute("aria-label","Turn sound on");oldButton.setAttribute("aria-pressed","false");oldButton.classList.remove("is-sound-on");}}
+          player.muted=true;if(button){button.innerHTML=speakerOff;button.setAttribute("aria-label","Turn sound on");button.setAttribute("aria-pressed","false");button.classList.remove("is-sound-on");}activePostMusicAudio=player;const attempt=player.play();if(attempt?.catch)attempt.catch(()=>{});
         }else if(!entry.isIntersecting&&activePostMusicAudio===player){player.pause();player.muted=true;if(button){button.innerHTML=speakerOff;button.setAttribute("aria-label","Turn sound on");button.setAttribute("aria-pressed","false");button.classList.remove("is-sound-on");}}
       });
     },{threshold:[0,0.55]});
@@ -1745,8 +1748,8 @@ function renderPosts(docs){
     const identity=document.createElement("span");identity.className="post-author-identity";
     const name=document.createElement("b");name.textContent=authorName||"GRAMORA member";
     const meta=document.createElement("small");meta.textContent=(authorUsername?"@"+authorUsername+" · ":"")+formatPostDate(isRepost?data.originalCreatedAt:data.createdAt);
-    identity.append(name,meta);head.append(avatar,identity);head.addEventListener("click",()=>{const viewer=auth?.currentUser;if(viewer&&authorUid)loadPublicProfile(viewer,authorUid);});
-    const content=document.createElement("div");content.className="post-content";const postPhotos=isRepost?(data.originalPhotoUrls||[]):(data.photoUrls||[]);const media=createPostMediaElement(postPhotos);if(media)content.append(media);const music=createPostMusicElement(isRepost?{musicTitle:data.originalMusicTitle,musicArtist:data.originalMusicArtist,musicArtwork:data.originalMusicArtwork,musicPreviewUrl:data.originalMusicPreviewUrl}:data);if(music)content.append(music);const caption=document.createElement("p");caption.className=postPhotos.length?"post-text post-caption-inline":"post-text post-text-card";caption.textContent=isRepost?(data.originalText||""):(data.text||"");if(!postPhotos.length)caption.style.background=isRepost?(data.originalBackground||POST_BACKGROUNDS[4]):(data.background||POST_BACKGROUNDS[4]);if(caption.textContent)content.append(caption);
+    const postMusicData=isRepost?{musicTitle:data.originalMusicTitle,musicArtist:data.originalMusicArtist,musicArtwork:data.originalMusicArtwork,musicPreviewUrl:data.originalMusicPreviewUrl}:data;identity.append(name,meta);const musicLabel=createPostMusicLabel(postMusicData);if(musicLabel)identity.append(musicLabel);head.append(avatar,identity);head.addEventListener("click",()=>{const viewer=auth?.currentUser;if(viewer&&authorUid)loadPublicProfile(viewer,authorUid);});
+    const content=document.createElement("div");content.className="post-content";const postPhotos=isRepost?(data.originalPhotoUrls||[]):(data.photoUrls||[]);const media=createPostMediaElement(postPhotos);const music=createPostMusicElement(postMusicData);if(media){if(music)media.append(music);content.append(media);}const caption=document.createElement("p");caption.className=postPhotos.length?"post-text post-caption-inline":"post-text post-text-card";caption.textContent=isRepost?(data.originalText||""):(data.text||"");if(!postPhotos.length)caption.style.background=isRepost?(data.originalBackground||POST_BACKGROUNDS[4]):(data.background||POST_BACKGROUNDS[4]);if(caption.textContent){if(!postPhotos.length&&music)caption.append(music);content.append(caption);}
     const actions=document.createElement("div");actions.className="post-actions";
     const like=document.createElement("button");like.className="like";like.type="button";like.dataset.likeCount="";
     const comment=document.createElement("button");comment.className="post-comment-open";comment.type="button";comment.innerHTML='<span class="post-action-count"></span>';
@@ -2857,7 +2860,7 @@ function openPostEditor(post){
   document.getElementById("postStatus").textContent="";document.getElementById("createDialog").showModal();
 }
 function openPostDetail(post,canEdit=false){
-  currentViewedPost=post;const card=document.getElementById("postDetailCard");card.replaceChildren();card.classList.toggle("has-photo-post",!!post.photoUrls?.length);card.style.background=post.photoUrls?.length?"transparent":(post.background||POST_BACKGROUNDS[4]);const media=createPostMediaElement(post.photoUrls||[],"post-detail-media");if(media)card.append(media);const music=createPostMusicElement(post);if(music)card.append(music);if(post.text){const caption=document.createElement("p");caption.textContent=post.text;caption.className="post-detail-caption";card.append(caption);}
+  currentViewedPost=post;const card=document.getElementById("postDetailCard");card.replaceChildren();card.classList.toggle("has-photo-post",!!post.photoUrls?.length);card.style.background=post.photoUrls?.length?"transparent":(post.background||POST_BACKGROUNDS[4]);const media=createPostMediaElement(post.photoUrls||[],"post-detail-media");const musicLabel=createPostMusicLabel(post);if(musicLabel){const byline=document.getElementById("postDetailByline");byline.append(document.createTextNode(" · "));byline.append(musicLabel);}const music=createPostMusicElement(post);if(media){if(music)media.append(music);card.append(media);}if(post.text){const caption=document.createElement("p");caption.textContent=post.text;caption.className="post-detail-caption";if(!media&&music)caption.append(music);card.append(caption);}
   document.getElementById("postDetailByline").textContent=(post.displayName||"GRAMORA member")+(post.username?" · @"+post.username:"")+" · "+formatPostDate(post.createdAt);
   document.getElementById("postDetailEdit").hidden=!canEdit;document.getElementById("postDetailDelete").hidden=!canEdit;
   const dialog=document.getElementById("postDetailDialog");dialog.dataset.postId=post.id;dialog.showModal();loadPostEngagement(post,dialog);
