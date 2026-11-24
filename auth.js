@@ -2784,7 +2784,7 @@ function openPostEditor(post){
   document.getElementById("postStatus").textContent="";document.getElementById("createDialog").showModal();
 }
 function openPostDetail(post,canEdit=false){
-  currentViewedPost=post;const card=document.getElementById("postDetailCard");card.replaceChildren();card.style.background=post.photoUrls?.length?"transparent":(post.background||POST_BACKGROUNDS[4]);const media=createPostMediaElement(post.photoUrls||[],"post-detail-media");if(media)card.append(media);if(post.text){const caption=document.createElement("p");caption.textContent=post.text;caption.className="post-detail-caption";card.append(caption);}
+  currentViewedPost=post;const card=document.getElementById("postDetailCard");card.replaceChildren();card.classList.toggle("has-photo-post",!!post.photoUrls?.length);card.style.background=post.photoUrls?.length?"transparent":(post.background||POST_BACKGROUNDS[4]);const media=createPostMediaElement(post.photoUrls||[],"post-detail-media");if(media)card.append(media);if(post.text){const caption=document.createElement("p");caption.textContent=post.text;caption.className="post-detail-caption";card.append(caption);}
   document.getElementById("postDetailByline").textContent=(post.displayName||"GRAMORA member")+(post.username?" · @"+post.username:"")+" · "+formatPostDate(post.createdAt);
   document.getElementById("postDetailEdit").hidden=!canEdit;document.getElementById("postDetailDelete").hidden=!canEdit;
   const dialog=document.getElementById("postDetailDialog");dialog.dataset.postId=post.id;dialog.showModal();loadPostEngagement(post,dialog);
