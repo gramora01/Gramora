@@ -1,8 +1,8 @@
-const CACHE_NAME = "gramora-shell-v165-highlight-light-fix";
+const CACHE_NAME = "gramora-shell-v166-empty-highlights-light";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=171",
+  "./style.css?v=172",
   "./script.js?v=74",
   "./auth.js?v=257",
   "./auth.css?v=63",
