@@ -657,7 +657,7 @@ function openStoryViewer(docs,id){
   const ownerEditAction=ownerMenu?.querySelector('[data-story-menu-action="edit"]');if(ownerEditAction)ownerEditAction.onclick=()=>{ownerMenu.hidden=true;editStoryButton?.click();};
   const ownerDeleteAction=ownerMenu?.querySelector('[data-story-menu-action="delete"]');if(ownerDeleteAction)ownerDeleteAction.onclick=()=>{ownerMenu.hidden=true;deleteButton?.click();};
   content.textContent=data.text||"";
-  content.style.left=(Number(data.textX??50))+"%";content.style.top=(Number(data.textY??50))+"%";content.style.transform="translate(-50%,-50%)";content.style.position="absolute";content.style.width="82%";
+  if(data.imageUrl){content.style.left=(Number(data.textX??50))+"%";content.style.top=(Number(data.textY??50))+"%";content.style.transform="translate(-50%,-50%)";content.style.position="absolute";content.style.width="82%";}else{content.style.removeProperty("left");content.style.removeProperty("top");content.style.removeProperty("transform");content.style.removeProperty("position");content.style.removeProperty("width");}
   content.style.background=data.imageUrl?"transparent":(data.background||POST_BACKGROUNDS[4]);
   const viewerImage=document.getElementById("storyViewerImage");if(viewerImage){viewerImage.src=data.imageUrl||"";viewerImage.hidden=!data.imageUrl;}
   document.getElementById("storyViewerStage")?.classList.toggle("has-story-image",!!data.imageUrl);
@@ -1210,6 +1210,7 @@ function setStoryEditorKind(kind){
   if(storyTypeChooser)storyTypeChooser.hidden=true;
   if(storyEditorWorkspace)storyEditorWorkspace.hidden=false;
   if(storyEditorKind==="image")applyStoryTextPosition(storyTextXInput?.value||50,storyTextYInput?.value||50);
+  else if(storyTextArea){storyTextArea.style.position="";storyTextArea.style.left="";storyTextArea.style.top="";storyTextArea.style.transform="";storyTextArea.style.width="";}
   const pick=document.getElementById("storyImagePickButton");if(pick)pick.hidden=storyEditorKind!=="image"||!!(storyImageUrlInput?.value||storyImageFile?.files?.length);
   const move=document.getElementById("storyMoveText");if(move)move.hidden=storyEditorKind!=="image"||!storyTextArea?.value.trim();
 }
