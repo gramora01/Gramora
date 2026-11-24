@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v138-feed-lazy-hydration";
+const CACHE_NAME = "gramora-shell-v139-post-music-autoplay";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=162",
+  "./style.css?v=163",
   "./script.js?v=74",
-  "./auth.js?v=245",
+  "./auth.js?v=246",
   "./auth.css?v=62",
   "./story-creator.css?v=3",
   "./story-creator.js?v=3",
