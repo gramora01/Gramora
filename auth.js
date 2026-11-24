@@ -420,6 +420,19 @@ let activeStoriesUnsubscribe=null;
 let activeStoryDocs=[];
 let storyFeedGeneration=0;
 const storyProfileCache=new Map();
+const storyImagePreloadCache=new Map();
+let storyOpenRequest=0;
+function preloadStoryImage(url){
+  if(!url)return Promise.resolve(false);
+  if(storyImagePreloadCache.has(url))return storyImagePreloadCache.get(url);
+  const task=new Promise(resolve=>{
+    const image=new Image();image.decoding="async";
+    image.onload=async()=>{try{if(image.decode)await image.decode();}catch(error){}resolve(true);};
+    image.onerror=()=>resolve(false);image.src=url;
+    if(image.complete&&image.naturalWidth>0){if(image.decode)image.decode().catch(()=>{}).finally(()=>resolve(true));else resolve(true);}
+  });
+  storyImagePreloadCache.set(url,task);return task;
+}
 function storySeenKey(id){return "gramora-story-seen-"+(auth?.currentUser?.uid||"guest")+"-"+id;}
 function storyWasSeen(id){try{return localStorage.getItem(storySeenKey(id))==="1";}catch(error){return false;}}
 function markStorySeen(id){try{localStorage.setItem(storySeenKey(id),"1");}catch(error){}}
@@ -502,6 +515,7 @@ function makeStoryAvatar(ring,profile,name){
 }
 function renderStories(docs){
   const strip=document.querySelector(".stories");if(!strip)return;
+  docs.forEach(item=>{const url=item.data().imageUrl;if(url)preloadStoryImage(url);});
   strip.replaceChildren();
   const current=auth?.currentUser;
   const ownStories=docs.filter(item=>item.data().uid===current?.uid)
@@ -627,12 +641,15 @@ document.getElementById("storyViewerDialog")?.addEventListener("close",()=>{
 });
 document.getElementById("storyViewerPrevious")?.addEventListener("click",()=>navigateStoryViewer(-1));
 document.getElementById("storyViewerNext")?.addEventListener("click",()=>navigateStoryViewer(1));
-function openStoryViewer(docs,id){
+async function openStoryViewer(docs,id){
+  const storyDoc=docs.find(item=>item.id===id);if(!storyDoc)return;
+  const data=storyDoc.data(),dialog=document.getElementById("storyViewerDialog");
+  const openRequest=++storyOpenRequest;
+  if(data.imageUrl)await preloadStoryImage(data.imageUrl);
+  if(openRequest!==storyOpenRequest)return;
   const activitySheet=document.getElementById("storyActivitySheet");
   if(activitySheet)activitySheet.hidden=true;
   storyViewerPaused=false;
-  const storyDoc=docs.find(item=>item.id===id);if(!storyDoc)return;
-  const data=storyDoc.data(),dialog=document.getElementById("storyViewerDialog");
   storyViewerSequence=dialog._highlightStories?.length?dialog._highlightStories:docs.filter(item=>item.data().uid===data.uid).sort((a,b)=>(a.data().createdAt?.toMillis?.()||0)-(b.data().createdAt?.toMillis?.()||0));
   storyViewerIndex=storyViewerSequence.findIndex(item=>item.id===id);if(storyViewerIndex<0)storyViewerIndex=0;
   dialog.dataset.storyId=id;
@@ -675,14 +692,14 @@ function openStoryViewer(docs,id){
   const viewerImage=document.getElementById("storyViewerImage");
   const viewerStage=document.getElementById("storyViewerStage");
   if(viewerImage){
-    viewerImage.onload=null;viewerImage.onerror=null;viewerImage.hidden=true;
+    viewerImage.onload=null;viewerImage.onerror=null;
     if(data.imageUrl){
-      viewerStage?.classList.add("story-image-loading");
-      viewerImage.onload=()=>{if(dialog.dataset.storyId!==id)return;viewerImage.hidden=false;viewerStage?.classList.remove("story-image-loading");};
-      viewerImage.onerror=()=>{if(dialog.dataset.storyId===id)viewerStage?.classList.remove("story-image-loading");};
-      viewerImage.src=data.imageUrl;
-      if(viewerImage.complete&&viewerImage.naturalWidth>0){viewerImage.hidden=false;viewerStage?.classList.remove("story-image-loading");}
-    }else{viewerImage.removeAttribute("src");viewerStage?.classList.remove("story-image-loading");}
+      viewerImage.src=data.imageUrl;viewerImage.hidden=false;
+      viewerStage?.classList.remove("story-image-loading");
+    }else{
+      viewerImage.hidden=true;viewerImage.removeAttribute("src");
+      viewerStage?.classList.remove("story-image-loading");
+    }
   }
   viewerStage?.classList.toggle("has-story-image",!!data.imageUrl);
   viewerStage?.classList.remove("story-viewer-enter");void viewerStage?.offsetWidth;viewerStage?.classList.add("story-viewer-enter");
