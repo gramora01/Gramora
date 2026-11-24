@@ -47,3 +47,27 @@
 #storyViewerStage.has-story-image #storyViewerText{background:transparent!important;position:relative;z-index:2;text-shadow:0 2px 8px #000b}
 #storyViewerStage.has-story-image #storyViewerLyrics{z-index:3}
 #storyViewerStage.has-story-image .gramora-story-tapzone{z-index:5}
+
+/* Separate Instagram-style text and photo story workspaces */
+#storyCreateDialog .gramora-story-type-chooser{min-height:70vh;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:28px;background:#111;color:#fff}
+#storyCreateDialog .gramora-story-type-chooser[hidden],#storyCreateDialog #storyEditorWorkspace[hidden]{display:none!important}
+#storyCreateDialog .gramora-story-type-chooser h2{font-size:25px;margin:0}
+#storyCreateDialog .gramora-story-type-chooser p{opacity:.7;margin:0 0 14px}
+#storyCreateDialog .gramora-story-type-chooser button{display:grid;grid-template-columns:54px 1fr;grid-template-rows:auto auto;gap:3px 12px;align-items:center;text-align:left;padding:18px;border:1px solid #ffffff30;border-radius:16px;background:#ffffff12;color:#fff}
+#storyCreateDialog .gramora-story-type-chooser button>span{grid-row:1/3;font-size:30px}
+#storyCreateDialog .gramora-story-type-chooser button b{font-size:16px}
+#storyCreateDialog .gramora-story-type-chooser button small{opacity:.7}
+#storyCreateDialog .gramora-story-topbar #storyBackToChooser{font-size:24px;padding:0 10px}
+#storyCreateDialog .gramora-story-move-text,#storyCreateDialog .gramora-story-image-pick{position:absolute;z-index:8;right:12px;top:64px;border:1px solid #ffffff55;border-radius:22px;padding:9px 13px;background:#111b;color:#fff}
+#storyCreateDialog .gramora-story-move-text.active{background:#fff;color:#111}
+#storyCreateDialog .gramora-story-image-pick[hidden],#storyCreateDialog .gramora-story-move-text[hidden]{display:none!important}
+#storyCreateDialog.story-kind-image #storyBackgroundPicker,
+#storyCreateDialog.story-kind-image .gramora-story-tools-label:nth-of-type(2){display:none!important}
+#storyCreateDialog.story-kind-image .gramora-story-style-strip{display:flex}
+#storyCreateDialog.story-kind-image #storyText{background:transparent!important;resize:none}
+#storyCreateDialog.story-kind-image .gramora-story-tools{gap:8px}
+#storyCreateDialog.story-kind-text #storyImagePickButton,
+#storyCreateDialog.story-kind-text #storyMoveText{display:none!important}
+#storyCreateDialog #storyPreviewCanvas.story-text-move-mode #storyText{outline:2px dashed #fff!important;cursor:move;touch-action:none;user-select:none}
+#storyCreateDialog .gramora-story-preview{touch-action:pan-y}
+#storyViewerStage.has-story-image #storyViewerText{pointer-events:none}
