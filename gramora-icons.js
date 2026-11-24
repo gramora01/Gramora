@@ -70,7 +70,8 @@ keep.forEach(child=>node.append(child));
 node.dataset.gramoraIcon=name;
 }
 function scan(root=document){
-const nodes=root?.nodeType===1?[root,...root.querySelectorAll("*")]:[...root.querySelectorAll("*")];
+root=root||document;
+const nodes=root.nodeType===1?[root,...root.querySelectorAll("*")]:[...root.querySelectorAll("*")];
 const find=selector=>nodes.filter(node=>node.matches(selector));
 find(".nav-icon:not(.mobile-profile-avatar)").forEach(n=>{const v=n.closest(".nav")?.dataset.view;const m={home:"home",explore:"search",messages:"messages",saved:"bookmark",profile:"profile"}[v];if(m)set(n,m);});
 find("#topCreate,.mobile-create > span,.sidebar-create > span:first-child").forEach(n=>set(n,"plus"));
