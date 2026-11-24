@@ -824,6 +824,11 @@ async function openStoryActivitySheet(storyId,ownerUid){
     if(!list)return;
     list.replaceChildren();
     if(!entries.length){const empty=document.createElement("p");empty.className="gramora-story-no-viewers";empty.textContent="No viewers yet";list.append(empty);return;}
+    // Read the owner's likes as a permitted list query. Do not get() a possibly
+    // missing per-viewer like document: Firestore may deny that missing-document read.
+    const likesSnap=await getDocs(query(collection(db,"storyLikes"),where("storyUid","==",ownerUid)));
+    const likedViewerUids=new Set(likesSnap.docs.filter(like=>like.data().storyId===storyId).map(like=>like.data().uid));
+    if(dialog.dataset.storyId!==storyId||sheet.hidden)return;
     for(const item of entries){
       const data=item.data();if(!data.uid)continue;
       const profileSnap=await getDoc(doc(db,"userProfiles",data.uid)),profile=profileSnap.exists()?profileSnap.data():{};
@@ -835,8 +840,7 @@ async function openStoryActivitySheet(storyId,ownerUid){
       const name=document.createElement("strong");name.textContent=profile.displayName||data.displayName||"GRAMORA member";
       const id=document.createElement("small");id.textContent="@"+username;
       info.append(name,id);row.append(avatar,info);
-      const likeSnap=await getDoc(doc(db,"storyLikes",storyId+"_"+data.uid));
-      if(likeSnap.exists()){const heart=document.createElement("span");heart.className="gramora-story-viewer-like-heart";heart.textContent="♥";heart.setAttribute("aria-label","Liked your story");avatar.append(heart);}
+      if(likedViewerUids.has(data.uid)){const heart=document.createElement("span");heart.className="gramora-story-viewer-like-heart";heart.textContent="♥";heart.setAttribute("aria-label","Liked your story");avatar.append(heart);}
       row.addEventListener("click",async()=>{closeStoryActivitySheet();dialog.close();await openPersonProfile(data.uid);});
       list.append(row);
     }
