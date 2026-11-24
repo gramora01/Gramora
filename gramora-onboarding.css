@@ -1,0 +1,37 @@
+/* GRAMORA welcome tour + ambient motion layer */
+:root{--gm-motion-a:rgba(131,58,180,.20);--gm-motion-b:rgba(225,48,108,.16);--gm-motion-c:rgba(79,91,213,.13)}
+body{position:relative;isolation:isolate}
+body::before,body::after{content:"";position:fixed;z-index:-1;pointer-events:none;width:min(62vw,620px);height:min(62vw,620px);border-radius:50%;filter:blur(75px);opacity:.45;will-change:transform}
+body::before{top:-18%;left:-18%;background:radial-gradient(circle,var(--gm-motion-a),transparent 68%);animation:gm-ambient-drift 19s ease-in-out infinite alternate}
+body::after{right:-20%;bottom:-22%;background:radial-gradient(circle,var(--gm-motion-b),transparent 68%);animation:gm-ambient-drift 23s ease-in-out infinite alternate-reverse}
+body.light{--gm-motion-a:rgba(131,58,180,.12);--gm-motion-b:rgba(225,48,108,.10);--gm-motion-c:rgba(79,91,213,.09)}
+@keyframes gm-ambient-drift{0%{transform:translate3d(0,0,0) scale(.92)}50%{transform:translate3d(9vw,7vh,0) scale(1.08)}100%{transform:translate3d(-3vw,12vh,0) scale(1)}}
+button,.create-gallery-button,.nav,.story,.post-actions button{ -webkit-tap-highlight-color:transparent}
+button:not(:disabled){transition:transform .18s cubic-bezier(.2,.8,.2,1),filter .18s ease,box-shadow .2s ease}
+button:active:not(:disabled){transform:scale(.96);filter:brightness(1.08)}
+.gm-help-button{position:fixed;z-index:35;right:18px;bottom:calc(88px + env(safe-area-inset-bottom));width:42px;height:42px;border:1px solid #ffffff55;border-radius:50%;background:linear-gradient(145deg,#fa7e1e,#d62976 58%,#833ab4);color:#fff;font-size:20px;font-weight:800;box-shadow:0 7px 20px #d6297650,inset 0 1px 2px #ffffff99;animation:gm-help-bob 3s ease-in-out infinite}
+@keyframes gm-help-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.gm-tour-dialog{width:min(92vw,440px);padding:0;overflow:hidden;border:1px solid #ffffff28;border-radius:25px;background:linear-gradient(145deg,#1b1b28,#10121a);color:#fff;box-shadow:0 28px 90px #0009}
+.gm-tour-dialog::backdrop{background:#05050dcc;backdrop-filter:blur(10px)}
+body.light .gm-tour-dialog{background:linear-gradient(145deg,#fff,#f5f0fb);color:#242431}
+.gm-tour-top{display:flex;align-items:center;justify-content:space-between;padding:19px 21px 0}
+.gm-tour-brand{display:flex;align-items:center;gap:8px;font-weight:800;letter-spacing:.5px}
+.gm-tour-mark{display:grid;place-items:center;width:30px;height:30px;border-radius:11px;background:linear-gradient(135deg,#feda75,#d62976 58%,#833ab4);box-shadow:0 5px 14px #d6297640}
+.gm-tour-skip{border:0;background:transparent;color:#c5a9db;font-size:12px;font-weight:700;padding:8px}
+.gm-tour-body{padding:24px 25px 21px;text-align:center}
+.gm-tour-icon{display:grid;place-items:center;width:78px;height:78px;margin:0 auto 18px;border-radius:25px;background:linear-gradient(145deg,#fa7e1e33,#d6297640,#833ab433);border:1px solid #ffffff20;font-size:35px;box-shadow:inset 0 1px #ffffff30,0 12px 28px #833ab425;animation:gm-tour-icon-float 3s ease-in-out infinite}
+@keyframes gm-tour-icon-float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}
+.gm-tour-eyebrow{margin:0 0 8px;color:#e879a6;font-size:10px;font-weight:800;letter-spacing:2px}
+.gm-tour-title{margin:0 0 10px;font:800 25px/1.18 Manrope, sans-serif;letter-spacing:-.6px}
+.gm-tour-copy{max-width:340px;margin:0 auto;color:#b9bac5;font-size:14px;line-height:1.65}
+body.light .gm-tour-copy{color:#666779}
+.gm-tour-dots{display:flex;justify-content:center;gap:7px;margin:21px 0 19px}
+.gm-tour-dot{width:7px;height:7px;border-radius:99px;background:#777384;transition:width .2s ease,background .2s ease}
+.gm-tour-dot.active{width:23px;background:linear-gradient(90deg,#fa7e1e,#d62976,#833ab4)}
+.gm-tour-actions{display:flex;gap:10px}
+.gm-tour-secondary,.gm-tour-next{flex:1;min-height:46px;border-radius:13px;font-weight:800}
+.gm-tour-secondary{border:1px solid #ffffff26;background:#ffffff0b;color:inherit}
+.gm-tour-next{border:1px solid #ffffff40;background:linear-gradient(120deg,#fa7e1e,#d62976 58%,#833ab4);color:white;box-shadow:0 5px 0 #64275f,0 9px 18px #d6297635}
+.gm-tour-next:active{transform:translateY(3px)!important;box-shadow:0 2px 0 #64275f!important}
+@media(max-width:680px){.gm-help-button{right:13px;bottom:calc(82px + env(safe-area-inset-bottom));width:40px;height:40px}.gm-tour-dialog{border-radius:22px}.gm-tour-body{padding:22px 21px 20px}.gm-tour-title{font-size:23px}}
+@media(prefers-reduced-motion:reduce){body::before,body::after,.gm-help-button,.gm-tour-icon{animation:none!important}}
