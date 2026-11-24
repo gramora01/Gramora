@@ -1,4 +1,4 @@
-const CACHE_NAME = "gramora-shell-v168-private-no-highlight-row";
+const CACHE_NAME = "gramora-shell-v169-3d-social-ui";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -10,7 +10,7 @@ const APP_SHELL = [
   "./story-creator.js?v=5",
   "./gramora-icons.css?v=2",
   "./post-action-spacing.css?v=1",
-  "./public-profile-layout.css?v=2",
+  "./public-profile-layout.css?v=2",\n  "./gramora-3d-ui.css?v=1",
   "./gramora-icons.js?v=10",
   "./gramora-layout-fix.css?v=1",
   "./icons/gramora.svg",
