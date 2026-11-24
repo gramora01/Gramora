@@ -355,16 +355,21 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly([
           'uid','displayName','text','lyrics','songTitle','songArtist','songUrl','previewUrl',
-          'songArtwork','songStart','background','createdAt','expiresAt'
+          'songArtwork','songStart','background','imageUrl','imagePath','createdAt','expiresAt'
         ])
         && request.resource.data.background is string
         && request.resource.data.background.size() <= 200
+        && request.resource.data.get('imageUrl','') is string
+        && request.resource.data.get('imageUrl','').size() <= 2000
+        && request.resource.data.get('imagePath','') is string
+        && request.resource.data.get('imagePath','').size() <= 500
+        && (request.resource.data.get('imagePath','') == '' || request.resource.data.imagePath.matches(request.auth.uid + '/stories/.*'))
         && request.resource.data.text is string
         && request.resource.data.text.size() <= 500
         && request.resource.data.songTitle is string
         && request.resource.data.lyrics is string
         && request.resource.data.lyrics.size() <= 1200
-        && (request.resource.data.text.size() > 0 || request.resource.data.songTitle.size() > 0)
+        && (request.resource.data.text.size() > 0 || request.resource.data.songTitle.size() > 0 || request.resource.data.get('imageUrl','').size() > 0)
         && request.resource.data.songArtist is string
         && request.resource.data.songUrl is string
         && request.resource.data.songUrl.size() <= 500
@@ -383,16 +388,21 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'text','lyrics','background','songTitle','songArtist','songUrl','previewUrl','songArtwork','songStart'
+          'text','lyrics','background','songTitle','songArtist','songUrl','previewUrl','songArtwork','songStart','imageUrl','imagePath'
         ])
         && request.resource.data.text is string
         && request.resource.data.text.size() <= 500
         && request.resource.data.songTitle is string
         && request.resource.data.lyrics is string
         && request.resource.data.lyrics.size() <= 1200
-        && (request.resource.data.text.size() > 0 || request.resource.data.songTitle.size() > 0)
+        && (request.resource.data.text.size() > 0 || request.resource.data.songTitle.size() > 0 || request.resource.data.get('imageUrl','').size() > 0)
         && request.resource.data.background is string
         && request.resource.data.background.size() <= 200
+        && request.resource.data.get('imageUrl','') is string
+        && request.resource.data.get('imageUrl','').size() <= 2000
+        && request.resource.data.get('imagePath','') is string
+        && request.resource.data.get('imagePath','').size() <= 500
+        && (request.resource.data.get('imagePath','') == '' || request.resource.data.imagePath.matches(request.auth.uid + '/stories/.*'))
         && request.resource.data.songTitle is string
         && request.resource.data.songArtist is string
         && request.resource.data.songUrl is string
