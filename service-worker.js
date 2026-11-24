@@ -1,16 +1,16 @@
-const CACHE_NAME = "gramora-shell-v169-3d-social-ui";
+const CACHE_NAME = "gramora-shell-v170-swipe-inbox-feed-opt";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=173",
-  "./script.js?v=74",
-  "./auth.js?v=258",
+  "./script.js?v=3",
+  "./auth.js?v=259",
   "./auth.css?v=63",
   "./story-creator.css?v=8",
   "./story-creator.js?v=5",
   "./gramora-icons.css?v=2",
   "./post-action-spacing.css?v=1",
-  "./public-profile-layout.css?v=2",\n  "./gramora-3d-ui.css?v=1",
+  "./public-profile-layout.css?v=2",\n  "./gramora-3d-ui.css?v=2",
   "./gramora-icons.js?v=10",
   "./gramora-layout-fix.css?v=1",
   "./icons/gramora.svg",
