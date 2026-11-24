@@ -2018,3 +2018,30 @@ body.light.public-profile-open .ig-profile > .public-profile-highlights {
   border-top-color:#e5e6eb!important;
   border-bottom-color:#e5e6eb!important;
 }
+
+
+/* Private public-profile empty state: keep the locked content area light too. */
+body.light.public-profile-open .ig-profile-grid,
+body.light.public-profile-open .ig-profile-grid:empty,
+body.light.public-profile-open .ig-profile-grid .private-profile-notice {
+  background:#fff!important;
+  background-color:#fff!important;
+  background-image:none!important;
+  color:#626570!important;
+}
+body.light.public-profile-open .ig-profile-grid .private-profile-notice {
+  border-color:#e5e6eb!important;
+  box-shadow:none!important;
+}
+body.light.public-profile-open .ig-profile-grid .private-profile-notice strong {
+  color:#202127!important;
+}
+body.light.public-profile-open .ig-profile > .public-profile-highlights[hidden] {
+  display:none!important;
+  background:transparent!important;
+  height:0!important;
+  min-height:0!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+}
