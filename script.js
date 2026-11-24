@@ -1,6 +1,6 @@
 const dialog=document.getElementById("createDialog");
 const form=document.getElementById("postForm");
-function openComposer(){if(dialog&&!dialog.open)dialog.showModal();}
+function openComposer(){gramoraCurrentPage="create";if(dialog&&!dialog.open)dialog.showModal();}
 ["openCreate","rightCreate","rightCreateDesktop","mobileCreate","topCreate"].forEach(id=>document.getElementById(id)?.addEventListener("click",openComposer));
 // Restore the user's saved theme before wiring the theme toggle.
 const themeButton=document.getElementById("themeBtn");
@@ -105,6 +105,7 @@ function showPlaceholder(view,title){
 let gramoraCurrentPage="home";
 function openGramoraPage(view){
   if(!view)return;
+  if(view==="create"){gramoraCurrentPage="create";openComposer();return;}
   const button=document.querySelector('.mobile-nav [data-view="'+view+'"], .sidebar [data-view="'+view+'"]');
   if(button){button.click();return;}
 }
@@ -130,7 +131,7 @@ document.querySelectorAll(".nav").forEach(button=>button.addEventListener("click
     if(!startAt||!event.changedTouches.length)return;
     const touch=event.changedTouches[0],dx=touch.clientX-startX,dy=touch.clientY-startY,elapsed=Date.now()-startAt;startAt=0;
     if(elapsed>650||Math.abs(dx)<75||Math.abs(dx)<Math.abs(dy)*1.35)return;
-    const pages=["home","explore","messages","profile"],current=pages.indexOf(gramoraCurrentPage);if(current<0)return;
+    const pages=["home","explore","create","messages","profile"],current=pages.indexOf(gramoraCurrentPage);if(current<0)return;
     if(dx<0&&current<pages.length-1)openGramoraPage(pages[current+1]);
     else if(dx>0&&current>0)openGramoraPage(pages[current-1]);
   },{passive:true});
