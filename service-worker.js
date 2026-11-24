@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v186-story-switch";
+const CACHE_NAME = "gramora-shell-v187-story-no-eager-preload";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=179",
   "./script.js?v=8",
-  "./auth.js?v=268",
+  "./auth.js?v=269",
   "./auth.css?v=63",
   "./story-creator.css?v=10",
   "./story-creator.js?v=5",
