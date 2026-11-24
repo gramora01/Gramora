@@ -2601,9 +2601,10 @@ async function loadPublicProfile(viewer,targetUid){
         const raw=d.data(),isRepost=!!isRepostTab;
         const authorUid=isRepost?raw.originalUid:raw.uid;
         const originalId=isRepost?raw.originalPostId:d.id;
-        const post=isRepost?{id:originalId,uid:raw.originalUid,displayName:raw.originalDisplayName,username:raw.originalUsername,photoURL:raw.originalPhotoURL,text:raw.originalText,background:raw.originalBackground,createdAt:raw.originalCreatedAt,views:raw.originalViews??raw.views??0,pinned:raw.originalPinned===true}:{id:d.id,...raw};
+        const post=isRepost?{id:originalId,uid:raw.originalUid,displayName:raw.originalDisplayName,username:raw.originalUsername,photoURL:raw.originalPhotoURL,text:raw.originalText,photoUrls:raw.originalPhotoUrls||[],background:raw.originalBackground,createdAt:raw.originalCreatedAt,views:raw.originalViews??raw.views??0,pinned:raw.originalPinned===true}:{id:d.id,...raw};
         const wrap=document.createElement("div");wrap.className="ig-post-wrap";
         const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.dataset.postId=originalId;tile.style.background=post.background||POST_BACKGROUNDS[4];
+        if(post.photoUrls?.length){const image=document.createElement("img");image.src=post.photoUrls[0];image.alt="Post photo";image.loading="lazy";tile.append(image);}
         const copy=document.createElement("span");copy.className="ig-post-tile-copy";copy.textContent=post.text||"";
         const viewBadge=document.createElement("span");viewBadge.className="ig-post-view-badge";
         const eye=document.createElement("span");eye.className="ig-post-view-eye";
@@ -3133,7 +3134,7 @@ async function loadProfilePage(user){
         if(!posts.length){grid.innerHTML='<div class="ig-no-posts"><strong>▧</strong><b>Share your first post</b><span>When you share posts, they will appear on your profile.</span></div>';return;}
         posts.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).forEach(post=>{
           const wrap=document.createElement("div");wrap.className="ig-post-wrap";
-          const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.textContent=post.text||"";tile.style.background=post.background||POST_BACKGROUNDS[4];
+          const tile=document.createElement("button");tile.type="button";tile.className="ig-post-tile";tile.style.background=post.background||POST_BACKGROUNDS[4];if(post.photoUrls?.length){const image=document.createElement("img");image.src=post.photoUrls[0];image.alt="Post photo";image.loading="lazy";tile.append(image);}if(post.text){const copy=document.createElement("span");copy.className="ig-post-tile-copy";copy.textContent=post.text;tile.append(copy);}
           tile.addEventListener("click",()=>openPostDetail(post,true));
           wrap.append(tile);grid.append(wrap);
         });
@@ -3145,11 +3146,11 @@ async function loadProfilePage(user){
           if(snap.empty){grid.innerHTML='<div class="ig-no-posts"><strong>⟳</strong><b>No reposts yet</b><span>Posts you repost will appear here.</span></div>';return;}
           snap.docs.sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).forEach(d=>{
             const data=d.data(),wrap=document.createElement("div"),tile=document.createElement("button");wrap.className="ig-post-wrap";tile.type="button";tile.className="ig-post-tile";
-            tile.textContent=data.originalText||"Reposted post";tile.style.background=data.originalBackground||POST_BACKGROUNDS[4];
+            tile.style.background=data.originalBackground||POST_BACKGROUNDS[4];if(data.originalPhotoUrls?.length){const image=document.createElement("img");image.src=data.originalPhotoUrls[0];image.alt="Reposted photo";image.loading="lazy";tile.append(image);}const copy=document.createElement("span");copy.className="ig-post-tile-copy";copy.textContent=data.originalText||"Reposted post";tile.append(copy);
             tile.setAttribute("aria-label","Open reposted post by "+(data.originalDisplayName||"GRAMORA member"));
             tile.addEventListener("click",()=>{
               if(!data.originalPostId||!data.originalUid)return;
-              openPostDetail({id:data.originalPostId,uid:data.originalUid,displayName:data.originalDisplayName||"GRAMORA member",username:data.originalUsername||"",photoURL:data.originalPhotoURL||"",text:data.originalText||"",background:data.originalBackground||POST_BACKGROUNDS[4],createdAt:data.originalCreatedAt||data.createdAt},false);
+              openPostDetail({id:data.originalPostId,uid:data.originalUid,displayName:data.originalDisplayName||"GRAMORA member",username:data.originalUsername||"",photoURL:data.originalPhotoURL||"",text:data.originalText||"",photoUrls:data.originalPhotoUrls||[],background:data.originalBackground||POST_BACKGROUNDS[4],createdAt:data.originalCreatedAt||data.createdAt},false);
             });
             wrap.append(tile);grid.append(wrap);
           });
