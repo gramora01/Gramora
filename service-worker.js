@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v178-profile-menu-pages";
+const CACHE_NAME = "gramora-shell-v179-single-menu-close";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=173",
+  "./style.css?v=175",
   "./script.js?v=8",
-  "./auth.js?v=261",
+  "./auth.js?v=263",
   "./auth.css?v=63",
   "./story-creator.css?v=8",
   "./story-creator.js?v=5",
