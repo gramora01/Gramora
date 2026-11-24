@@ -219,7 +219,12 @@ async function refreshNotificationBadge(){
   try{
     const snap=await getDocs(query(collection(db,"notifications"),where("toUid","==",user.uid),limit(100)));
     const unread=snap.docs.filter(item=>item.data().read!==true).length;
-    button.innerHTML=unread?'<span class="notification-badge">'+(unread>99?"99+":unread)+'</span>':"";
+    // Preserve the bell SVG; update only the unread-count badge.
+    let badge=button.querySelector(":scope > .notification-badge");
+    if(unread){
+      if(!badge){badge=document.createElement("span");badge.className="notification-badge";button.append(badge);}
+      badge.textContent=unread>99?"99+":String(unread);
+    }else if(badge){badge.remove();}
     button.setAttribute("aria-label",unread?unread+" unread notifications":"Notifications");
   }catch(error){console.warn("Notification count unavailable:",error);}
 }
