@@ -1,4 +1,4 @@
-const CACHE_NAME = "gramora-shell-v200-story-pan-text-color";
+const CACHE_NAME = "gramora-shell-v201-story-pan-text-color";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,7 +6,7 @@ const APP_SHELL = [
   "./script.js?v=8",
   "./auth.js?v=278",
   "./auth.css?v=63",
-  "./story-creator.css?v=15",
+  "./story-creator.css?v=16",
   "./story-creator.js?v=10",
   "./gramora-icons.css?v=2",
   "./post-action-spacing.css?v=1",
