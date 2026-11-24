@@ -235,3 +235,12 @@ input:focus,textarea:focus,select:focus{
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* Smooth horizontal page transitions for swipe navigation */
+.gm-page-enter #feed{animation:gm-page-swipe-in .28s cubic-bezier(.22,.75,.25,1) both;}
+@keyframes gm-page-swipe-in{from{opacity:.72;transform:translateX(13px)}to{opacity:1;transform:translateX(0)}}
+.main-content{touch-action:pan-y;overscroll-behavior-x:contain;}
+.gramora-inbox{animation:gm-page-swipe-in .25s ease both;}
+.gramora-conversation{transition:transform .18s ease,box-shadow .18s ease,background .18s ease!important;}
+@media(hover:hover) and (pointer:fine){.gramora-conversation:hover{transform:translateX(3px);box-shadow:0 7px 18px rgba(131,58,180,.12)!important}}
+@media(prefers-reduced-motion:reduce){.gm-page-enter #feed,.gramora-inbox{animation:none!important}}
