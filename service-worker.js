@@ -1,4 +1,4 @@
-const CACHE_NAME = "gramora-shell-v203-story-gesture-style-fix";
+const CACHE_NAME = "gramora-shell-v204-story-touch-rework";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,8 +6,8 @@ const APP_SHELL = [
   "./script.js?v=8",
   "./auth.js?v=278",
   "./auth.css?v=63",
-  "./story-creator.css?v=18",
-  "./story-creator.js?v=12",
+  "./story-creator.css?v=19",
+  "./story-creator.js?v=13",
   "./gramora-icons.css?v=2",
   "./post-action-spacing.css?v=1",
   "./public-profile-layout.css?v=3",
