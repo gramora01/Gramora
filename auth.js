@@ -3282,7 +3282,7 @@ async function openStoryHighlightChooser(user,storyId){
           const stories=[...(data.stories||[])];
           if(stories.some(item=>item.storyId===storyId)){dialog.close();return;}
           if(stories.length>=20)throw new Error("This highlight already has 20 stories.");
-          stories.push({storyId,uid:raw.uid,displayName:raw.displayName||user.displayName||"GRAMORA member",text:raw.text||"",lyrics:raw.lyrics||"",background:raw.background||POST_BACKGROUNDS[4],songTitle:raw.songTitle||"",songArtist:raw.songArtist||"",songUrl:raw.songUrl||"",previewUrl:raw.previewUrl||"",songArtwork:raw.songArtwork||"",songStart:Number(raw.songStart||0),createdAt:raw.createdAt||null});
+          stories.push({storyId,uid:raw.uid,displayName:raw.displayName||user.displayName||"GRAMORA member",text:raw.text||"",lyrics:raw.lyrics||"",background:raw.background||POST_BACKGROUNDS[4],imageUrl:raw.imageUrl||"",imagePath:raw.imagePath||"",textX:Number(raw.textX??50),textY:Number(raw.textY??50),songTitle:raw.songTitle||"",songArtist:raw.songArtist||"",songUrl:raw.songUrl||"",previewUrl:raw.previewUrl||"",songArtwork:raw.songArtwork||"",songStart:Number(raw.songStart||0),createdAt:raw.createdAt||null});
           await updateDoc(doc(db,"storyHighlights",highlightDoc.id),{stories,coverStoryId:data.coverStoryId||stories[0]?.storyId||storyId,coverImage:data.coverImage||"",coverText:data.coverText||((stories[0]?.text||data.title||"G").slice(0,2))});
           dialog.close();await loadProfilePage(user);
         }catch(error){console.error("Add story to highlight failed:",error);alert(error.message||"Story highlight update nahi hua.");button.disabled=false;}
@@ -3348,7 +3348,7 @@ highlightForm?.addEventListener("submit",async event=>{
   const selected=highlightArchiveDocs.filter(item=>highlightSelectedIds.has(item.id));
   if(!title||title.length>24){status.textContent="Highlight name 1–24 characters ka rakhein.";return;}
   if(!selected.length||selected.length>20){status.textContent="1 se 20 stories select karein.";return;}
-  const stories=selected.map(item=>{const d=item.data();return {storyId:item.id,uid:d.uid||user.uid,displayName:d.displayName||user.displayName||"GRAMORA member",text:d.text||"",lyrics:d.lyrics||"",background:d.background||POST_BACKGROUNDS[4],songTitle:d.songTitle||"",songArtist:d.songArtist||"",songUrl:d.songUrl||"",previewUrl:d.previewUrl||"",songArtwork:d.songArtwork||"",songStart:Number(d.songStart||0),createdAt:d.createdAt||null};});
+  const stories=selected.map(item=>{const d=item.data();return {storyId:item.id,uid:d.uid||user.uid,displayName:d.displayName||user.displayName||"GRAMORA member",text:d.text||"",lyrics:d.lyrics||"",background:d.background||POST_BACKGROUNDS[4],imageUrl:d.imageUrl||"",imagePath:d.imagePath||"",textX:Number(d.textX??50),textY:Number(d.textY??50),songTitle:d.songTitle||"",songArtist:d.songArtist||"",songUrl:d.songUrl||"",previewUrl:d.previewUrl||"",songArtwork:d.songArtwork||"",songStart:Number(d.songStart||0),createdAt:d.createdAt||null};});
   const coverStoryId=highlightCoverStoryId&&highlightSelectedIds.has(highlightCoverStoryId)?highlightCoverStoryId:selected[0].id;
   const payload={title,coverText:(selected.find(x=>x.id===coverStoryId)?.data().text||title).slice(0,2),coverStoryId,coverImage:highlightCoverImage,stories};
   button.disabled=true;status.textContent="Saving highlight…";
