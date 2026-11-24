@@ -78,3 +78,24 @@
 
 /* Preserve the complete uploaded photo frame in story preview and viewer. */
 #storyCreateDialog .gramora-story-image-preview,#storyViewerStage .gramora-story-viewer-image{object-fit:contain!important;background:#000!important}#storyViewerStage.has-story-image{background:#000!important}
+
+/* Keep the original image dimensions visible; center it inside the story frame without stretching or cropping. */
+#storyViewerStage.has-story-image > #storyViewerImage,
+#storyCreateDialog.story-kind-image #storyPreviewCanvas > #storyImagePreview {
+  position: absolute !important;
+  inset: 50% auto auto 50% !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  transform: translate(-50%, -50%) !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  background: transparent !important;
+}
+#storyViewerStage.has-story-image,
+#storyCreateDialog.story-kind-image #storyPreviewCanvas {
+  background: #000 !important;
+}
