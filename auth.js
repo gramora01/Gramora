@@ -540,6 +540,7 @@ function renderStories(docs){
     else openCreator();
   });
   strip.append(create);
+  storyViewerUserGroups=[...new Map(docs.filter(item=>item.data().uid).reduce((groups,item)=>{const uid=item.data().uid;if(!groups.has(uid))groups.set(uid,[]);groups.get(uid).push(item);return groups;},new Map())).values()].map(group=>group.sort((a,b)=>(a.data().createdAt?.toMillis?.()||0)-(b.data().createdAt?.toMillis?.()||0)));
   const latestByUser=new Map();
   docs.forEach(storyDoc=>{
     const uid=storyDoc.data().uid;
@@ -575,7 +576,7 @@ async function recordStoryView(storyId,storyData){
     await setDoc(ref,viewData);
   }catch(error){console.error("Story view could not be recorded:",error);}
 }
-let storyViewerTimer=null,storyViewerStartedAt=0,storyViewerDuration=7000,storyViewerSequence=[],storyViewerIndex=0,storyViewerPaused=false;
+let storyViewerTimer=null,storyViewerStartedAt=0,storyViewerDuration=7000,storyViewerSequence=[],storyViewerIndex=0,storyViewerPaused=false,storyViewerUserGroups=[];
 function stopStoryViewerTimer(){
   if(storyViewerTimer){clearInterval(storyViewerTimer);storyViewerTimer=null;}
 }
@@ -606,9 +607,23 @@ function startStoryViewerTimer(){
 function navigateStoryViewer(direction){
   if(!storyViewerSequence.length)return;
   const next=storyViewerIndex+direction;
+  if(next>=0&&next<storyViewerSequence.length){
+    openStoryViewer(storyViewerSequence,storyViewerSequence[next].id);return;
+  }
+  const dialog=document.getElementById("storyViewerDialog");
+  if(dialog?._highlightStories?.length){
+    if(next<0){storyViewerIndex=0;return;}
+    stopStoryViewerTimer();dialog.close();return;
+  }
+  const current=storyViewerSequence[storyViewerIndex]?.data?.();
+  const uid=current?.uid;
+  const groupIndex=storyViewerUserGroups.findIndex(group=>group.some(item=>item.data().uid===uid));
+  const targetGroup=storyViewerUserGroups[groupIndex+direction];
+  if(targetGroup?.length){
+    openStoryViewer(targetGroup,direction>0?targetGroup[0].id:targetGroup[targetGroup.length-1].id);return;
+  }
   if(next<0){storyViewerIndex=0;return;}
-  if(next>=storyViewerSequence.length){stopStoryViewerTimer();document.getElementById("storyViewerDialog")?.close();return;}
-  openStoryViewer(storyViewerSequence,storyViewerSequence[next].id);
+  stopStoryViewerTimer();dialog?.close();
 }
 const storyViewerStage=document.getElementById("storyViewerStage");
 let storyViewerTouchX=0,storyViewerTouchY=0;
