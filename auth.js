@@ -418,24 +418,32 @@ if(auth){
 
 let activeStoriesUnsubscribe=null;
 let activeStoryDocs=[];
+let storyFeedGeneration=0;
 const storyProfileCache=new Map();
 function storySeenKey(id){return "gramora-story-seen-"+(auth?.currentUser?.uid||"guest")+"-"+id;}
 function storyWasSeen(id){try{return localStorage.getItem(storySeenKey(id))==="1";}catch(error){return false;}}
 function markStorySeen(id){try{localStorage.setItem(storySeenKey(id),"1");}catch(error){}}
 function startStoriesFeed(user){
   if(activeStoriesUnsubscribe)activeStoriesUnsubscribe();
+  const generation=++storyFeedGeneration;
+  activeStoryDocs=[];
+  renderStories([]);
   let docs=[],offs=[],cancelled=false;
+  const readyUids=new Set();
   activeStoriesUnsubscribe=()=>{cancelled=true;offs.forEach(off=>off());};
   getVisibleContentUids(user).then(uids=>{
-    if(cancelled)return;
+    if(cancelled||generation!==storyFeedGeneration)return;
     if(!uids.length){activeStoryDocs=[];renderStories([]);return;}
     uids.forEach(uid=>offs.push(onSnapshot(query(collection(db,"stories"),where("uid","==",uid),limit(100)),snapshot=>{
+      if(cancelled||generation!==storyFeedGeneration)return;
       docs=docs.filter(item=>item.data().uid!==uid).concat(snapshot.docs);
+      readyUids.add(uid);
+      if(readyUids.size!==uids.length)return;
       activeStoryDocs=docs.filter(item=>{const expiry=item.data().expiresAt;return expiry?.toMillis?expiry.toMillis()>Date.now():false;});
       activeStoryDocs.sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0));
       renderStories(activeStoryDocs);
-    },error=>{console.error("Stories feed error:",error);const hint=document.getElementById("storyCreateStatus");if(hint)hint.textContent="Stories load nahi hui. Latest Firestore Rules publish karein.";})));
-  }).catch(error=>console.error("Stories feed setup failed:",error));
+    },error=>{if(cancelled||generation!==storyFeedGeneration)return;console.error("Stories feed error:",error);const hint=document.getElementById("storyCreateStatus");if(hint)hint.textContent="Stories load nahi hui. Latest Firestore Rules publish karein."; })));
+  }).catch(error=>{if(!cancelled&&generation===storyFeedGeneration)console.error("Stories feed setup failed:",error);});
 }
 async function getStoryProfile(uid){
   if(storyProfileCache.has(uid))return storyProfileCache.get(uid);
@@ -664,8 +672,20 @@ function openStoryViewer(docs,id){
   content.textContent=data.text||"";
   if(data.imageUrl){content.style.left=(Number(data.textX??50))+"%";content.style.top=(Number(data.textY??50))+"%";content.style.transform="translate(-50%,-50%)";content.style.position="absolute";content.style.width="82%";}else{content.style.removeProperty("left");content.style.removeProperty("top");content.style.removeProperty("transform");content.style.removeProperty("position");content.style.removeProperty("width");}
   content.style.background=data.imageUrl?"transparent":(data.background||POST_BACKGROUNDS[4]);
-  const viewerImage=document.getElementById("storyViewerImage");if(viewerImage){viewerImage.src=data.imageUrl||"";viewerImage.hidden=!data.imageUrl;}
-  document.getElementById("storyViewerStage")?.classList.toggle("has-story-image",!!data.imageUrl);
+  const viewerImage=document.getElementById("storyViewerImage");
+  const viewerStage=document.getElementById("storyViewerStage");
+  if(viewerImage){
+    viewerImage.onload=null;viewerImage.onerror=null;viewerImage.hidden=true;
+    if(data.imageUrl){
+      viewerStage?.classList.add("story-image-loading");
+      viewerImage.onload=()=>{if(dialog.dataset.storyId!==id)return;viewerImage.hidden=false;viewerStage?.classList.remove("story-image-loading");};
+      viewerImage.onerror=()=>{if(dialog.dataset.storyId===id)viewerStage?.classList.remove("story-image-loading");};
+      viewerImage.src=data.imageUrl;
+      if(viewerImage.complete&&viewerImage.naturalWidth>0){viewerImage.hidden=false;viewerStage?.classList.remove("story-image-loading");}
+    }else{viewerImage.removeAttribute("src");viewerStage?.classList.remove("story-image-loading");}
+  }
+  viewerStage?.classList.toggle("has-story-image",!!data.imageUrl);
+  viewerStage?.classList.remove("story-viewer-enter");void viewerStage?.offsetWidth;viewerStage?.classList.add("story-viewer-enter");
   const viewerLyrics=document.getElementById("storyViewerLyrics");if(viewerLyrics){viewerLyrics.textContent=data.lyrics||"";viewerLyrics.hidden=!(data.lyrics||"").trim();}
   const viewerName=document.getElementById("storyViewerName");if(viewerName)viewerName.textContent=data.displayName||"GRAMORA member";
   const viewerTime=document.getElementById("storyViewerTime");if(viewerTime)viewerTime.textContent=formatPostDate(data.createdAt);
