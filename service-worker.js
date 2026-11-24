@@ -1,9 +1,9 @@
-const CACHE_NAME = "gramora-shell-v171-swipe-feed-final";
+const CACHE_NAME = "gramora-shell-v172-create-swipe-order";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=173",
-  "./script.js?v=4",
+  "./script.js?v=5",
   "./auth.js?v=259",
   "./auth.css?v=63",
   "./story-creator.css?v=8",
