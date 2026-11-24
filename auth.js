@@ -2647,7 +2647,7 @@ async function loadPublicProfile(viewer,targetUid){
         const viewBadge=document.createElement("span");viewBadge.className="ig-post-view-badge";
         const eye=document.createElement("span");eye.className="ig-post-view-eye";
         const viewCount=document.createElement("span");viewCount.className="ig-post-view-count";viewCount.dataset.postId=originalId;viewCount.textContent=formatPostViews(post.views);
-        viewBadge.append(eye,viewCount);tile.append(copy,viewBadge);
+        viewBadge.append(eye,viewCount);tile.append(viewBadge);
         if(post.pinned===true||raw.pinned===true||raw.isPinned===true){const pin=document.createElement("span");pin.className="ig-post-pinned";pin.setAttribute("aria-label","Pinned post");tile.append(pin);}
         tile.addEventListener("click",()=>openPostDetail(post,false));wrap.append(tile);grid.append(wrap);
         if(isRepost&&raw.originalViews==null&&raw.views==null){getDoc(doc(db,"posts",originalId)).then(postSnap=>{if(postSnap.exists()&&viewCount.isConnected)viewCount.textContent=formatPostViews(postSnap.data().views||0);}).catch(error=>console.warn("Reposted post view count unavailable:",error));}
