@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=157">
+  <link rel="stylesheet" href="style.css?v=158">
   <link rel="stylesheet" href="auth.css?v=62">
   <link rel="stylesheet" href="story-creator.css?v=3">
   <link rel="stylesheet" href="gramora-icons.css?v=2">
@@ -71,7 +71,65 @@
     <button class="nav" data-view="profile" type="button" aria-label="Profile"><span class="nav-icon mobile-profile-avatar" id="mobileProfileAvatar" aria-hidden="true">◉</span><small>Profile</small></button>
   </nav>
 
-  <dialog id="createDialog" class="story-dialog"><form id="postForm"><div class="dialog-head"><div><p class="eyebrow">SHARE A LITTLE SOMETHING</p><h2>Create a post</h2></div><button id="closeCreate" class="close-btn" type="button" aria-label="Close">×</button></div><label for="caption">What's on your mind?</label><textarea id="caption" rows="5" placeholder="A thought, a moment, a little inspiration..." required></textarea><input id="postBackground" type="hidden"><label>Choose a background</label><div id="postBackgroundPicker" class="background-picker"><button type="button" data-bg="linear-gradient(135deg,#ff9966,#ff5e62)" style="background:linear-gradient(135deg,#ff9966,#ff5e62)" aria-label="Background 1"></button><button type="button" data-bg="linear-gradient(135deg,#7f7fd5,#86a8e7,#91eae4)" style="background:linear-gradient(135deg,#7f7fd5,#86a8e7,#91eae4)" aria-label="Background 2"></button><button type="button" data-bg="linear-gradient(135deg,#654ea3,#eaafc8)" style="background:linear-gradient(135deg,#654ea3,#eaafc8)" aria-label="Background 3"></button><button type="button" data-bg="linear-gradient(135deg,#11998e,#38ef7d)" style="background:linear-gradient(135deg,#11998e,#38ef7d)" aria-label="Background 4"></button><button type="button" data-bg="linear-gradient(135deg,#232526,#414345)" style="background:linear-gradient(135deg,#232526,#414345)" aria-label="Background 5"></button><button type="button" data-bg="linear-gradient(135deg,#f7971e,#ffd200)" style="background:linear-gradient(135deg,#f7971e,#ffd200)" aria-label="Background 6"></button><button type="button" data-bg="linear-gradient(135deg,#fc466b,#3f5efb)" style="background:linear-gradient(135deg,#fc466b,#3f5efb)" aria-label="Background 7"></button><button type="button" data-bg="linear-gradient(135deg,#eeaeca,#94bbe9)" style="background:linear-gradient(135deg,#eeaeca,#94bbe9)" aria-label="Background 8"></button></div><p class="muted tiny">Text post preview — choose a style before sharing.</p><p id="postStatus" class="post-status" role="status" aria-live="polite"></p><button class="create-btn publish" type="submit" value="publish">Share with the community ↗</button></form></dialog><dialog id="postDetailDialog" class="post-detail-dialog"><div class="dialog-head"><div><p class="eyebrow">GRAMORA POST</p><p id="postDetailByline" class="muted tiny"></p></div><button id="closePostDetail" class="close-btn" type="button" aria-label="Close">×</button></div><div id="postDetailCard" class="post-detail-card"></div><div class="post-detail-engagement"><button id="postDetailLike" class="post-detail-like" type="button" aria-pressed="false"><span class="post-action-count">0</span></button></div><section class="post-detail-comments-wrap"><h3>Comments</h3><div id="postDetailComments" class="post-detail-comments"></div><form id="postCommentForm" class="post-comment-form"><input id="postCommentInput" maxlength="500" placeholder="Add a comment…" required><button type="submit">Post</button></form><p id="postCommentStatus" class="muted tiny" role="status"></p></section><div class="post-detail-actions"><button id="postDetailEdit" type="button" class="outline-btn" hidden>Edit post</button><button id="postDetailDelete" type="button" class="settings-danger" hidden>Delete post</button></div></dialog>
+  <dialog id="createDialog" class="story-dialog gramora-create-dialog">
+  <form id="postForm">
+    <div class="gramora-create-top">
+      <button id="closeCreate" class="gramora-create-close" type="button" aria-label="Close">×</button>
+      <h2>Create new post</h2>
+      <span class="gramora-create-step">1 of 2</span>
+    </div>
+    <div class="gramora-create-workspace">
+      <section class="gramora-create-media">
+        <div id="createPhotoStage" class="create-photo-stage">
+          <div class="create-photo-empty">
+            <span class="create-photo-icon">▧</span>
+            <h3>Share a photo</h3>
+            <p>Choose a photo from your gallery to get started.</p>
+            <label class="create-gallery-button" for="createPhotoInput">Select from gallery</label>
+          </div>
+          <div id="createPhotoPreview" class="create-photo-preview" hidden></div>
+        </div>
+        <input id="createPhotoInput" class="create-photo-input" type="file" accept="image/*" multiple>
+        <div class="create-media-toolbar">
+          <label class="create-tool-button" for="createPhotoInput"><span>＋</span> Add photos</label>
+          <button id="createRatioBtn" class="create-tool-button" type="button" aria-label="Change photo ratio">↗ <span id="createRatioLabel">Original</span></button>
+          <span id="createPhotoCount" class="create-photo-count">0 photos</span>
+        </div>
+        <div id="createPhotoThumbs" class="create-photo-thumbs" aria-label="Selected photos"></div>
+      </section>
+      <aside class="gramora-create-details">
+        <div class="create-account-line"><span class="create-account-avatar" id="createAccountAvatar">G</span><b id="createAccountName">Your account</b></div>
+        <label class="create-caption-label" for="caption">Write a caption</label>
+        <textarea id="caption" rows="5" maxlength="2200" placeholder="Write a caption…"></textarea>
+        <div class="create-caption-meta"><span>Use #hashtags and @mentions</span><span id="createCaptionCount">0/2,200</span></div>
+        <div class="create-editor-section">
+          <div class="create-section-title">Filters</div>
+          <div class="create-filter-row">
+            <button type="button" class="create-filter active" data-filter="none"><span class="filter-swatch filter-original"></span>Original</button>
+            <button type="button" class="create-filter" data-filter="warm"><span class="filter-swatch filter-warm"></span>Warm</button>
+            <button type="button" class="create-filter" data-filter="mono"><span class="filter-swatch filter-mono"></span>B&W</button>
+            <button type="button" class="create-filter" data-filter="fade"><span class="filter-swatch filter-fade"></span>Fade</button>
+          </div>
+        </div>
+        <div class="create-editor-links">
+          <button type="button" id="createTagToggle"><span>♙</span> Tag people <span>＋</span></button>
+          <div id="createTagField" hidden><input id="createTagInput" type="text" placeholder="Enter @username"></div>
+          <button type="button" id="createLocationToggle"><span>⌖</span> Add location <span>＋</span></button>
+          <div id="createLocationField" hidden><input id="createLocationInput" type="text" placeholder="Add a location"></div>
+        </div>
+        <details class="create-advanced">
+          <summary>Advanced settings <span>⌄</span></summary>
+          <label><input id="createHideLikes" type="checkbox"> Hide like and view counts on this post</label>
+          <label><input id="createTurnCommentsOff" type="checkbox"> Turn off commenting</label>
+        </details>
+        <p id="postStatus" class="post-status" role="status" aria-live="polite"></p>
+        <button class="create-btn publish gramora-share-button" type="submit" value="publish">Share <span>→</span></button>
+      </aside>
+    </div>
+    <input id="postBackground" type="hidden">
+    <div id="postBackgroundPicker" hidden></div>
+  </form>
+</dialog><dialog id="postDetailDialog" class="post-detail-dialog"><div class="dialog-head"><div><p class="eyebrow">GRAMORA POST</p><p id="postDetailByline" class="muted tiny"></p></div><button id="closePostDetail" class="close-btn" type="button" aria-label="Close">×</button></div><div id="postDetailCard" class="post-detail-card"></div><div class="post-detail-engagement"><button id="postDetailLike" class="post-detail-like" type="button" aria-pressed="false"><span class="post-action-count">0</span></button></div><section class="post-detail-comments-wrap"><h3>Comments</h3><div id="postDetailComments" class="post-detail-comments"></div><form id="postCommentForm" class="post-comment-form"><input id="postCommentInput" maxlength="500" placeholder="Add a comment…" required><button type="submit">Post</button></form><p id="postCommentStatus" class="muted tiny" role="status"></p></section><div class="post-detail-actions"><button id="postDetailEdit" type="button" class="outline-btn" hidden>Edit post</button><button id="postDetailDelete" type="button" class="settings-danger" hidden>Delete post</button></div></dialog>
 
 
 
@@ -192,7 +250,7 @@
   </div>
   <script src="script.js?v=74"></script>
   <script src="gramora-icons.js?v=8" defer></script>
-  <script type="module" src="auth.js?v=232"></script>
+  <script type="module" src="auth.js?v=233"></script>
   <script src="story-creator.js?v=3" defer></script>
   <script>
     // Startup failsafe: never leave GRAMORA hidden behind an endless loading state.
