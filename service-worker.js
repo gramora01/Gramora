@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v180-back-label-fix";
+const CACHE_NAME = "gramora-shell-v181-story-reply-preview";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=176",
+  "./style.css?v=177",
   "./script.js?v=8",
-  "./auth.js?v=263",
+  "./auth.js?v=264",
   "./auth.css?v=63",
   "./story-creator.css?v=8",
   "./story-creator.js?v=5",
