@@ -1,8 +1,8 @@
-const CACHE_NAME = "gramora-shell-v179-single-menu-close";
+const CACHE_NAME = "gramora-shell-v180-back-label-fix";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=175",
+  "./style.css?v=176",
   "./script.js?v=8",
   "./auth.js?v=263",
   "./auth.css?v=63",
