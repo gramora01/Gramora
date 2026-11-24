@@ -1,16 +1,17 @@
-const CACHE_NAME = "gramora-shell-v173-touch-swipe-fix";
+const CACHE_NAME = "gramora-shell-v174-profile-theme";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=173",
   "./script.js?v=6",
-  "./auth.js?v=259",
+  "./auth.js?v=260",
   "./auth.css?v=63",
   "./story-creator.css?v=8",
   "./story-creator.js?v=5",
   "./gramora-icons.css?v=2",
   "./post-action-spacing.css?v=1",
-  "./public-profile-layout.css?v=2",\n  "./gramora-3d-ui.css?v=2",
+  "./public-profile-layout.css?v=3",
+  "./gramora-3d-ui.css?v=2",
   "./gramora-icons.js?v=10",
   "./gramora-layout-fix.css?v=1",
   "./icons/gramora.svg",
