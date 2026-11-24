@@ -3668,11 +3668,32 @@ document.getElementById("createAddedAccountForm")?.addEventListener("submit",asy
 
 document.getElementById("closeSettings")?.addEventListener("click",closeSettingsDrawer);
 settingsDialog?.addEventListener("click",event=>{if(event.target===settingsDialog)closeSettingsDrawer();});
-document.querySelectorAll(".settings-tab").forEach(tab=>tab.addEventListener("click",()=>{
+const settingsMenu=document.querySelector(".settings-menu");
+const settingsContent=document.querySelector(".settings-content");
+const settingsTitle=document.getElementById("settingsTitle");
+const settingsBack=document.getElementById("settingsBack");
+function showSettingsMenu(){
+  if(settingsMenu)settingsMenu.hidden=false;
+  if(settingsContent)settingsContent.hidden=true;
+  if(settingsBack)settingsBack.hidden=true;
+  if(settingsTitle)settingsTitle.textContent="Menu";
+  document.querySelectorAll(".settings-panel").forEach(panel=>panel.hidden=true);
+  document.querySelectorAll(".settings-tab").forEach(tab=>tab.classList.remove("active"));
+}
+function openSettingsPage(tab){
+  if(!tab)return;
+  const page=tab.dataset.settings;
+  if(settingsMenu)settingsMenu.hidden=true;
+  if(settingsContent)settingsContent.hidden=false;
+  if(settingsBack)settingsBack.hidden=false;
+  if(settingsTitle)settingsTitle.textContent=tab.textContent.trim();
   document.querySelectorAll(".settings-tab").forEach(x=>x.classList.toggle("active",x===tab));
-  document.querySelectorAll(".settings-panel").forEach(panel=>panel.hidden=panel.dataset.panel!==tab.dataset.settings);
-  if(tab.dataset.settings==="privacy")loadPrivacySettings();
-}));
+  document.querySelectorAll(".settings-panel").forEach(panel=>panel.hidden=panel.dataset.panel!==page);
+  if(page==="privacy")loadPrivacySettings();
+}
+document.querySelectorAll(".settings-tab").forEach(tab=>tab.addEventListener("click",()=>openSettingsPage(tab)));
+settingsBack?.addEventListener("click",showSettingsMenu);
+showSettingsMenu();
 document.getElementById("settingsBlockedRefresh")?.addEventListener("click",renderBlockedAccounts);
 document.getElementById("followRequestsRefresh")?.addEventListener("click",renderFollowRequests);
 
