@@ -1,13 +1,13 @@
-const CACHE_NAME = "gramora-shell-v141-stop-background-music";
+const CACHE_NAME = "gramora-shell-v142-image-stories";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=164",
   "./script.js?v=74",
-  "./auth.js?v=248",
+  "./auth.js?v=249",
   "./auth.css?v=62",
-  "./story-creator.css?v=3",
-  "./story-creator.js?v=3",
+  "./story-creator.css?v=4",
+  "./story-creator.js?v=4",
   "./gramora-icons.css?v=2",
   "./post-action-spacing.css?v=1",
   "./public-profile-layout.css?v=2",
