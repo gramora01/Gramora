@@ -102,18 +102,40 @@ function showPlaceholder(view,title){
   if(view==="explore"||view==="saved"){const button=document.createElement("button");button.className="create-btn";button.type="button";button.textContent="Back to home";button.addEventListener("click",()=>document.querySelector('[data-view="home"]')?.click());card.append(button);}
   feed.append(card);
 }
-document.querySelectorAll(".nav").forEach(button=>button.addEventListener("click",()=>{
-  const view=button.dataset.view;
+let gramoraCurrentPage="home";
+function openGramoraPage(view){
   if(!view)return;
+  const button=document.querySelector('.mobile-nav [data-view="'+view+'"], .sidebar [data-view="'+view+'"]');
+  if(button){button.click();return;}
+}
+document.querySelectorAll(".nav").forEach(button=>button.addEventListener("click",()=>{
+  const view=button.dataset.view;if(!view)return;
+  gramoraCurrentPage=view;
   document.body.classList.remove("view-home","view-explore","view-messages","view-saved","view-profile","public-profile-open");
   document.body.classList.add("view-"+view);
   document.body.classList.toggle("profile-active",view==="profile");
   document.querySelectorAll(".nav").forEach(item=>item.classList.toggle("active",item.dataset.view===view));
   const titles={home:"Your feed",explore:"Explore",messages:"Messages",saved:"Saved posts",profile:"My profile"};
-  document.getElementById("viewTitle").textContent=titles[view]||"Your feed";
+  const titleNode=document.getElementById("viewTitle");if(titleNode)titleNode.textContent=titles[view]||"Your feed";
   if(view!=="home"&&view!=="profile"&&view!=="explore")showPlaceholder(view,titles[view]);
   document.dispatchEvent(new CustomEvent("gramora:view",{detail:view}));
+  document.body.classList.remove("gm-page-enter");void document.body.offsetWidth;document.body.classList.add("gm-page-enter");
 }));
+(()=>{
+  const surface=document.querySelector(".main-content")||document.getElementById("feed");if(!surface)return;
+  let startX=0,startY=0,startAt=0;
+  const blocked=target=>!!target.closest('input,textarea,select,button,a,[contenteditable="true"],dialog,.post,.story,.story-viewer,.story-dialog,.post-detail-dialog,.gramora-chat-dialog,.gramora-conversation,.ig-post-tile,.create-photo-stage');
+  surface.addEventListener("touchstart",event=>{if(event.touches.length!==1||blocked(event.target))return;const touch=event.touches[0];startX=touch.clientX;startY=touch.clientY;startAt=Date.now();},{passive:true});
+  surface.addEventListener("touchend",event=>{
+    if(!startAt||!event.changedTouches.length)return;
+    const touch=event.changedTouches[0],dx=touch.clientX-startX,dy=touch.clientY-startY,elapsed=Date.now()-startAt;startAt=0;
+    if(elapsed>650||Math.abs(dx)<75||Math.abs(dx)<Math.abs(dy)*1.35)return;
+    const pages=["home","explore","messages","profile"],current=pages.indexOf(gramoraCurrentPage);if(current<0)return;
+    if(dx<0&&current<pages.length-1)openGramoraPage(pages[current+1]);
+    else if(dx>0&&current>0)openGramoraPage(pages[current-1]);
+  },{passive:true});
+})();
+
 document.addEventListener("click",event=>{
   const like=event.target.closest(".like");
   if(like){like.classList.toggle("liked");like.innerHTML="<span>"+(like.classList.contains("liked")?"Liked":"Like")+"</span>";}
