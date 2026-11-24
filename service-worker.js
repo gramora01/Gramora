@@ -1,4 +1,4 @@
-const CACHE_NAME = "gramora-shell-v150-story-fit";
+const CACHE_NAME = "gramora-shell-v151-performance";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -11,7 +11,7 @@ const APP_SHELL = [
   "./gramora-icons.css?v=2",
   "./post-action-spacing.css?v=1",
   "./public-profile-layout.css?v=2",
-  "./gramora-icons.js?v=8",
+  "./gramora-icons.js?v=9",
   "./gramora-layout-fix.css?v=1",
   "./icons/gramora.svg",
   "./manifest.json"
