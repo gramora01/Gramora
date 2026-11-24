@@ -1694,3 +1694,19 @@ body.light.public-profile-open .ig-profile .public-profile-highlights[hidden]{
   margin:0!important;
   border:0!important;
 }
+
+/* Final light-theme surface fix: every public-profile section above the post grid must stay light. */
+body.light.public-profile-open .ig-profile > :not(.ig-profile-grid),
+body.light.public-profile-open .ig-profile > :not(.ig-profile-grid)::before,
+body.light.public-profile-open .ig-profile > :not(.ig-profile-grid)::after{
+  background-color:#fff!important;
+  background-image:none!important;
+}
+body.light.public-profile-open .ig-profile > .ig-profile-top,
+body.light.public-profile-open .ig-profile > .ig-profile-bio,
+body.light.public-profile-open .ig-profile > .ig-profile-actions,
+body.light.public-profile-open .ig-profile > .public-profile-highlights,
+body.light.public-profile-open .ig-profile > .public-profile-tabs{
+  background:#fff!important;
+  color:#202127!important;
+}
