@@ -1,13 +1,13 @@
-const CACHE_NAME = "gramora-shell-v199-story-effects-sparkle-icon";
+const CACHE_NAME = "gramora-shell-v200-story-pan-text-color";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=180",
   "./script.js?v=8",
-  "./auth.js?v=277",
+  "./auth.js?v=278",
   "./auth.css?v=63",
-  "./story-creator.css?v=14",
-  "./story-creator.js?v=9",
+  "./story-creator.css?v=15",
+  "./story-creator.js?v=10",
   "./gramora-icons.css?v=2",
   "./post-action-spacing.css?v=1",
   "./public-profile-layout.css?v=3",
