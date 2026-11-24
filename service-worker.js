@@ -1,4 +1,4 @@
-const CACHE_NAME = "gramora-shell-v197-story-image-effects";
+const CACHE_NAME = "gramora-shell-v198-story-right-icon-rail";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,8 +6,8 @@ const APP_SHELL = [
   "./script.js?v=8",
   "./auth.js?v=277",
   "./auth.css?v=63",
-  "./story-creator.css?v=13",
-  "./story-creator.js?v=7",
+  "./story-creator.css?v=14",
+  "./story-creator.js?v=8",
   "./gramora-icons.css?v=2",
   "./post-action-spacing.css?v=1",
   "./public-profile-layout.css?v=3",
