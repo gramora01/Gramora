@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=161">
+  <link rel="stylesheet" href="style.css?v=162">
   <link rel="stylesheet" href="auth.css?v=62">
   <link rel="stylesheet" href="story-creator.css?v=3">
   <link rel="stylesheet" href="gramora-icons.css?v=2">
@@ -105,6 +105,13 @@
         <label class="create-caption-label" for="caption">Write a caption</label>
         <textarea id="caption" rows="5" maxlength="2200" placeholder="Write a caption…"></textarea>
         <div class="create-caption-meta"><span>Use #hashtags and @mentions</span><span id="createCaptionCount">0/2,200</span></div>
+        <section class="gramora-post-music" aria-label="Add music to post">
+          <div class="gramora-post-music-head"><b>♫ Add music</b><small>Choose a song for your post</small></div>
+          <div class="gramora-post-music-search"><input id="postMusicSearch" type="search" placeholder="Search song or artist…" autocomplete="off"><button id="postMusicSearchButton" type="button">Search</button></div>
+          <div id="postMusicResults" class="gramora-post-music-results" aria-live="polite"></div>
+          <div id="postMusicSelected" class="gramora-post-music-selected" hidden><img id="postMusicArtwork" alt=""><span><b id="postMusicTitle"></b><small id="postMusicArtist"></small></span><button id="postMusicPreview" type="button">▶ Preview</button><button id="postMusicRemove" type="button" aria-label="Remove song">×</button></div>
+          <small class="gramora-post-music-note">Song previews are up to 30 seconds.</small>
+        </section>
         <div class="create-editor-section">
           <div class="create-section-title">Filters</div>
           <div class="create-filter-row">
@@ -252,7 +259,7 @@
   </div>
   <script src="script.js?v=74"></script>
   <script src="gramora-icons.js?v=8" defer></script>
-  <script type="module" src="auth.js?v=244"></script>
+  <script type="module" src="auth.js?v=245"></script>
   <script src="story-creator.js?v=3" defer></script>
   <script>
     // Startup failsafe: never leave GRAMORA hidden behind an endless loading state.
