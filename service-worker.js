@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v130-compact-photo-caption";
+const CACHE_NAME = "gramora-shell-v131-light-caption-visibility";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=160",
   "./script.js?v=74",
-  "./auth.js?v=238",
+  "./auth.js?v=239",
   "./auth.css?v=62",
   "./story-creator.css?v=3",
   "./story-creator.js?v=3",
