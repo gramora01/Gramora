@@ -1,8 +1,8 @@
-const CACHE_NAME = "gramora-shell-v163-post-tags-location";
+const CACHE_NAME = "gramora-shell-v164-public-profile-highlight-light";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=169",
+  "./style.css?v=170",
   "./script.js?v=74",
   "./auth.js?v=257",
   "./auth.css?v=63",
