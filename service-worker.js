@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v190-highlight-image-fix";
+const CACHE_NAME = "gramora-shell-v191-story-swipe-users";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=180",
   "./script.js?v=8",
-  "./auth.js?v=272",
+  "./auth.js?v=273",
   "./auth.css?v=63",
   "./story-creator.css?v=10",
   "./story-creator.js?v=5",
