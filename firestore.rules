@@ -350,7 +350,19 @@ service cloud.firestore {
             && get(/databases/$(database)/documents/reposts/$(repostId)).data.uid == request.resource.data.uid
           )
         )
-        && request.resource.data.keys().hasOnly(['uid','displayName','username','photoURL','originalPostId','originalUid','originalDisplayName','originalUsername','originalPhotoURL','originalText','originalBackground','originalPhotoUrls','originalPhotoPaths','originalCreatedAt','createdAt']);
+        && request.resource.data.get('originalTaggedUsers', []) is list
+        && request.resource.data.get('originalTaggedUsers', []).size() <= 10
+        && request.resource.data.get('originalLocation', '') is string
+        && request.resource.data.get('originalLocation', '').size() <= 120
+        && request.resource.data.get('originalMusicTitle', '') is string
+        && request.resource.data.get('originalMusicTitle', '').size() <= 120
+        && request.resource.data.get('originalMusicArtist', '') is string
+        && request.resource.data.get('originalMusicArtist', '').size() <= 120
+        && request.resource.data.get('originalMusicArtwork', '') is string
+        && request.resource.data.get('originalMusicArtwork', '').size() <= 2000
+        && request.resource.data.get('originalMusicPreviewUrl', '') is string
+        && request.resource.data.get('originalMusicPreviewUrl', '').size() <= 2000
+        && request.resource.data.keys().hasOnly(['uid','displayName','username','photoURL','originalPostId','originalUid','originalDisplayName','originalUsername','originalPhotoURL','originalTaggedUsers','originalLocation','originalMusicTitle','originalMusicArtist','originalMusicArtwork','originalMusicPreviewUrl','originalText','originalBackground','originalPhotoUrls','originalPhotoPaths','originalCreatedAt','createdAt']);
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
       allow update: if false;
     }
