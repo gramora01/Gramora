@@ -71,3 +71,6 @@
 #storyCreateDialog #storyPreviewCanvas.story-text-move-mode #storyText{outline:2px dashed #fff!important;cursor:move;touch-action:none;user-select:none}
 #storyCreateDialog .gramora-story-preview{touch-action:pan-y}
 #storyViewerStage.has-story-image #storyViewerText{pointer-events:none}
+
+#storyCreateDialog.story-kind-text .gse-tools button:nth-child(2){display:none!important}
+#storyCreateDialog.story-kind-image .gse-tools button:nth-child(4){display:none!important}
