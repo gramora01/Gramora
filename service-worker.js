@@ -1,8 +1,8 @@
-const CACHE_NAME = "gramora-shell-v183-story-performance";
+const CACHE_NAME = "gramora-shell-v184-story-activity-lock";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=178",
+  "./style.css?v=179",
   "./script.js?v=8",
   "./auth.js?v=266",
   "./auth.css?v=63",
