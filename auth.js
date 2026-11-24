@@ -2733,11 +2733,12 @@ function bindBackgroundPicker(selector,inputId,previewId){
   }));
   const first=picker.querySelector("[data-bg]");if(first){input.value=first.dataset.bg;first.classList.add("selected");if(preview){preview.style.background=first.dataset.bg;preview.style.color="#fff";}}
 }
-bindBackgroundPicker("#postBackgroundPicker","postBackground","caption");
+bindBackgroundPicker("#postBackgroundPicker","postBackground","createTextPreview");
 bindBackgroundPicker("#storyBackgroundPicker","storyBackground","storyPreviewCanvas");
 function openPostEditor(post){
   editingPostId=post?.id||null;const bg=post?.background||POST_BACKGROUNDS[4];
-  document.getElementById("caption").value=post?.text||"";document.getElementById("postBackground").value=bg;document.getElementById("caption").style.background=bg;
+  setCreatePostMode("text");
+  document.getElementById("caption").value=post?.text||"";document.getElementById("postBackground").value=bg;document.getElementById("createTextPreview").style.background=bg;document.getElementById("createTextPreview").textContent=post?.text||"Write something…";
   document.querySelectorAll("#postBackgroundPicker [data-bg]").forEach(b=>b.classList.toggle("selected",b.dataset.bg===bg));
   document.querySelector("#createDialog h2").textContent=editingPostId?"Edit post":"Create a post";
   document.querySelector("#postForm .publish").textContent=editingPostId?"Save changes":"Share with the community ↗";
@@ -2770,13 +2771,32 @@ const createPhotoPreview=document.getElementById("createPhotoPreview");
 const createPhotoStage=document.getElementById("createPhotoStage");
 const createPhotoThumbs=document.getElementById("createPhotoThumbs");
 const createPhotoCount=document.getElementById("createPhotoCount");
-let createPhotoFiles=[],createPhotoUrls=[],createActivePhoto=0,createPhotoFilter="none",createPhotoRatio=0;
+let createPhotoFiles=[],createPhotoUrls=[],createActivePhoto=0,createPhotoFilter="none",createPhotoRatio=0,createPostMode="photo";
+function setCreatePostMode(mode){
+  createPostMode=mode==="text"?"text":"photo";
+  const isText=createPostMode==="text";
+  document.getElementById("createPhotoMode")?.classList.toggle("active",!isText);
+  document.getElementById("createTextMode")?.classList.toggle("active",isText);
+  document.getElementById("createPhotoMode")?.setAttribute("aria-pressed",String(!isText));
+  document.getElementById("createTextMode")?.setAttribute("aria-pressed",String(isText));
+  document.getElementById("createPhotoStage").classList.toggle("text-post-stage",isText);
+  document.getElementById("createPhotoEmpty").hidden=isText||createPhotoFiles.length>0;
+  document.getElementById("createPhotoPreview").hidden=isText||!createPhotoFiles.length;
+  document.getElementById("createTextPreview").hidden=!isText;
+  document.querySelector(".create-media-toolbar").hidden=isText;
+  document.getElementById("createPhotoThumbs").hidden=isText;
+  document.getElementById("createTextBackgroundTools").hidden=!isText;
+  document.querySelector(".create-caption-label").textContent=isText?"Write your text post":"Write a caption";
+  document.getElementById("caption").placeholder=isText?"What would you like to share?":"Write a caption…";
+  updateCreateTextPreview();
+}
+function updateCreateTextPreview(){const preview=document.getElementById("createTextPreview"),input=document.getElementById("caption");if(preview&&input){preview.textContent=input.value.trim()||"Your text will appear here";preview.style.background=document.getElementById("postBackground").value||POST_BACKGROUNDS[4];}}
 function renderCreatePhotoSelection(){
   if(!createPhotoPreview||!createPhotoStage)return;
   createPhotoThumbs.replaceChildren();
   createPhotoCount.textContent=createPhotoFiles.length+" photo"+(createPhotoFiles.length===1?"":"s");
   const empty=createPhotoStage.querySelector(".create-photo-empty");
-  empty.hidden=createPhotoFiles.length>0;createPhotoPreview.hidden=!createPhotoFiles.length;
+  empty.hidden=createPostMode==="text"||createPhotoFiles.length>0;createPhotoPreview.hidden=createPostMode==="text"||!createPhotoFiles.length;
   createPhotoPreview.replaceChildren();
   if(createPhotoFiles.length){
     const img=document.createElement("img");img.src=createPhotoUrls[createActivePhoto];img.alt="Selected photo preview";img.className=createPhotoFilter==="none"?"":"filter-"+createPhotoFilter;
@@ -2797,7 +2817,9 @@ createPhotoInput?.addEventListener("change",()=>{
   createActivePhoto=Math.max(0,createPhotoFiles.length-1);createPhotoInput.value="";renderCreatePhotoSelection();
 });
 document.getElementById("createCaptionCount")?.parentElement?.previousElementSibling;
-document.getElementById("caption")?.addEventListener("input",event=>{const count=document.getElementById("createCaptionCount");if(count)count.textContent=event.target.value.length+"/2,200";});
+document.getElementById("caption")?.addEventListener("input",event=>{const count=document.getElementById("createCaptionCount");if(count)count.textContent=event.target.value.length+"/2,200";updateCreateTextPreview();});
+document.getElementById("createPhotoMode")?.addEventListener("click",()=>setCreatePostMode("photo"));
+document.getElementById("createTextMode")?.addEventListener("click",()=>setCreatePostMode("text"));
 document.querySelectorAll(".create-filter").forEach(button=>button.addEventListener("click",()=>{createPhotoFilter=button.dataset.filter;document.querySelectorAll(".create-filter").forEach(item=>item.classList.toggle("active",item===button));renderCreatePhotoSelection();}));
 document.getElementById("createRatioBtn")?.addEventListener("click",()=>{
   const ratios=["Original","1:1","4:5","16:9"];createPhotoRatio=(createPhotoRatio+1)%ratios.length;
@@ -2815,6 +2837,7 @@ document.getElementById("createDialog")?.addEventListener("close",()=>{
   document.getElementById("createTagInput").value="";document.getElementById("createLocationInput").value="";
   document.getElementById("createHideLikes").checked=false;document.getElementById("createTurnCommentsOff").checked=false;
   document.getElementById("createCaptionCount").textContent="0/2,200";
+  setCreatePostMode("photo");
 });
 
 postForm.addEventListener("submit",async event=>{
@@ -2823,7 +2846,8 @@ postForm.addEventListener("submit",async event=>{
   const status=document.getElementById("postStatus");
   
   if(!auth?.currentUser){status.textContent="Please log in to publish a post.";return;}
-  if(createPhotoFiles.length){status.textContent="Photo selection and preview are ready. Photo upload and Share will be connected in the next step; no photo has been uploaded yet.";return;}
+  if(createPostMode==="photo"&&createPhotoFiles.length){status.textContent="Photo selection and preview are ready. Photo upload and Share will be connected in the next step; no photo has been uploaded yet.";return;}
+  if(createPostMode==="photo"&&!createPhotoFiles.length){status.textContent="Select a photo or switch to Text to create a text-only post.";return;}
   const text=document.getElementById("caption").value.trim();
   const background=document.getElementById("postBackground").value||POST_BACKGROUNDS[4];
   if(!text){status.textContent="Write something before sharing.";return;}
