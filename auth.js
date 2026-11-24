@@ -1670,7 +1670,7 @@ function createPostMusicElement(data){
   sound.addEventListener("click",async()=>{
     const enable=audio.muted;
     if(enable){
-      if(activePostMusicAudio&&activePostMusicAudio!==audio){activePostMusicAudio.pause();const oldButton=activePostMusicAudio.closest(".gramora-post-music-player")?.querySelector(".gramora-post-music-sound");if(oldButton){oldButton.innerHTML=speakerOff;oldButton.setAttribute("aria-label","Turn sound on");oldButton.setAttribute("aria-pressed","false");oldButton.classList.remove("is-sound-on");}}
+      if(activePostMusicAudio&&activePostMusicAudio!==audio){activePostMusicAudio.pause();activePostMusicAudio.muted=true;const oldButton=activePostMusicAudio.closest(".gramora-post-music-player")?.querySelector(".gramora-post-music-sound");if(oldButton){oldButton.innerHTML=speakerOff;oldButton.setAttribute("aria-label","Turn sound on");oldButton.setAttribute("aria-pressed","false");oldButton.classList.remove("is-sound-on");}}
       activePostMusicAudio=audio;setSound(true);
       try{await audio.play();}catch(error){setSound(false);}
     }else{setSound(false);}
@@ -1684,8 +1684,8 @@ function createPostMusicElement(data){
         const player=entry.target,button=player.closest(".gramora-post-music-player")?.querySelector(".gramora-post-music-sound");
         if(entry.isIntersecting&&entry.intersectionRatio>=0.55){
           if(activePostMusicAudio&&activePostMusicAudio!==player){activePostMusicAudio.pause();const oldButton=activePostMusicAudio.closest(".gramora-post-music-player")?.querySelector(".gramora-post-music-sound");if(oldButton){oldButton.innerHTML=speakerOff;oldButton.setAttribute("aria-label","Turn sound on");oldButton.setAttribute("aria-pressed","false");oldButton.classList.remove("is-sound-on");}}
-          if(player.muted){activePostMusicAudio=player;const attempt=player.play();if(attempt?.catch)attempt.catch(()=>{});}
-        }else if(!entry.isIntersecting&&activePostMusicAudio===player){player.pause();if(button){button.innerHTML=speakerOff;button.setAttribute("aria-label","Turn sound on");button.setAttribute("aria-pressed","false");button.classList.remove("is-sound-on");}}
+          player.muted=true;button?.classList.remove("is-sound-on");if(button){button.innerHTML=speakerOff;button.setAttribute("aria-label","Turn sound on");button.setAttribute("aria-pressed","false");}activePostMusicAudio=player;const attempt=player.play();if(attempt?.catch)attempt.catch(()=>{});
+        }else if(!entry.isIntersecting&&activePostMusicAudio===player){player.pause();player.muted=true;if(button){button.innerHTML=speakerOff;button.setAttribute("aria-label","Turn sound on");button.setAttribute("aria-pressed","false");button.classList.remove("is-sound-on");}}
       });
     },{threshold:[0,0.55]});
     postMusicObserver.observe(audio);
