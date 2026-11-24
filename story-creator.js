@@ -80,12 +80,14 @@
   const isTool=e=>!!e.target.closest(".gse-tools,.gse-bottom,.gse-color-palette,button");
   stage?.addEventListener("pointerdown",e=>{
     if(isTool(e)||e.pointerType==="mouse"&&e.button!==0)return;
-    if(e.target===ta&&document.activeElement===ta)return;
+    const touchingText=e.target===ta&&ta.value.trim();
+    if(touchingText&&document.activeElement===ta)ta.blur();
     stage.setPointerCapture?.(e.pointerId);points.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(points.size===2){gesture={kind:"pinch",moved:true};pinchStart=distance();pinchScale=scale;return;}
-    if(e.target===ta&&ta.value.trim())gesture={kind:"text",id:e.pointerId,x:e.clientX,y:e.clientY,moved:false};
+    if(touchingText)gesture={kind:"text",id:e.pointerId,x:e.clientX,y:e.clientY,moved:false};
     else if(photo&&!photo.hidden)gesture={kind:"photo",id:e.pointerId,x:e.clientX,y:e.clientY,startX:imageX,startY:imageY,moved:false};
     else gesture={kind:"place",id:e.pointerId,x:e.clientX,y:e.clientY,moved:false};
+    if(touchingText)e.preventDefault();
   });
   stage?.addEventListener("pointermove",e=>{
     if(!points.has(e.pointerId))return;points.set(e.pointerId,{x:e.clientX,y:e.clientY});
@@ -93,7 +95,7 @@
     if(!gesture||gesture.id!==e.pointerId)return;
     const dx=e.clientX-gesture.x,dy=e.clientY-gesture.y;if(Math.hypot(dx,dy)>5)gesture.moved=true;if(!gesture.moved)return;
     if(gesture.kind==="photo"){imageX=gesture.startX+dx;imageY=gesture.startY+dy;applyPhotoTransform();}
-    else if(gesture.kind==="text"){const r=stage.getBoundingClientRect(),px=Math.max(5,Math.min(95,(e.clientX-r.left)/r.width*100)),py=Math.max(5,Math.min(95,(e.clientY-r.top)/r.height*100));$("storyTextX").value=String(px);$("storyTextY").value=String(py);ta.style.position="absolute";ta.style.left=px+"%";ta.style.top=py+"%";ta.style.transform="translate(-50%,-50%)";ta.style.width="82%";e.preventDefault();}
+    else if(gesture.kind==="text"){const r=stage.getBoundingClientRect(),px=Math.max(5,Math.min(95,(e.clientX-r.left)/r.width*100)),py=Math.max(5,Math.min(95,(e.clientY-r.top)/r.height*100));$("storyTextX").value=String(px);$("storyTextY").value=String(py);ta.style.position="absolute";ta.style.inset="auto";ta.style.left=px+"%";ta.style.top=py+"%";ta.style.transform="translate(-50%,-50%)";ta.style.width="82%";ta.style.pointerEvents="auto";e.preventDefault();}
   });
   const finishGesture=e=>{
     if(!points.has(e.pointerId))return;const g=gesture;points.delete(e.pointerId);
