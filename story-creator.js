@@ -38,7 +38,7 @@
   const applyImageEffect=()=>{const filter=imageEffects[effectIndex].filter;const img=$("storyImagePreview");if(img)img.style.filter=filter==="none"?"":filter;const b=tools.querySelectorAll(".gse-tool")[2];if(b){b.setAttribute("aria-label","Effects: "+imageEffects[effectIndex].name+". Tap to change");b.title=imageEffects[effectIndex].name;}effectInput.value=String(effectIndex);};
   function cycleImageEffect(){effectIndex=(effectIndex+1)%imageEffects.length;applyImageEffect();}
   window.gramoraApplyStoryEffect=(index)=>{effectIndex=Math.max(0,Math.min(imageEffects.length-1,Number(index)||0));applyImageEffect();};
-  host.append(tools);
+  (stage||host).append(tools);
   const bottom=el("div","gse-bottom");
   const pill=el("button","gse-pill",'<i class="gse-av">G</i>Your story');pill.type="button";
   const send=el("button","gse-send",icons.send);send.type="button";send.setAttribute("aria-label","Share story");send.addEventListener("click",()=>click("storyShareSubmit"));
