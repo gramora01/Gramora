@@ -1,8 +1,8 @@
-const CACHE_NAME = "gramora-shell-v121-light-profile-highlights";
+const CACHE_NAME = "gramora-shell-v122-repost-public-profile-highlight-bg";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=155",
+  "./style.css?v=156",
   "./script.js?v=74",
   "./auth.js?v=231",
   "./auth.css?v=62",
