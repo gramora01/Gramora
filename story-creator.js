@@ -33,6 +33,7 @@
     const i = list.findIndex(b => b.dataset.bg === cur);
     list[(i + 1) % list.length].click();
   };
+  const editorHost = $("storyEditorWorkspace") || form;
   const tools = el("div", "gse-tools");
   tools.append(
     tool("Text", ic.aa, () => ta.focus()),
@@ -42,17 +43,17 @@
     tool("Colour", ic.color, () => click("storyTextColorToggle")),
     tool("Align", ic.align, () => click("storyTextAlignToggle"))
   );
-  form.appendChild(tools);
+  editorHost.appendChild(tools);
 
   const edit = el("div", "gse-edit-tools");
   [["Aa", ic.aa, () => ta.focus()], ["Colour", ic.color, () => click("storyTextColorToggle")], ["Align", ic.align, () => click("storyTextAlignToggle")]].forEach(([l, i, f]) => {
     const b = el("button", "gse-ebtn", i); b.type = "button"; b.setAttribute("aria-label", l); b.addEventListener("click", f); edit.append(b);
   });
-  form.appendChild(edit);
+  editorHost.appendChild(edit);
 
   const size = el("input", "gse-size"); size.type = "range"; size.min = 20; size.max = 64; size.value = 34; size.setAttribute("aria-label", "Text size");
   size.addEventListener("input", () => ta.style.setProperty("font-size", size.value + "px", "important"));
-  form.appendChild(size);
+  editorHost.appendChild(size);
 
   const bottom = el("div", "gse-bottom");
   const pill = el("button", "gse-pill", '<i class="gse-av">' + ((($("authName") || {}).textContent || "Y").trim()[0] || "Y").toUpperCase() + "</i>Your stories");
@@ -60,7 +61,7 @@
   const send = el("button", "gse-send", ic.send); send.type = "button"; send.setAttribute("aria-label", "Share story");
   send.addEventListener("click", () => click("storyShareSubmit"));
   bottom.append(pill, el("span", "gse-sp"), send);
-  form.appendChild(bottom);
+  editorHost.appendChild(bottom);
 
   [edit, dlg.querySelector(".gramora-story-style-strip")].forEach(n => n && n.addEventListener("pointerdown", e => e.preventDefault()));
   const done = $("storyEditorDone");
