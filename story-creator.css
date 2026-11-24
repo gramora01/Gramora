@@ -74,3 +74,7 @@
 
 #storyCreateDialog.story-kind-text .gse-tools button:nth-child(2){display:none!important}
 #storyCreateDialog.story-kind-image .gse-tools button:nth-child(4){display:none!important}
+
+
+/* Preserve the complete uploaded photo frame in story preview and viewer. */
+#storyCreateDialog .gramora-story-image-preview,#storyViewerStage .gramora-story-viewer-image{object-fit:contain!important;background:#000!important}#storyViewerStage.has-story-image{background:#000!important}
