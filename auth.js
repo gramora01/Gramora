@@ -1840,13 +1840,16 @@ function renderPosts(docs){
     const meta=document.createElement("small");meta.textContent=(authorUsername?"@"+authorUsername+" · ":"")+formatPostDate(isRepost?data.originalCreatedAt:data.createdAt);
     const postMusicData=isRepost?{musicTitle:data.originalMusicTitle,musicArtist:data.originalMusicArtist,musicArtwork:data.originalMusicArtwork,musicPreviewUrl:data.originalMusicPreviewUrl}:data;identity.append(name,meta);const musicLabel=createPostMusicLabel(postMusicData);if(musicLabel)identity.append(musicLabel);head.append(avatar,identity);head.addEventListener("click",()=>{const viewer=auth?.currentUser;if(viewer&&authorUid)loadPublicProfile(viewer,authorUid);});
     const content=document.createElement("div");content.className="post-content";const postPhotos=isRepost?(data.originalPhotoUrls||[]):(data.photoUrls||[]);const media=createPostMediaElement(postPhotos);const music=createPostMusicElement(postMusicData);if(media){if(music)media.append(music);content.append(media);}const caption=document.createElement("p");caption.className=postPhotos.length?"post-text post-caption-inline":"post-text post-text-card";caption.textContent=isRepost?(data.originalText||""):(data.text||"");if(!postPhotos.length)caption.style.background=isRepost?(data.originalBackground||POST_BACKGROUNDS[4]):(data.background||POST_BACKGROUNDS[4]);if(caption.textContent){if(!postPhotos.length&&music)caption.append(music);content.append(caption);}
+    const postLocation=isRepost?(data.originalLocation||""):(data.location||"");
+    const postTags=isRepost?(data.originalTaggedUsers||[]):(data.taggedUsers||[]);
+    if(postLocation||postTags.length){const metaLine=document.createElement("div");metaLine.className="gramora-post-meta";if(postLocation){const place=document.createElement("span");place.className="gramora-post-location";place.textContent="⌖ "+postLocation;metaLine.append(place);}if(postTags.length){const tags=document.createElement("span");tags.className="gramora-post-tags";tags.append(document.createTextNode("Tagged: "));postTags.slice(0,10).forEach((person,index)=>{if(index)tags.append(document.createTextNode(", "));const link=document.createElement("button");link.type="button";link.textContent="@"+(person.username||person.displayName||"user");link.addEventListener("click",event=>{event.stopPropagation();if(person.uid&&auth?.currentUser)loadPublicProfile(auth.currentUser,person.uid);});tags.append(link);});metaLine.append(tags);}content.append(metaLine);}
     const actions=document.createElement("div");actions.className="post-actions";
     const like=document.createElement("button");like.className="like";like.type="button";like.dataset.likeCount="";
     const comment=document.createElement("button");comment.className="post-comment-open";comment.type="button";comment.innerHTML='<span class="post-action-count"></span>';
     const repost=document.createElement("button");repost.className="repost";repost.type="button";repost.innerHTML='<span class="post-action-count"></span>';
     const save=document.createElement("button");save.className="save";save.type="button";save.innerHTML='<span class="post-action-count"></span>';
     const originalId=isRepost?data.originalPostId:postDoc.id;
-    const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,background:data.originalBackground,photoUrls:data.originalPhotoUrls||[],photoPaths:data.originalPhotoPaths||[],musicTitle:data.originalMusicTitle||"",musicArtist:data.originalMusicArtist||"",musicArtwork:data.originalMusicArtwork||"",musicPreviewUrl:data.originalMusicPreviewUrl||"",createdAt:data.originalCreatedAt}:data;
+    const originalData=isRepost?{uid:data.originalUid,displayName:data.originalDisplayName,username:data.originalUsername,photoURL:data.originalPhotoURL,text:data.originalText,background:data.originalBackground,photoUrls:data.originalPhotoUrls||[],photoPaths:data.originalPhotoPaths||[],taggedUsers:data.originalTaggedUsers||[],location:data.originalLocation||"",musicTitle:data.originalMusicTitle||"",musicArtist:data.originalMusicArtist||"",musicArtwork:data.originalMusicArtwork||"",musicPreviewUrl:data.originalMusicPreviewUrl||"",createdAt:data.originalCreatedAt}:data;
     const postForDetail={id:originalId,...originalData};
     const likeCount=like.querySelector(".post-action-count"),commentCount=comment.querySelector(".post-action-count"),repostCount=repost.querySelector(".post-action-count"),saveCount=save.querySelector(".post-action-count");
     like.setAttribute("aria-label","Like post");comment.setAttribute("aria-label","View comments");repost.setAttribute("aria-label","Repost");save.setAttribute("aria-label","Save post");
@@ -1994,6 +1997,8 @@ async function createPostRepost(postId,original,button){
         originalPhotoURL:original.photoURL||"",
         originalPhotoUrls:Array.isArray(original.photoUrls)?original.photoUrls:[],
         originalPhotoPaths:Array.isArray(original.photoPaths)?original.photoPaths:[],
+        originalTaggedUsers:Array.isArray(original.taggedUsers)?original.taggedUsers:[],
+        originalLocation:original.location||"",
         originalMusicTitle:original.musicTitle||"",
         originalMusicArtist:original.musicArtist||"",
         originalMusicArtwork:original.musicArtwork||"",
@@ -3033,15 +3038,21 @@ document.getElementById("createRatioBtn")?.addEventListener("click",()=>{
   const stage=document.getElementById("createPhotoStage");stage.style.aspectRatio=["auto","1/1","4/5","16/9"][createPhotoRatio];
   document.getElementById("createRatioLabel").textContent=ratios[createPhotoRatio];
 });
-document.getElementById("createTagToggle")?.addEventListener("click",()=>{const field=document.getElementById("createTagField");field.hidden=!field.hidden;if(!field.hidden)document.getElementById("createTagInput").focus();});
-document.getElementById("createLocationToggle")?.addEventListener("click",()=>{const field=document.getElementById("createLocationField");field.hidden=!field.hidden;if(!field.hidden)document.getElementById("createLocationInput").focus();});
+let selectedPostTags=[],tagSearchPeople=[],tagPeopleLoaded=false;
+const tagInput=document.getElementById("createTagInput"),tagResults=document.getElementById("createTagResults"),tagSelected=document.getElementById("createTagSelected");
+function renderSelectedPostTags(){if(!tagSelected)return;tagSelected.replaceChildren();selectedPostTags.forEach(person=>{const chip=document.createElement("span");chip.className="gramora-tag-chip";const label=document.createElement("span");label.textContent="@"+(person.username||person.displayName||"user");const remove=document.createElement("button");remove.type="button";remove.textContent="×";remove.setAttribute("aria-label","Remove tag");remove.addEventListener("click",()=>{selectedPostTags=selectedPostTags.filter(item=>item.uid!==person.uid);renderSelectedPostTags();});chip.append(label,remove);tagSelected.append(chip);});}
+async function loadTagPeople(){if(tagPeopleLoaded)return;if(tagResults)tagResults.textContent="People loading…";try{const [profilesSnap,usernamesSnap]=await Promise.all([getDocs(query(collection(db,"userProfiles"),limit(100))),getDocs(query(collection(db,"usernames"),limit(500)))]);const usernameByUid=new Map();usernamesSnap.docs.forEach(item=>{const value=item.data();if(value.uid)usernameByUid.set(value.uid,item.id);});const unique=new Map();profilesSnap.docs.forEach(item=>{const value=item.data(),uid=value.uid||item.id;if(!uid||uid===auth?.currentUser?.uid)return;unique.set(uid,{uid,displayName:value.displayName||"GRAMORA member",username:value.username||usernameByUid.get(uid)||""});});tagSearchPeople=[...unique.values()];tagPeopleLoaded=true;renderTagPeople(tagInput?.value||"");}catch(error){console.warn("Tag people search unavailable:",error);if(tagResults)tagResults.textContent="People load nahi ho paaye. Internet aur Firestore Rules check karein.";}}
+function renderTagPeople(term=""){if(!tagResults)return;tagResults.replaceChildren();const q=term.trim().toLowerCase().replace(/^@/,"");if(!q){tagResults.textContent="Username type karke kisi user ko select karein.";return;}const matches=tagSearchPeople.filter(person=>(person.username||"").toLowerCase().includes(q)||(person.displayName||"").toLowerCase().includes(q)).filter(person=>!selectedPostTags.some(tag=>tag.uid===person.uid)).slice(0,8);if(!matches.length){tagResults.textContent="Koi user nahi mila.";return;}matches.forEach(person=>{const option=document.createElement("button");option.type="button";option.className="gramora-tag-result";const name=document.createElement("b");name.textContent=person.displayName;const username=document.createElement("small");username.textContent=person.username?"@"+person.username:"Username not set";option.append(name,username);option.addEventListener("click",()=>{if(selectedPostTags.length>=10){tagResults.textContent="Ek post mein maximum 10 users tag kar sakte hain.";return;}selectedPostTags.push({uid:person.uid,displayName:person.displayName,username:person.username});renderSelectedPostTags();tagInput.value="";renderTagPeople("");});tagResults.append(option);});}
+document.getElementById("createTagToggle")?.addEventListener("click",async()=>{const field=document.getElementById("createTagField");field.hidden=!field.hidden;if(!field.hidden){tagInput?.focus();await loadTagPeople();}});
+tagInput?.addEventListener("input",()=>renderTagPeople(tagInput.value));
+document.getElementById("createLocationToggle")?.addEventListener("click",()=>{const field=document.getElementById("createLocationField");field.hidden=!field.hidden;if(!field.hidden)document.getElementById("createLocationInput")?.focus();});
 document.getElementById("createDialog")?.addEventListener("close",()=>{
   createPhotoUrls.forEach(url=>URL.revokeObjectURL(url));createPhotoFiles=[];createPhotoUrls=[];createActivePhoto=0;createPhotoFilter="none";createPhotoRatio=0;
   if(createPhotoStage)createPhotoStage.style.aspectRatio="";
   document.querySelectorAll(".create-filter").forEach((item,index)=>item.classList.toggle("active",index===0));
   renderCreatePhotoSelection();
   document.getElementById("createTagField").hidden=true;document.getElementById("createLocationField").hidden=true;
-  document.getElementById("createTagInput").value="";document.getElementById("createLocationInput").value="";
+  document.getElementById("createTagInput").value="";document.getElementById("createLocationInput").value="";selectedPostTags=[];renderSelectedPostTags();if(tagResults)tagResults.replaceChildren();
   document.getElementById("createHideLikes").checked=false;document.getElementById("createTurnCommentsOff").checked=false;
   clearPostMusicSelection();
   document.getElementById("createCaptionCount").textContent="0/2,200";
@@ -3096,6 +3107,8 @@ postForm.addEventListener("submit",async event=>{
   if(createPostMode==="text"&&!text){status.textContent="Write something before sharing.";return;}
   const background=document.getElementById("postBackground").value||POST_BACKGROUNDS[4];
   const postMusic=selectedPostMusic?{musicTitle:selectedPostMusic.title,musicArtist:selectedPostMusic.artist,musicArtwork:selectedPostMusic.artwork,musicPreviewUrl:selectedPostMusic.previewUrl,musicUrl:selectedPostMusic.trackUrl,musicStart:0}:{musicTitle:"",musicArtist:"",musicArtwork:"",musicPreviewUrl:"",musicUrl:"",musicStart:0};
+  const taggedUsers=selectedPostTags.map(person=>({uid:person.uid,displayName:person.displayName||"GRAMORA member",username:person.username||""}));
+  const location=document.getElementById("createLocationInput")?.value.trim().slice(0,120)||"";
   if(!text){status.textContent="Write something before sharing.";return;}
   const button=postForm.querySelector(".publish");
   button.disabled=true;button.textContent=editingPostId?"Saving…":"Sharing…";status.textContent=editingPostId?"Post update ho rahi hai…":"Publishing your post…";
@@ -3108,14 +3121,14 @@ postForm.addEventListener("submit",async event=>{
       const postRef=doc(collection(db,"posts"));
       status.textContent="Uploading photos securely…";
       const uploaded=await uploadGramoraPostPhotos(createPhotoFiles,user.uid,postRef.id);
-      await setDoc(postRef,{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",text,photoUrls:uploaded.photoUrls,photoPaths:uploaded.photoPaths,photoCount:uploaded.photoUrls.length,...postMusic,createdAt:serverTimestamp()});
+      await setDoc(postRef,{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",text,photoUrls:uploaded.photoUrls,photoPaths:uploaded.photoPaths,photoCount:uploaded.photoUrls.length,taggedUsers,location,...postMusic,createdAt:serverTimestamp()});
       document.getElementById("caption").value="";status.textContent="Photo post shared successfully!";dialog.close();activeView="home";
       document.querySelector('.mobile-nav [data-view="home"], .sidebar [data-view="home"]')?.click();
     }else if(editingPostId){
       await updateDoc(doc(db,"posts",editingPostId),{text,background});editingPostId=null;status.textContent="Post updated successfully!";dialog.close();
       if(activeView==="profile")await loadProfilePage(user);else await getDocsForFeed();
     }else{
-      await addDoc(collection(db,"posts"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",text,background,...postMusic,createdAt:serverTimestamp()});
+      await addDoc(collection(db,"posts"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",username:profile.username||"",text,background,taggedUsers,location,...postMusic,createdAt:serverTimestamp()});
       document.getElementById("caption").value="";status.textContent="Posted successfully!";dialog.close();activeView="home";
       document.querySelector('.mobile-nav [data-view="home"], .sidebar [data-view="home"]')?.click();
     }
