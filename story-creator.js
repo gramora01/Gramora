@@ -69,42 +69,67 @@
   function toggleTextColors(){palette.classList.toggle("is-open");}
   window.gramoraApplyStoryTextColor=color=>{if(!color)return;ta.style.setProperty("color",color,"important");colorInput.value=color;};
 
-  // One-finger photo pan, two-finger pinch zoom, tap-anywhere text entry and text dragging.
+  // Reliable touch controls: tap photo to type, drag photo to pan, pinch to zoom, drag text to move.
   const photo=$("storyImagePreview");
   const scaleInput=(()=>{let x=$("storyImageScale");if(!x){x=document.createElement("input");x.type="hidden";x.id="storyImageScale";x.value="1";form.append(x);}return x;})();
   const xInput=(()=>{let x=$("storyImageX");if(!x){x=document.createElement("input");x.type="hidden";x.id="storyImageX";x.value="0";form.append(x);}return x;})();
   const yInput=(()=>{let x=$("storyImageY");if(!x){x=document.createElement("input");x.type="hidden";x.id="storyImageY";x.value="0";form.append(x);}return x;})();
-  let imageX=0,imageY=0,scale=1,points=new Map(),gesture=null,pinchStart=0,pinchScale=1;
+  let imageX=0,imageY=0,scale=1,activePointers=new Map(),gesture=null,pinchStart=0,pinchScale=1,lastTapAt=0;
   const applyPhotoTransform=()=>{stage?.style.setProperty("--story-image-scale",String(scale));stage?.style.setProperty("--story-image-x",imageX+"px");stage?.style.setProperty("--story-image-y",imageY+"px");scaleInput.value=String(scale);xInput.value=String(imageX);yInput.value=String(imageY);};
-  const distance=()=>{const p=[...points.values()];return p.length<2?0:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);};
-  const isTool=e=>!!e.target.closest(".gse-tools,.gse-bottom,.gse-color-palette,button");
+  const pointerDistance=()=>{const p=[...activePointers.values()];return p.length<2?0:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);};
+  const isTool=e=>!!e.target.closest(".gse-tools,.gse-bottom,.gse-color-palette,button,.gramora-story-style-strip");
+  const textAtPoint=(x,y)=>{if(!ta.value.trim()||ta.hidden)return false;const r=ta.getBoundingClientRect();return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom;};
+  const placeTextAt=(x,y)=>{revealText(x,y);requestAnimationFrame(()=>{try{ta.focus({preventScroll:true});}catch(_){ta.focus();}});};
   stage?.addEventListener("pointerdown",e=>{
     if(isTool(e)||e.pointerType==="mouse"&&e.button!==0)return;
-    const touchingText=e.target===ta&&ta.value.trim();
-    if(touchingText&&document.activeElement===ta)ta.blur();
-    stage.setPointerCapture?.(e.pointerId);points.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(points.size===2){gesture={kind:"pinch",moved:true};pinchStart=distance();pinchScale=scale;return;}
-    if(touchingText)gesture={kind:"text",id:e.pointerId,x:e.clientX,y:e.clientY,moved:false};
-    else if(photo&&!photo.hidden)gesture={kind:"photo",id:e.pointerId,x:e.clientX,y:e.clientY,startX:imageX,startY:imageY,moved:false};
-    else gesture={kind:"place",id:e.pointerId,x:e.clientX,y:e.clientY,moved:false};
-    if(touchingText)e.preventDefault();
-  });
+    const onText=textAtPoint(e.clientX,e.clientY);
+    activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    try{stage.setPointerCapture(e.pointerId);}catch(_){}
+    if(activePointers.size===2){gesture={kind:"pinch",moved:true};pinchStart=pointerDistance();pinchScale=scale;e.preventDefault();return;}
+    const r=stage.getBoundingClientRect();
+    gesture=onText
+      ?{kind:"text",id:e.pointerId,x:e.clientX,y:e.clientY,startX:parseFloat(ta.style.left)||50,startY:parseFloat(ta.style.top)||50,moved:false}
+      :{kind:"photo",id:e.pointerId,x:e.clientX,y:e.clientY,startX:imageX,startY:imageY,rect:r,moved:false};
+    if(onText)e.preventDefault();
+  },{passive:false});
   stage?.addEventListener("pointermove",e=>{
-    if(!points.has(e.pointerId))return;points.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(points.size>=2&&gesture?.kind==="pinch"){const d=distance();if(pinchStart&&d){scale=Math.max(1,Math.min(3,pinchScale*d/pinchStart));applyPhotoTransform();}return;}
+    if(!activePointers.has(e.pointerId))return;
+    activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(activePointers.size>=2&&gesture?.kind==="pinch"){
+      const d=pointerDistance();if(pinchStart&&d){scale=Math.max(1,Math.min(3,pinchScale*d/pinchStart));applyPhotoTransform();}
+      e.preventDefault();return;
+    }
     if(!gesture||gesture.id!==e.pointerId)return;
-    const dx=e.clientX-gesture.x,dy=e.clientY-gesture.y;if(Math.hypot(dx,dy)>5)gesture.moved=true;if(!gesture.moved)return;
-    if(gesture.kind==="photo"){imageX=gesture.startX+dx;imageY=gesture.startY+dy;applyPhotoTransform();}
-    else if(gesture.kind==="text"){const r=stage.getBoundingClientRect(),px=Math.max(5,Math.min(95,(e.clientX-r.left)/r.width*100)),py=Math.max(5,Math.min(95,(e.clientY-r.top)/r.height*100));$("storyTextX").value=String(px);$("storyTextY").value=String(py);ta.style.position="absolute";ta.style.inset="auto";ta.style.left=px+"%";ta.style.top=py+"%";ta.style.transform="translate(-50%,-50%)";ta.style.width="82%";ta.style.pointerEvents="auto";e.preventDefault();}
-  });
+    const dx=e.clientX-gesture.x,dy=e.clientY-gesture.y;
+    if(Math.hypot(dx,dy)>7)gesture.moved=true;
+    if(!gesture.moved)return;
+    if(gesture.kind==="photo"){
+      imageX=gesture.startX+dx;imageY=gesture.startY+dy;applyPhotoTransform();
+    }else if(gesture.kind==="text"){
+      const r=stage.getBoundingClientRect(),px=Math.max(5,Math.min(95,(e.clientX-r.left)/r.width*100)),py=Math.max(5,Math.min(95,(e.clientY-r.top)/r.height*100));
+      ta.style.position="absolute";ta.style.inset="auto";ta.style.left=px+"%";ta.style.top=py+"%";ta.style.transform="translate(-50%,-50%)";ta.style.width="82%";
+      $("storyTextX").value=String(px);$("storyTextY").value=String(py);ta.blur();
+    }
+    e.preventDefault();
+  },{passive:false});
   const finishGesture=e=>{
-    if(!points.has(e.pointerId))return;const g=gesture;points.delete(e.pointerId);
-    if(points.size<2){gesture=null;pinchStart=0;}
+    if(!activePointers.has(e.pointerId))return;
+    const g=gesture;activePointers.delete(e.pointerId);
+    if(activePointers.size<2){gesture=null;pinchStart=0;}
     if(!g||g.id!==e.pointerId||g.moved)return;
-    if(g.kind==="place"||g.kind==="photo")revealText(e.clientX,e.clientY);else if(g.kind==="text")revealText();
+    if(g.kind==="photo"){
+      lastTapAt=Date.now();placeTextAt(e.clientX,e.clientY);
+    }else if(g.kind==="text"){
+      ta.blur();
+    }
   };
   stage?.addEventListener("pointerup",finishGesture);
-  stage?.addEventListener("pointercancel",e=>{points.delete(e.pointerId);gesture=null;pinchStart=0;});
+  stage?.addEventListener("pointercancel",e=>{activePointers.delete(e.pointerId);gesture=null;pinchStart=0;});
+  // Fallback for browsers that dispatch click but suppress pointerup on the canvas.
+  stage?.addEventListener("click",e=>{
+    if(isTool(e)||e.target===ta||Date.now()-lastTapAt<450||!photo||photo.hidden)return;
+    const x=e.clientX,y=e.clientY;if(x&&y)placeTextAt(x,y);
+  });
   applyPhotoTransform();
   const imageFile=$("storyImageFile");
   imageFile?.addEventListener("change",()=>{if(imageFile.files?.length){scale=1;imageX=0;imageY=0;applyPhotoTransform();effectIndex=0;applyImageEffect();}});
