@@ -1,8 +1,8 @@
-const CACHE_NAME = "gramora-shell-v153-post-music-stop";
+const CACHE_NAME = "gramora-shell-v154-notification-icon";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=164",
+  "./style.css?v=165",
   "./script.js?v=74",
   "./auth.js?v=255",
   "./auth.css?v=62",
