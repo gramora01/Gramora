@@ -1,0 +1,237 @@
+/* GRAMORA 3D SOCIAL UI — visual-only layer. No app logic or layout behavior is changed. */
+:root{
+  --gm-pink:#e1306c;--gm-purple:#833ab4;--gm-orange:#fd8d32;--gm-blue:#1877f2;--gm-green:#25d366;
+  --gm-glow:0 12px 34px rgba(131,58,180,.18);
+  --gm-card:linear-gradient(145deg,rgba(28,30,40,.98),rgba(15,17,24,.98));
+  --gm-line:rgba(255,255,255,.09);
+}
+body{
+  background:
+    radial-gradient(ellipse at 8% 4%,rgba(131,58,180,.15),transparent 34%),
+    radial-gradient(ellipse at 92% 22%,rgba(225,48,108,.10),transparent 30%),
+    var(--bg)!important;
+  background-attachment:fixed!important;
+}
+body.light{
+  --gm-card:linear-gradient(145deg,#fff,#f7f5fc);
+  --gm-line:rgba(38,34,58,.10);
+  --gm-glow:0 14px 34px rgba(131,58,180,.12);
+  background:
+    radial-gradient(ellipse at 5% 0%,rgba(225,48,108,.09),transparent 34%),
+    radial-gradient(ellipse at 95% 20%,rgba(131,58,180,.08),transparent 32%),
+    #f6f5fa!important;
+  color:#242431!important;
+}
+.topbar{
+  background:rgba(12,13,19,.82)!important;
+  border-bottom:1px solid var(--gm-line)!important;
+  box-shadow:0 8px 28px rgba(0,0,0,.16);
+  backdrop-filter:blur(22px) saturate(1.45)!important;
+}
+body.light .topbar{background:rgba(255,255,255,.82)!important;box-shadow:0 8px 26px rgba(50,38,80,.08)}
+.brand{letter-spacing:-1.15px!important}
+.brand-mark,.mini-brand{
+  background:linear-gradient(145deg,#ffb347 0%,#f04c72 48%,#833ab4 100%)!important;
+  box-shadow:0 5px 15px rgba(225,48,108,.28),inset 0 1px 2px #ffffff9c!important;
+  transform:translateZ(0);
+}
+.app-shell{isolation:isolate}
+.sidebar,.rightbar{
+  border-color:var(--gm-line)!important;
+}
+.sidebar{
+  background:rgba(15,17,24,.66)!important;
+  border:1px solid var(--gm-line)!important;
+  border-radius:22px!important;
+  box-shadow:0 18px 45px rgba(0,0,0,.14),inset 0 1px #ffffff0b!important;
+  backdrop-filter:blur(18px);
+}
+body.light .sidebar{background:rgba(255,255,255,.78)!important;box-shadow:0 18px 42px rgba(50,38,80,.08),inset 0 1px #fff!important}
+.nav{
+  border:1px solid transparent!important;
+  border-radius:14px!important;
+  transition:transform .22s cubic-bezier(.2,.8,.2,1),background .22s ease,box-shadow .22s ease,border-color .22s ease!important;
+}
+.nav.active{
+  background:linear-gradient(120deg,rgba(225,48,108,.19),rgba(131,58,180,.19))!important;
+  border-color:rgba(225,48,108,.22)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.10),0 7px 18px rgba(131,58,180,.12)!important;
+}
+.nav-icon .gramora-ui-icon,.topbar .gramora-ui-icon,.mobile-nav .gramora-ui-icon{
+  filter:drop-shadow(0 2px 3px rgba(225,48,108,.18));
+  transition:transform .22s ease,filter .22s ease;
+}
+@media(hover:hover) and (pointer:fine){
+ .nav:hover{transform:translateX(4px);background:rgba(131,58,180,.12)!important;border-color:var(--gm-line)!important}
+ .nav:hover .gramora-ui-icon{transform:scale(1.12);filter:drop-shadow(0 3px 7px rgba(225,48,108,.35))}
+ .story:hover{transform:translateY(-4px)}
+}
+.stories-section,.section-head{position:relative}
+.story{
+  transition:transform .24s cubic-bezier(.2,.8,.2,1),filter .24s ease!important;
+}
+.story-ring{
+  padding:3px!important;
+  background:linear-gradient(135deg,#feda75,#fa7e1e,#d62976,#962fbf,#4f5bd5)!important;
+  box-shadow:0 6px 18px rgba(214,41,118,.20),inset 0 1px 2px #fff9!important;
+}
+.story-ring>span{
+  border:2px solid var(--panel)!important;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.18);
+}
+.your-story .story-ring>span{background:linear-gradient(145deg,#272a36,#151720)!important}
+body.light .story-ring>span{border-color:#fff!important;background:linear-gradient(145deg,#fff,#f1edf8)!important}
+.feed{perspective:1100px}
+.post{
+  position:relative;
+  border:1px solid var(--gm-line)!important;
+  border-radius:20px!important;
+  overflow:hidden;
+  background:var(--gm-card)!important;
+  box-shadow:0 14px 36px rgba(0,0,0,.16),inset 0 1px rgba(255,255,255,.045)!important;
+  transition:transform .24s ease,box-shadow .24s ease,border-color .24s ease!important;
+}
+body.light .post{box-shadow:0 14px 34px rgba(42,32,68,.075),inset 0 1px #fff!important}
+.post-head{padding-top:14px!important}
+.post-head .avatar,.ig-profile-avatar,.create-account-avatar{
+  box-shadow:0 0 0 2px var(--panel),0 0 0 4px #d62976,0 5px 15px rgba(131,58,180,.20)!important;
+}
+.post-actions{padding-top:7px}
+.post-actions button,.post-detail-engagement button{
+  border-radius:12px!important;
+  transition:transform .16s ease,filter .16s ease,background .2s ease!important;
+}
+.post-actions .like.liked .gramora-ui-icon{filter:drop-shadow(0 2px 5px rgba(225,48,108,.42))}
+.create-btn,.publish,.outline-btn,.create-gallery-button,.create-tool-button,
+.gramora-share-button,.post-comment-form button,.gramora-post-music-search button,
+.create-filter,.gramora-story-done,.settings-danger,.blocked-unblock,.blocked-refresh,
+.follow-request-actions button,.gramora-chat-send,.gramora-chat-attach,.gramora-story-tool,
+.gramora-story-image-pick,.gramora-story-move-text{
+  position:relative;
+  transform:translateY(0);
+  border-radius:13px!important;
+  transition:transform .16s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,filter .2s ease!important;
+}
+.create-btn,.publish,.gramora-share-button,.gramora-story-done,.gramora-chat-send{
+  background:linear-gradient(135deg,#feda75 0%,#fa7e1e 18%,#d62976 56%,#962fbf 82%,#4f5bd5 100%)!important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.24)!important;
+  box-shadow:0 7px 0 #70265f,0 11px 22px rgba(214,41,118,.24),inset 0 1px 2px rgba(255,255,255,.55)!important;
+  text-shadow:0 1px 2px rgba(30,10,35,.22);
+}
+.outline-btn,.create-gallery-button,.create-tool-button,.create-filter{
+  border:1px solid var(--gm-line)!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(125,91,160,.08))!important;
+  box-shadow:0 4px 0 rgba(0,0,0,.22),0 7px 15px rgba(0,0,0,.10),inset 0 1px rgba(255,255,255,.15)!important;
+}
+body.light .outline-btn,body.light .create-gallery-button,body.light .create-tool-button,body.light .create-filter{
+  background:linear-gradient(145deg,#fff,#f1edf8)!important;
+  box-shadow:0 4px 0 #d9d3e3,0 7px 15px rgba(62,43,90,.08),inset 0 1px #fff!important;
+}
+@media(hover:hover) and (pointer:fine){
+ .create-btn:hover,.publish:hover,.gramora-share-button:hover,.gramora-story-done:hover,.gramora-chat-send:hover{
+   transform:translateY(-3px);
+   box-shadow:0 10px 0 #70265f,0 17px 28px rgba(214,41,118,.32),inset 0 1px 2px #ffffff99!important;
+   filter:saturate(1.12);
+ }
+ .outline-btn:hover,.create-gallery-button:hover,.create-tool-button:hover,.create-filter:hover{
+   transform:translateY(-2px);
+   box-shadow:0 6px 0 rgba(0,0,0,.20),0 12px 20px rgba(131,58,180,.14),inset 0 1px #ffffff33!important;
+ }
+ .post:hover{transform:translateY(-2px);box-shadow:0 20px 44px rgba(0,0,0,.22),inset 0 1px #ffffff0c!important;border-color:rgba(214,41,118,.22)!important}
+}
+.create-btn:active,.publish:active,.outline-btn:active,.create-gallery-button:active,
+.create-tool-button:active,.create-filter:active,.gramora-story-done:active,
+.gramora-chat-send:active,.post-actions button:active{
+  transform:translateY(3px) scale(.985)!important;
+  filter:brightness(.96);
+  box-shadow:0 2px 0 rgba(0,0,0,.22),inset 0 2px 5px rgba(0,0,0,.16)!important;
+}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+  outline:2px solid #d62976!important;outline-offset:3px!important;
+}
+.top-action,.top-heart,.settings-btn,.icon-btn{
+  border-radius:13px!important;
+  transition:transform .2s ease,background .2s ease,box-shadow .2s ease!important;
+}
+@media(hover:hover) and (pointer:fine){
+ .top-action:hover,.top-heart:hover,.settings-btn:hover,.icon-btn:hover{transform:translateY(-2px) rotate(-2deg);background:rgba(214,41,118,.12)!important;box-shadow:0 7px 16px rgba(131,58,180,.16)}
+}
+.mobile-nav{
+  background:rgba(13,14,20,.88)!important;
+  border-top:1px solid var(--gm-line)!important;
+  box-shadow:0 -10px 30px rgba(0,0,0,.20)!important;
+  backdrop-filter:blur(22px) saturate(1.5)!important;
+}
+body.light .mobile-nav{background:rgba(255,255,255,.90)!important;box-shadow:0 -10px 28px rgba(42,32,68,.09)!important}
+.mobile-nav .mobile-create{
+  background:linear-gradient(140deg,#fa7e1e,#d62976 55%,#833ab4)!important;
+  border:1px solid #ffffff55!important;
+  box-shadow:0 5px 0 #69235e,0 9px 20px rgba(214,41,118,.28),inset 0 1px 2px #ffffff88!important;
+  transition:transform .18s ease,box-shadow .18s ease!important;
+}
+.mobile-nav .mobile-create:active{transform:translateY(3px) scale(.96)!important;box-shadow:0 2px 0 #69235e!important}
+.mobile-nav .nav.active .nav-icon{filter:drop-shadow(0 3px 7px rgba(214,41,118,.28))}
+.ig-profile,.ig-profile-top,.ig-profile-actions,.ig-profile-tabs{
+  border-color:var(--gm-line)!important;
+}
+.ig-profile-avatar{border-radius:50%!important}
+.ig-profile-actions button,.ig-profile-tabs button,.settings-tab,.settings-row,
+.create-editor-links>button,.gramora-tag-result,.gramora-location-field,
+.gramora-tag-field,.settings-content,.discover-card,.right-note{
+  border-radius:15px!important;
+}
+.ig-profile-actions .public-follow,.ig-profile-actions .profile-add,
+body.light .ig-profile-actions button:first-child{
+  box-shadow:0 5px 0 rgba(100,34,100,.48),0 9px 18px rgba(131,58,180,.16),inset 0 1px #ffffff55!important;
+}
+.discover-card,.settings-content,.settings-panel,.settings-menu,.gramora-create-details,
+.gramora-create-media,.post-detail-card,.post-detail-comments-wrap,.follow-list-dialog{
+  border:1px solid var(--gm-line)!important;
+  background:var(--gm-card)!important;
+  box-shadow:0 18px 44px rgba(0,0,0,.17),inset 0 1px rgba(255,255,255,.06)!important;
+  border-radius:20px!important;
+}
+body.light .discover-card,body.light .settings-content,body.light .settings-panel,
+body.light .settings-menu,body.light .gramora-create-details,body.light .gramora-create-media,
+body.light .post-detail-card,body.light .post-detail-comments-wrap,body.light .follow-list-dialog{
+  box-shadow:0 18px 40px rgba(42,32,68,.08),inset 0 1px #fff!important;
+}
+dialog,.story-dialog,.settings-dialog,.post-detail-dialog{
+  border:1px solid var(--gm-line)!important;
+  box-shadow:0 30px 90px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.08)!important;
+}
+dialog::backdrop{background:rgba(5,5,12,.68)!important;backdrop-filter:blur(8px)}
+input,textarea,select{
+  border-radius:12px!important;
+  transition:border-color .2s ease,box-shadow .2s ease,background .2s ease!important;
+}
+input:focus,textarea:focus,select:focus{
+  border-color:rgba(214,41,118,.72)!important;
+  box-shadow:0 0 0 4px rgba(214,41,118,.12)!important;
+}
+.gramora-ui-icon{
+  filter:drop-shadow(0 1px 2px rgba(131,58,180,.16));
+  transition:transform .2s ease,filter .2s ease;
+}
+.post-actions .like .gramora-ui-icon{color:#e1306c}
+.post-actions .save .gramora-ui-icon{color:#a78bfa}
+.post-actions .repost .gramora-ui-icon{color:#25d366}
+.post-comment-open .gramora-ui-icon{color:#4f9cff}
+#notificationBtn .gramora-ui-icon{color:#e1306c}
+#settingsBtn .gramora-ui-icon{color:#a78bfa}
+#storyCreate .story-ring>span{font-weight:800}
+@keyframes gm-soft-enter{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+@keyframes gm-social-pulse{0%,100%{box-shadow:0 0 0 0 rgba(214,41,118,.0)}50%{box-shadow:0 0 0 5px rgba(214,41,118,.10)}}
+.section-head,.stories-section{animation:gm-soft-enter .45s ease both}
+.feed>.post{animation:gm-soft-enter .38s ease both}
+.story-ring{animation:gm-social-pulse 3.8s ease-in-out infinite}
+@media(max-width:680px){
+ .post{border-radius:0!important;border-left:0!important;border-right:0!important}
+ .sidebar,.rightbar{box-shadow:none!important}
+ .mobile-nav{padding-bottom:env(safe-area-inset-bottom)!important}
+ .topbar{box-shadow:0 5px 18px rgba(0,0,0,.12)!important}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
