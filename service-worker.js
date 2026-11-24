@@ -1,4 +1,4 @@
-const CACHE_NAME = "gramora-shell-v154-notification-icon";
+const CACHE_NAME = "gramora-shell-v155-notification-inline";
 const APP_SHELL = [
   "./",
   "./index.html",
