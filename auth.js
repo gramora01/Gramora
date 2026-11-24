@@ -1859,7 +1859,7 @@ function scheduleFeedPostHydration(article,hydrate){
 function renderPosts(docs){
   const feed=document.getElementById("feed");if(feedPostHydrationObserver){feedPostHydrationObserver.disconnect();feedPostHydrationObserver=null;}feed.replaceChildren();
   if(!docs.length){const empty=document.createElement("div");empty.className="empty-welcome";const heading=document.createElement("h2");heading.textContent="Your feed is ready.";const note=document.createElement("p");note.textContent="Be the first to share a moment with the GRAMORA community.";empty.append(heading,note);feed.append(empty);return;}
-  docs.forEach(postDoc=>{
+  docs.forEach((postDoc,postIndex)=>{
     const data=postDoc.data(),isRepost=!!data._isRepost;
     const authorUid=isRepost?data.originalUid:data.uid,authorName=isRepost?data.originalDisplayName:data.displayName;
     const authorUsername=isRepost?data.originalUsername:data.username,authorPhoto=isRepost?data.originalPhotoURL:data.photoURL;
