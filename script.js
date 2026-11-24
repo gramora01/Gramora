@@ -123,19 +123,27 @@ document.querySelectorAll(".nav").forEach(button=>button.addEventListener("click
   document.body.classList.remove("gm-page-enter");void document.body.offsetWidth;document.body.classList.add("gm-page-enter");
 }));
 (()=>{
-  const surface=document.querySelector(".main-content")||document.getElementById("feed");if(!surface)return;
-  let startX=0,startY=0,startAt=0;
-  const blocked=target=>!!target.closest('input,textarea,select,button,a,[contenteditable="true"],dialog,.story,.story-viewer,.story-dialog,.post-detail-dialog,.gramora-chat-dialog,.gramora-conversation,.ig-post-tile,.create-photo-stage');
-  surface.addEventListener("touchstart",event=>{if(event.touches.length!==1||blocked(event.target))return;const touch=event.touches[0];startX=touch.clientX;startY=touch.clientY;startAt=Date.now();},{passive:true});
+  const surface=document.querySelector(".app-shell")||document.querySelector(".main-content")||document.getElementById("feed");
+  if(!surface)return;
+  let startX=0,startY=0,startAt=0,tracking=false;
+  const blocked=target=>!!target.closest('input,textarea,select,[contenteditable="true"],dialog,.story-viewer,.story-dialog,.post-detail-dialog,.gramora-chat-dialog,.gramora-conversation,.create-photo-stage');
+  surface.addEventListener("touchstart",event=>{
+    tracking=false;startAt=0;
+    if(event.touches.length!==1||blocked(event.target))return;
+    const touch=event.touches[0];startX=touch.clientX;startY=touch.clientY;startAt=Date.now();tracking=true;
+  },{passive:true,capture:true});
   surface.addEventListener("touchend",event=>{
-    if(!startAt||!event.changedTouches.length)return;
-    const touch=event.changedTouches[0],dx=touch.clientX-startX,dy=touch.clientY-startY,elapsed=Date.now()-startAt;startAt=0;
-    if(elapsed>650||Math.abs(dx)<75||Math.abs(dx)<Math.abs(dy)*1.35)return;
-    const pages=["home","explore","create","messages","profile"],current=pages.indexOf(gramoraCurrentPage);if(current<0)return;
+    if(!tracking||!startAt||!event.changedTouches.length)return;
+    const touch=event.changedTouches[0],dx=touch.clientX-startX,dy=touch.clientY-startY,elapsed=Date.now()-startAt;
+    tracking=false;startAt=0;
+    if(elapsed>900||Math.abs(dx)<55||Math.abs(dx)<Math.abs(dy)*1.25)return;
+    const pages=["home","explore","create","messages","profile"],current=pages.indexOf(gramoraCurrentPage);
+    if(current<0)return;
     if(dx<0&&current<pages.length-1)openGramoraPage(pages[current+1]);
     else if(dx>0&&current>0)openGramoraPage(pages[current-1]);
-  },{passive:true});
-})();
+  },{passive:true,capture:true});
+  surface.addEventListener("touchcancel",()=>{tracking=false;startAt=0;},{passive:true,capture:true});
+})();;
 
 document.addEventListener("click",event=>{
   const like=event.target.closest(".like");
