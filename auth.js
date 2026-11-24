@@ -1209,6 +1209,7 @@ function setStoryEditorKind(kind){
   const label=document.getElementById("storyModeLabel");if(label)label.textContent=storyEditorKind==="image"?"IMAGE STORY":"TEXT STORY";
   if(storyTypeChooser)storyTypeChooser.hidden=true;
   if(storyEditorWorkspace)storyEditorWorkspace.hidden=false;
+  if(storyEditorKind==="image")applyStoryTextPosition(storyTextXInput?.value||50,storyTextYInput?.value||50);
   const pick=document.getElementById("storyImagePickButton");if(pick)pick.hidden=storyEditorKind!=="image"||!!(storyImageUrlInput?.value||storyImageFile?.files?.length);
   const move=document.getElementById("storyMoveText");if(move)move.hidden=storyEditorKind!=="image"||!storyTextArea?.value.trim();
 }
