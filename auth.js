@@ -657,7 +657,9 @@ function openStoryViewer(docs,id){
   const ownerEditAction=ownerMenu?.querySelector('[data-story-menu-action="edit"]');if(ownerEditAction)ownerEditAction.onclick=()=>{ownerMenu.hidden=true;editStoryButton?.click();};
   const ownerDeleteAction=ownerMenu?.querySelector('[data-story-menu-action="delete"]');if(ownerDeleteAction)ownerDeleteAction.onclick=()=>{ownerMenu.hidden=true;deleteButton?.click();};
   content.textContent=data.text||"";
-  content.style.background=data.background||POST_BACKGROUNDS[4];
+  content.style.background=data.imageUrl?"transparent":(data.background||POST_BACKGROUNDS[4]);
+  const viewerImage=document.getElementById("storyViewerImage");if(viewerImage){viewerImage.src=data.imageUrl||"";viewerImage.hidden=!data.imageUrl;}
+  document.getElementById("storyViewerStage")?.classList.toggle("has-story-image",!!data.imageUrl);
   const viewerLyrics=document.getElementById("storyViewerLyrics");if(viewerLyrics){viewerLyrics.textContent=data.lyrics||"";viewerLyrics.hidden=!(data.lyrics||"").trim();}
   const viewerName=document.getElementById("storyViewerName");if(viewerName)viewerName.textContent=data.displayName||"GRAMORA member";
   const viewerTime=document.getElementById("storyViewerTime");if(viewerTime)viewerTime.textContent=formatPostDate(data.createdAt);
@@ -699,7 +701,7 @@ function openStoryViewer(docs,id){
     editStoryButton.hidden=!!dialog._highlightStories?.length||data.uid!==auth?.currentUser?.uid;
     editStoryButton.onclick=()=>{
       if(data.uid!==auth?.currentUser?.uid)return;
-      storyEditingId=id;setStoryEditingMode(true);document.getElementById("storyText").value=data.text||"";if(storyCharCount)storyCharCount.textContent=String((data.text||"").length);
+      storyEditingId=id;setStoryEditingMode(true);document.getElementById("storyText").value=data.text||"";if(storyImageUrlInput)storyImageUrlInput.value=data.imageUrl||"";if(storyImagePathInput)storyImagePathInput.value=data.imagePath||"";if(storyImageFile)storyImageFile.value="";setStoryImagePreview(data.imageUrl||"");if(storyCharCount)storyCharCount.textContent=String((data.text||"").length);
       const bg=data.background||POST_BACKGROUNDS[4];document.getElementById("storyBackground").value=bg;document.getElementById("storyPreviewCanvas").style.background=bg;
       document.querySelectorAll("#storyBackgroundPicker [data-bg]").forEach(button=>button.classList.toggle("selected",button.dataset.bg===bg));
       document.getElementById("storySongTitle").value=data.songTitle||"";document.getElementById("storySongLyrics").value=data.lyrics||"";document.getElementById("storyLyricsEditor").hidden=!data.songTitle;document.getElementById("storyLyricsPreview").textContent=data.lyrics||"";document.getElementById("storyLyricsPreview").hidden=!(data.lyrics||"").trim();document.getElementById("storySongArtist").value=data.songArtist||"";document.getElementById("storySongUrl").value=data.songUrl||"";document.getElementById("storySongPreviewUrl").value=data.previewUrl||"";document.getElementById("storySongArtwork").value=data.songArtwork||"";document.getElementById("storySongStart").value=String(data.songStart||0);document.getElementById("storyMusicAttached").hidden=!data.songTitle;document.getElementById("storySongAttachedTitle").textContent=data.songTitle||"";document.getElementById("storySongAttachedArtist").textContent=data.songArtist||"";document.getElementById("storySongArtworkPreview").src=data.songArtwork||"";
@@ -1070,8 +1072,8 @@ storyEditorDone?.addEventListener("click",()=>{
     storyTextArea?.focus();
     return;
   }
-  if(!storyTextArea?.value.trim()){
-    if(status)status.textContent="Pehle story text likhein, phir Done dabayein.";
+  if(!storyTextArea?.value.trim()&&!storyImageFile?.files?.length&&!storyImageUrlInput?.value.trim()&&!document.getElementById("storySongTitle")?.value.trim()){
+    if(status)status.textContent="Photo select karein, text likhein ya song add karein.";
     storyTextArea?.focus();
     return;
   }
@@ -1192,41 +1194,27 @@ document.querySelectorAll(".gramora-music-tabs [data-music-tab]").forEach(tab=>t
 }));
 
 const storyForm=document.getElementById("storyForm");
+const storyImageFile=document.getElementById("storyImageFile"),storyImagePreview=document.getElementById("storyImagePreview"),storyImageUrlInput=document.getElementById("storyImageUrl"),storyImagePathInput=document.getElementById("storyImagePath"),storyImageRemove=document.getElementById("storyImageRemove");
+function setStoryImagePreview(url){if(storyImagePreview){storyImagePreview.src=url||"";storyImagePreview.hidden=!url;}if(storyImageRemove)storyImageRemove.hidden=!url;}
+storyImageFile?.addEventListener("change",()=>{const file=storyImageFile.files?.[0];if(!file)return;if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>5*1024*1024){const status=document.getElementById("storyCreateStatus");if(status)status.textContent="JPG, PNG ya WebP photo select karein (maximum 5 MB).";storyImageFile.value="";return;}setStoryImagePreview(URL.createObjectURL(file));if(storyImageUrlInput)storyImageUrlInput.value="";if(storyImagePathInput)storyImagePathInput.value="";});
+storyImageRemove?.addEventListener("click",()=>{if(storyImageFile)storyImageFile.value="";if(storyImageUrlInput)storyImageUrlInput.value="";if(storyImagePathInput)storyImagePathInput.value="";setStoryImagePreview("");});
 storyForm?.addEventListener("submit",async event=>{
-  event.preventDefault();
-  const status=document.getElementById("storyCreateStatus");
-  const button=storyForm.querySelector('button[type="submit"]');
-  const text=document.getElementById("storyText").value.trim();
-  const background=document.getElementById("storyBackground").value||POST_BACKGROUNDS[4];
-  const songTitle=document.getElementById("storySongTitle").value.trim();
-  const lyrics=document.getElementById("storySongLyrics").value.trim();
-  const songArtist=document.getElementById("storySongArtist").value.trim();
-  const songUrl=document.getElementById("storySongUrl").value.trim();
-  const previewUrl=storyPreviewInput?.value.trim()||"";
-  const songArtwork=document.getElementById("storySongArtwork").value.trim();
-  const songStart=Number(document.getElementById("storySongStart").value||0);
+  event.preventDefault();const status=document.getElementById("storyCreateStatus"),button=storyForm.querySelector('button[type="submit"]');
+  const text=document.getElementById("storyText").value.trim(),background=document.getElementById("storyBackground").value||POST_BACKGROUNDS[4],songTitle=document.getElementById("storySongTitle").value.trim(),lyrics=document.getElementById("storySongLyrics").value.trim(),songArtist=document.getElementById("storySongArtist").value.trim(),songUrl=document.getElementById("storySongUrl").value.trim(),previewUrl=storyPreviewInput?.value.trim()||"",songArtwork=document.getElementById("storySongArtwork").value.trim(),songStart=Number(document.getElementById("storySongStart").value||0),selectedImage=storyImageFile?.files?.[0]||null;
+  let imageUrl=storyImageUrlInput?.value.trim()||"",imagePath=storyImagePathInput?.value.trim()||"";
   if(!auth?.currentUser){status.textContent="Story share karne ke liye login karein.";return;}
-  if(!text&&!songTitle){status.textContent="Story text likhein ya song add karein.";return;}
-  if(songUrl&&!/^https:\/\/(open\.spotify\.com|music\.apple\.com|music\.youtube\.com|www\.youtube\.com|youtu\.be)\//i.test(songUrl)){
-    status.textContent="Valid Apple Music, Spotify ya YouTube song link add karein.";return;
-  }
-  button.disabled=true;button.textContent=storyEditingId?"Saving…":"Sharing…";status.textContent=storyEditingId?"Story update ho rahi hai…":"Story publish ho rahi hai…";
+  if(!text&&!songTitle&&!imageUrl&&!selectedImage){status.textContent="Photo select karein, text likhein ya song add karein.";return;}
+  if(songUrl&&!/^https:\/\/(open\.spotify\.com|music\.apple\.com|music\.youtube\.com|www\.youtube\.com|youtu\.be)\//i.test(songUrl)){status.textContent="Valid Apple Music, Spotify ya YouTube song link add karein.";return;}
+  button.disabled=true;button.textContent=storyEditingId?"Saving…":"Sharing…";status.textContent=selectedImage?"Story photo upload ho rahi hai…":(storyEditingId?"Story update ho rahi hai…":"Story publish ho rahi hai…");
   try{
-    const user=auth.currentUser;
-    const profileSnap=await getDoc(doc(db,"userProfiles",user.uid));
-    const profile=profileSnap.exists()?profileSnap.data():{};
-    if(storyEditingId){
-      await updateDoc(doc(db,"stories",storyEditingId),{text,lyrics,background,songTitle,songArtist,songUrl,previewUrl,songArtwork,songStart});storyEditingId=null;status.textContent="Story update ho gayi!";
-    }else{
-      await addDoc(collection(db,"stories"),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",text,lyrics,songTitle,songArtist,songUrl,previewUrl,songArtwork,songStart,background,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)});
-      status.textContent="Story share ho gayi!";
-    }
-    storyForm.reset();setStoryEditingMode(true);if(storyEditorDone)storyEditorDone.textContent="Done";if(storyCharCount)storyCharCount.textContent="0";if(storyTextArea){storyTextArea.style.font="";storyTextArea.style.color="#fff";storyTextArea.style.textAlign="center";}document.querySelectorAll(".gramora-story-style-strip [data-story-font]").forEach((item,index)=>item.classList.toggle("active",index===0));stopStoryMusicPreview();if(storyMusicAttached)storyMusicAttached.hidden=true;if(storyMusicSelection)storyMusicSelection.hidden=true;document.getElementById("storyLyricsEditor").hidden=true;document.getElementById("storyLyricsPreview").hidden=true;storySongResults?.replaceChildren();
-    document.getElementById("storyCreateDialog").close();document.getElementById("storyCreateDialog").querySelector("h2").textContent="Create a text story";
-  }catch(error){
-    console.error("Story publish failed:",error);
-    status.textContent=error.code==="permission-denied"?"Firestore Rules publish karein.":"Story publish nahi hui: "+(error.message||"Try again.");
-  }finally{button.disabled=false;button.textContent=storyEditingId?"Save story":"Share story";}
+    const user=auth.currentUser,profileSnap=await getDoc(doc(db,"userProfiles",user.uid)),profile=profileSnap.exists()?profileSnap.data():{},storyId=storyEditingId||doc(collection(db,"stories")).id;
+    if(selectedImage){const uploaded=await uploadGramoraStoryImage(selectedImage,user.uid,storyId);imageUrl=uploaded.imageUrl;imagePath=uploaded.imagePath;}
+    const storyData={text,lyrics,background,songTitle,songArtist,songUrl,previewUrl,songArtwork,songStart,imageUrl,imagePath};
+    if(storyEditingId){await updateDoc(doc(db,"stories",storyEditingId),storyData);storyEditingId=null;status.textContent="Story update ho gayi!";}
+    else{await setDoc(doc(db,"stories",storyId),{uid:user.uid,displayName:profile.displayName||user.displayName||"GRAMORA member",...storyData,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)});status.textContent="Story share ho gayi!";}
+    storyForm.reset();if(storyImageUrlInput)storyImageUrlInput.value="";if(storyImagePathInput)storyImagePathInput.value="";setStoryImagePreview("");setStoryEditingMode(true);if(storyEditorDone)storyEditorDone.textContent="Done";if(storyCharCount)storyCharCount.textContent="0";if(storyTextArea){storyTextArea.style.font="";storyTextArea.style.color="#fff";storyTextArea.style.textAlign="center";}document.querySelectorAll(".gramora-story-style-strip [data-story-font]").forEach((item,index)=>item.classList.toggle("active",index===0));stopStoryMusicPreview();if(storyMusicAttached)storyMusicAttached.hidden=true;if(storyMusicSelection)storyMusicSelection.hidden=true;document.getElementById("storyLyricsEditor").hidden=true;document.getElementById("storyLyricsPreview").hidden=true;storySongResults?.replaceChildren();document.getElementById("storyCreateDialog").close();document.getElementById("storyCreateDialog").querySelector("h2").textContent="Create a story";
+  }catch(error){console.error("Story publish failed:",error);status.textContent=error.code==="permission-denied"?"Firestore Rules publish karein.":"Story publish nahi hui: "+(error.message||"Try again.");}
+  finally{button.disabled=false;button.textContent=storyEditingId?"Save story":"Share story";}
 });
 document.getElementById("closeStoryCreate")?.addEventListener("click",()=>document.getElementById("storyCreateDialog").close());
 document.getElementById("storyCreateDialog")?.addEventListener("close",()=>{
@@ -1651,6 +1639,19 @@ async function uploadGramoraPostPhotos(files,uid,postId){
     photoUrls.push("https://kyqkzrzrnkzjtefrnzmh.supabase.co/storage/v1/object/public/gramora%20-photos/"+path.split("/").map(encodeURIComponent).join("/"));
   }
   return {photoUrls,photoPaths};
+}
+async function uploadGramoraStoryImage(file,uid,storyId){
+  if(!file)return {imageUrl:"",imagePath:""};
+  if(!["image/jpeg","image/png","image/webp"].includes(file.type))throw new Error("Story photo JPG, PNG ya WebP format mein honi chahiye.");
+  if(file.size>5*1024*1024)throw new Error("Story photo 5 MB ya usse chhoti honi chahiye.");
+  const user=auth?.currentUser;if(!user)throw new Error("Please sign in again before uploading.");
+  const extension=file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg";
+  const path=uid+"/stories/"+storyId+"/image."+extension,token=await user.getIdToken();
+  const worker="https://gramora-photo-access.gramora01.workers.dev";
+  const response=await fetch(worker+"/upload?path="+encodeURIComponent(path),{method:"POST",headers:{"Authorization":"Bearer "+token,"Content-Type":file.type},body:file});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(result.error||"Story photo upload failed ("+response.status+").");
+  return {imagePath:path,imageUrl:"https://kyqkzrzrnkzjtefrnzmh.supabase.co/storage/v1/object/public/gramora%20-photos/"+path.split("/").map(encodeURIComponent).join("/")};
 }
 function createPostMusicLabel(data){
   if(!data?.musicTitle)return null;
