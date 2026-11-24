@@ -1319,43 +1319,26 @@ async function migrateOwnedRepostsToFeed(user){
 }
 const repostMigrationStarted=new Set();
 function startPostsFeed(user){
-  if(!repostMigrationStarted.has(user.uid)){
-    repostMigrationStarted.add(user.uid);
-    setTimeout(()=>{if(auth?.currentUser?.uid===user.uid)migrateOwnedRepostsToFeed(user);},6000);
-  }
+  if(!repostMigrationStarted.has(user.uid)){repostMigrationStarted.add(user.uid);setTimeout(()=>{if(auth?.currentUser?.uid===user.uid)migrateOwnedRepostsToFeed(user);},6000);}
   if(activeFeedUnsubscribe)activeFeedUnsubscribe();
-  let posts=[],reposts=[],ready=0,total=0,offs=[],cancelled=false,completed=false;
-  const feedLoadTimer=setTimeout(()=>{
-    if(!cancelled&&!completed&&activeView==="home"){
-      showFeedRetryMessage("Your feed is taking longer than expected. Check your connection and try again.",user);
-    }
-  },12000);
-  const renderCombined=()=>{
-    if(cancelled||ready<total)return;
-    completed=true;clearTimeout(feedLoadTimer);
-    if(activeView!=="home")return;
-    const repostDocs=reposts.map(item=>({id:"repost_"+item.id,data:()=>({...item.data(),_isRepost:true,_repostId:item.id})}));
-    renderPosts([...posts,...repostDocs].sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).slice(0,60));
-  };
+  let posts=[],reposts=[],postsReady=0,repostsReady=0,offs=[],cancelled=false,postsRendered=false,repostsRendered=false;
+  const feedLoadTimer=setTimeout(()=>{if(!cancelled&&!postsRendered&&activeView==="home")showFeedRetryMessage("Your feed is taking longer than expected. Check your connection and try again.",user);},12000);
+  const renderCombined=includeReposts=>{if(cancelled||activeView!=="home")return;const repostDocs=includeReposts?reposts.map(item=>({id:"repost_"+item.id,data:()=>({...item.data(),_isRepost:true,_repostId:item.id})})):[];renderPosts([...posts,...repostDocs].sort((a,b)=>(b.data().createdAt?.toMillis?.()||0)-(a.data().createdAt?.toMillis?.()||0)).slice(0,60));};
   activeFeedUnsubscribe=()=>{cancelled=true;clearTimeout(feedLoadTimer);offs.forEach(off=>off());};
   getVisibleContentUids(user).then(uids=>{
     if(cancelled)return;
     const groups=[];for(let i=0;i<uids.length;i+=30)groups.push(uids.slice(i,i+30));
-    total=groups.length+groups.length*groups.length;
-    if(!total){completed=true;clearTimeout(feedLoadTimer);renderPosts([]);return;}
-    groups.forEach(uidBatch=>{
-      offs.push(onSnapshot(query(collection(db,"posts"),where("uid","in",uidBatch),limit(100)),snap=>{
-        posts=posts.filter(item=>!uidBatch.includes(item.data().uid)).concat(snap.docs);
-        ready++;renderCombined();
-      },error=>{console.warn("A followed account's posts are not visible:",error.code||error);ready++;renderCombined();}));
-    });
-    groups.forEach(reposterBatch=>groups.forEach(originalBatch=>{
-      offs.push(onSnapshot(query(collection(db,"repostFeed"),where("uid","in",reposterBatch),where("originalUid","in",originalBatch),limit(100)),snap=>{
-        reposts=reposts.filter(item=>!(reposterBatch.includes(item.data().uid)&&originalBatch.includes(item.data().originalUid))).concat(snap.docs);
-        ready++;renderCombined();
-      },error=>{console.warn("Reposts feed unavailable:",error.code||error);ready++;renderCombined();}));
-    }));
-  }).catch(error=>{console.error(error);completed=true;clearTimeout(feedLoadTimer);if(activeView==="home")showFeedRetryMessage("Could not prepare your feed ("+(error.code||"network error")+"). Check your connection and Firestore Rules, then retry.",user);});
+    if(!groups.length){clearTimeout(feedLoadTimer);renderPosts([]);postsRendered=true;return;}
+    const allowedOriginalUids=new Set(uids);
+    groups.forEach(uidBatch=>offs.push(onSnapshot(query(collection(db,"posts"),where("uid","in",uidBatch),limit(100)),snap=>{
+      posts=posts.filter(item=>!uidBatch.includes(item.data().uid)).concat(snap.docs);postsReady++;
+      if(postsReady>=groups.length&&!postsRendered){postsRendered=true;clearTimeout(feedLoadTimer);renderCombined(false);}else if(postsRendered&&repostsRendered)renderCombined(true);
+    },error=>{console.warn("Followed posts unavailable:",error.code||error);postsReady++;if(postsReady>=groups.length&&!postsRendered){postsRendered=true;clearTimeout(feedLoadTimer);renderCombined(false);}})));
+    groups.forEach(reposterBatch=>offs.push(onSnapshot(query(collection(db,"repostFeed"),where("uid","in",reposterBatch),limit(150)),snap=>{
+      const batchUids=new Set(reposterBatch);reposts=reposts.filter(item=>!batchUids.has(item.data().uid)).concat(snap.docs.filter(item=>allowedOriginalUids.has(item.data().originalUid)));repostsReady++;
+      if(repostsReady>=groups.length){repostsRendered=true;if(postsRendered)renderCombined(true);}
+    },error=>{console.warn("Reposts feed unavailable:",error.code||error);repostsReady++;if(repostsReady>=groups.length){repostsRendered=true;if(postsRendered)renderCombined(true);}})));
+  }).catch(error=>{console.error(error);clearTimeout(feedLoadTimer);if(activeView==="home")showFeedRetryMessage("Could not prepare your feed ("+(error.code||"network error")+"). Check your connection and Firestore Rules, then retry.",user);});
 }
 function showFeedRetryMessage(message,user){
   const feed=document.getElementById("feed");
@@ -2565,7 +2548,7 @@ async function renderGramoraInbox(user){
   const empty=page.querySelector(".gramora-inbox-empty");
   const emptyTitle=empty?.querySelector("h3");
   const emptyText=empty?.querySelector("p");
-  if(emptyTitle)emptyTitle.textContent="Loading chats…";
+  if(emptyTitle)emptyTitle.textContent="Your messages will appear here";
   if(emptyText)emptyText.textContent="Your conversations will appear here.";
   activeInboxUnsubscribe=onSnapshot(
     query(collection(db,"conversations"),where("participantUids","array-contains",user.uid)),
@@ -2581,14 +2564,7 @@ async function renderGramoraInbox(user){
         try{const profileSnap=await getDoc(doc(db,"userProfiles",otherUid));if(profileSnap.exists())profile=profileSnap.data();}
         catch(error){console.warn("Chat profile unavailable",error);}
         const clearedAt=Number(localStorage.getItem("gramora-chat-cleared:"+user.uid+":"+conversationDoc.id)||0);
-        let unreadCount=0;
-        try{
-          const recentMessages=await getDocs(query(collection(db,"conversations",conversationDoc.id,"messages"),orderBy("createdAt","desc"),limit(50)));
-          unreadCount=recentMessages.docs.filter(messageDoc=>{
-            const message=messageDoc.data();
-            return (message.createdAt?.toMillis?.()||0)>clearedAt&&message.senderUid===otherUid&&message.status!=="seen";
-          }).length;
-        }catch(error){console.warn("Unread message count unavailable",error);}
+        const unreadCount=0;
         const lastMessageAt=data.lastMessageAt?.toMillis?.()||0;
         const visibleLastMessage=lastMessageAt>clearedAt?(data.lastMessage||""):"";
         return {id:conversationDoc.id,uid:otherUid,profile,
@@ -2619,6 +2595,15 @@ async function renderGramoraInbox(user){
         row.append(avatar,details,right);
         row.addEventListener("click",()=>openGramoraChat(user,item.uid,item.profile));
         list.append(row);
+      });
+      sorted.forEach(item=>{
+        const clearedAt=Number(localStorage.getItem("gramora-chat-cleared:"+user.uid+":"+item.id)||0);
+        getDocs(query(collection(db,"conversations",item.id,"messages"),orderBy("createdAt","desc"),limit(50))).then(messageSnap=>{
+          if(token!==inboxRenderToken||!page.isConnected)return;
+          const unread=messageSnap.docs.filter(messageDoc=>{const message=messageDoc.data();return (message.createdAt?.toMillis?.()||0)>clearedAt&&message.senderUid===item.uid&&message.status!=="seen";}).length;
+          const row=list.querySelector('[data-conversation-id="'+item.id+'"]');if(!row)return;
+          row.classList.toggle("has-unread",unread>0);const preview=row.querySelector(".gramora-conversation-details small");if(preview&&unread>0)preview.textContent=unread>3?"4+ new messages":unread+" new messages";
+        }).catch(error=>console.warn("Unread message count unavailable:",error));
       });
       const search=page.querySelector(".gramora-inbox-search input");
       const term=search?.value.trim().toLowerCase()||"";
