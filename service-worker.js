@@ -1,13 +1,13 @@
-const CACHE_NAME = "gramora-shell-v196-story-editor-pro";
+const CACHE_NAME = "gramora-shell-v197-story-image-effects";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=180",
   "./script.js?v=8",
-  "./auth.js?v=276",
+  "./auth.js?v=277",
   "./auth.css?v=63",
-  "./story-creator.css?v=12",
-  "./story-creator.js?v=6",
+  "./story-creator.css?v=13",
+  "./story-creator.js?v=7",
   "./gramora-icons.css?v=2",
   "./post-action-spacing.css?v=1",
   "./public-profile-layout.css?v=3",
