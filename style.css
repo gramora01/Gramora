@@ -1853,3 +1853,19 @@ html body.light #caption::placeholder{
  -webkit-text-fill-color:#737782!important;
  opacity:1!important;
 }
+
+/* Instagram-style profile grid: photo tiles show only the photo, not its caption */
+body.profile-active .ig-post-tile img,
+body.public-profile-open .ig-post-tile img{z-index:0}
+body.light #postDetailDialog .post-detail-caption{
+ color:#202127!important;
+ -webkit-text-fill-color:#202127!important;
+ background:#fff!important;
+ border-color:#e4e6eb!important;
+}
+body.light #postDetailDialog #postDetailCard{
+ color:#202127!important;
+ background:#fff!important;
+}
+body.light #postDetailDialog .post-detail-byline,
+body.light #postDetailDialog .post-detail-caption{color:#202127!important}
