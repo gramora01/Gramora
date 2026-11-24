@@ -185,13 +185,27 @@ service cloud.firestore {
           'username',
           'text',
           'background',
+          'photoUrls',
+          'photoPaths',
+          'photoCount',
           'createdAt'
         ])
-        && request.resource.data.background is string
-        && request.resource.data.background.size() <= 200
         && request.resource.data.text is string
-        && request.resource.data.text.size() > 0
-        && request.resource.data.text.size() <= 2000;
+        && request.resource.data.text.size() <= 2000
+        && (
+          (request.resource.data.keys().hasAny(['photoPaths'])
+            && request.resource.data.photoPaths is list
+            && request.resource.data.photoPaths.size() > 0
+            && request.resource.data.photoPaths.size() <= 10
+            && request.resource.data.photoUrls is list
+            && request.resource.data.photoUrls.size() == request.resource.data.photoPaths.size()
+            && request.resource.data.photoCount == request.resource.data.photoPaths.size())
+          ||
+          (!request.resource.data.keys().hasAny(['photoPaths'])
+            && request.resource.data.text.size() > 0
+            && request.resource.data.background is string
+            && request.resource.data.background.size() <= 200)
+        );
 
       // The owner may edit post content; viewers may atomically increment views once.
       allow update: if (
@@ -313,7 +327,7 @@ service cloud.firestore {
             && get(/databases/$(database)/documents/reposts/$(repostId)).data.uid == request.resource.data.uid
           )
         )
-        && request.resource.data.keys().hasOnly(['uid','displayName','username','photoURL','originalPostId','originalUid','originalDisplayName','originalUsername','originalPhotoURL','originalText','originalBackground','originalCreatedAt','createdAt']);
+        && request.resource.data.keys().hasOnly(['uid','displayName','username','photoURL','originalPostId','originalUid','originalDisplayName','originalUsername','originalPhotoURL','originalText','originalBackground','originalPhotoUrls','originalPhotoPaths','originalCreatedAt','createdAt']);
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
       allow update: if false;
     }
