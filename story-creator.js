@@ -10,7 +10,7 @@
     text:"<b>Aa</b>",
     image:S('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/>'),
     music:S('<path d="M9 18V6l10-2v12"/><circle cx="7" cy="18" r="2.5"/><circle cx="17" cy="16" r="2.5"/>'),
-    effects:S('<path d="M4 4h16v16H4z"/><path d="m4 15 5-5 4 4 3-3 4 4"/><circle cx="9" cy="8" r="1.5"/>'),
+    effects:S('<path d="M12 3.5 14 9l5.5 2-5.5 2-2 5.5-2-5.5-5.5-2L10 9l2-5.5Z"/><path d="m19 3 .7 2.3L22 6l-2.3.7L19 9l-.7-2.3L16 6l2.3-.7L19 3Z"/><path d="m5 15 .7 2.3L8 18l-2.3.7L5 21l-.7-2.3L2 18l2.3-.7L5 15Z"/>'),
     align:S('<path d="M4 7h16M4 12h10M4 17h16"/>'),
     send:S('<path d="M5 12h14M13 6l6 6-6 6"/>')
   };
