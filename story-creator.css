@@ -99,3 +99,17 @@
 #storyCreateDialog.story-kind-image #storyPreviewCanvas {
   background: #000 !important;
 }
+
+/* Smooth story loading + restrained GPU-friendly 3D motion. */
+#storyViewerStage.story-image-loading{background:radial-gradient(ellipse at 50% 42%,#39264f 0%,#171322 55%,#08080d 100%)!important;overflow:hidden}
+#storyViewerStage.story-image-loading:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 25%,#ffffff12 48%,transparent 70%);transform:translateX(-100%);animation:gramoraStoryShimmer 1.15s ease-in-out infinite;z-index:1}
+#storyViewerStage .gramora-story-viewer-image{transition:opacity .22s ease,transform .35s cubic-bezier(.2,.8,.2,1);will-change:transform,opacity}
+#storyViewerStage .gramora-story-viewer-image[hidden]{display:none!important;opacity:0}
+#storyViewerStage.story-viewer-enter{animation:gramoraStoryEnter .28s cubic-bezier(.2,.8,.2,1) both}
+.story-ring{transform:translateZ(0);transition:transform .22s ease,filter .22s ease}
+.story:active .story-ring{transform:scale(.94) rotate(-2deg);filter:drop-shadow(0 5px 12px #a855f755)}
+.story-user-ring.story-unseen{animation:gramoraStoryRingGlow 2.8s ease-in-out infinite}
+@keyframes gramoraStoryShimmer{to{transform:translateX(100%)}}
+@keyframes gramoraStoryEnter{from{opacity:.72;transform:scale(1.012)}to{opacity:1;transform:scale(1)}}
+@keyframes gramoraStoryRingGlow{0%,100%{filter:drop-shadow(0 0 0 #c026d300)}50%{filter:drop-shadow(0 0 7px #c026d355)}}
+@media(prefers-reduced-motion:reduce){#storyViewerStage.story-viewer-enter,.story-user-ring.story-unseen,#storyViewerStage.story-image-loading:after{animation:none!important}.story-ring,#storyViewerStage .gramora-story-viewer-image{transition:none!important}}
