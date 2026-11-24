@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v176-repost-swipe-fix";
+const CACHE_NAME = "gramora-shell-v177-story-viewers-fix";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=173",
   "./script.js?v=8",
-  "./auth.js?v=260",
+  "./auth.js?v=261",
   "./auth.css?v=63",
   "./story-creator.css?v=8",
   "./story-creator.js?v=5",
