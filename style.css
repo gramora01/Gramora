@@ -2055,3 +2055,7 @@ body.light.public-profile-open .ig-profile > .public-profile-highlights[hidden] 
 .settings-panel{animation:gramoraSettingsPageIn .2s ease both}
 @keyframes gramoraSettingsPageIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
 @media(max-width:680px){.settings-dialog .settings-head{display:flex!important;align-items:center!important}.settings-dialog .settings-back{flex:0 0 38px!important}.settings-dialog .settings-content{min-height:55vh}}
+
+/* Keep the hidden Settings back control from appearing beside the close button. */
+.settings-dialog .settings-back[hidden]{display:none!important}
+.settings-dialog .settings-back:not([hidden]){font-size:22px!important}
