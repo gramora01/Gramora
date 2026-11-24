@@ -1796,3 +1796,19 @@ body.light .create-advanced label{color:#626875}
  .gramora-share-button{margin-top:18px}
  body.light .gramora-create-media{border-bottom-color:#e5e7ed}
 }
+
+
+/* Text-only post composer mode */
+.create-post-modes{display:flex;gap:8px;margin:0 0 12px;padding:4px;border:1px solid #303440;border-radius:10px;background:#191c24}
+.create-post-mode{flex:1;padding:10px;border:0;border-radius:7px;background:transparent;color:#b9bdc8;font-size:12px;font-weight:800}
+.create-post-mode.active{background:#405de6;color:#fff}
+.create-text-preview{width:100%;height:100%;min-height:390px;display:grid;place-items:center;padding:28px;text-align:center;white-space:pre-wrap;overflow-wrap:anywhere;color:#fff;font-size:clamp(20px,3vw,32px);font-weight:800;line-height:1.35}
+.create-text-preview[hidden]{display:none}
+.create-text-background-tools{margin:0 0 14px}
+.create-text-background-picker{display:flex;gap:9px;flex-wrap:wrap;margin-top:9px}
+.create-text-background-picker button{width:30px;height:30px;border:2px solid #ffffff66;border-radius:50%;padding:0;cursor:pointer}
+.create-text-background-picker button.selected{outline:2px solid #7182ff;outline-offset:2px}
+body.light .create-post-modes{background:#f7f8fb;border-color:#e0e3eb}
+body.light .create-post-mode{color:#626875}
+body.light .create-post-mode.active{color:#fff}
+@media(max-width:700px){.create-text-preview{min-height:0;height:100%;font-size:25px}.create-post-modes{margin-bottom:10px}}
