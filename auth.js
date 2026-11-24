@@ -1633,7 +1633,7 @@ async function uploadGramoraPostPhotos(files,uid,postId){
     if(!response.ok)throw new Error(result.error||"Secure photo upload failed ("+response.status+").");
     photoPaths.push(path);
     // The bucket remains Public during this integration stage. This URL will be replaced by short-lived signed URLs before the bucket is made Private.
-    photoUrls.push("https://kyqkzrzrnkzjtefrnzmh.supabase.co/storage/v1/object/public/gramora-photos/"+path.split("/").map(encodeURIComponent).join("/"));
+    photoUrls.push("https://kyqkzrzrnkzjtefrnzmh.supabase.co/storage/v1/object/public/gramora%20-photos/"+path.split("/").map(encodeURIComponent).join("/"));
   }
   return {photoUrls,photoPaths};
 }
