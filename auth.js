@@ -2897,6 +2897,13 @@ async function openStoryHighlightChooser(user,storyId){
 }
 async function loadProfileHighlights(user,panel,canManage=true){
   const strip=panel.querySelector(".ig-highlights");if(!strip)return;
+  if(!canManage){
+    /* Public highlight row gets its theme surface directly when rendered. */
+    panel.style.setProperty("background-color","#fff","important");
+    strip.style.setProperty("background-color","#fff","important");
+    strip.style.setProperty("background-image","none","important");
+    strip.style.setProperty("color","#30333b","important");
+  }
   try{
     const snap=await getDocs(query(collection(db,"storyHighlights"),where("uid","==",user.uid)));
     if(snap.empty){
