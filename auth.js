@@ -1695,6 +1695,26 @@ function createPostMusicElement(data){
   }else{audio.autoplay=true;audio.muted=true;audio.play().catch(()=>{});}
   return wrap;
 }
+function stopActivePostMusic(){
+  document.querySelectorAll(".gramora-post-music-overlay audio").forEach(audio=>{
+    audio.pause();
+    audio.muted=true;
+    const button=audio.closest(".gramora-post-music-overlay")?.querySelector(".gramora-post-music-sound");
+    if(button){
+      button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"></path><path d="m16 9 5 6m0-6-5 6"></path></svg>';
+      button.setAttribute("aria-label","Turn sound on");
+      button.setAttribute("aria-pressed","false");
+      button.classList.remove("is-sound-on");
+    }
+  });
+  activePostMusicAudio=null;
+}
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden)stopActivePostMusic();
+});
+window.addEventListener("pagehide",stopActivePostMusic);
+window.addEventListener("freeze",stopActivePostMusic);
+window.addEventListener("beforeunload",stopActivePostMusic);
 function createPostMediaElement(urls,className="post-media-gallery"){
   const list=Array.isArray(urls)?urls.filter(url=>typeof url==="string"&&url.startsWith("https://")):[];
   if(!list.length)return null;
