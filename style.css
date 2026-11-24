@@ -1829,3 +1829,10 @@ body.light .create-post-mode.active{color:#fff}
 
 /* Compact Instagram-style caption below photo posts */
 .post-caption-inline{margin:0!important;padding:0 2px 2px!important;min-height:0!important;border-radius:0!important;display:block!important;place-items:initial!important;text-align:left!important;color:var(--text)!important;font-size:14px!important;font-weight:400!important;line-height:1.45!important;box-shadow:none!important;background:transparent!important;white-space:pre-wrap;overflow-wrap:anywhere}
+
+
+/* Light theme caption readability: composer and published photo captions */
+body.light #caption,
+body.light .gramora-create-details #caption{color:#202127!important;background:#f7f8fb!important;border-color:#dfe2e9!important;caret-color:#202127!important}
+body.light #caption::placeholder{color:#737782!important;opacity:1}
+body.light .post-caption-inline{color:#202127!important;background:transparent!important}
