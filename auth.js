@@ -515,7 +515,6 @@ function makeStoryAvatar(ring,profile,name){
 }
 function renderStories(docs){
   const strip=document.querySelector(".stories");if(!strip)return;
-  docs.forEach(item=>{const url=item.data().imageUrl;if(url)preloadStoryImage(url);});
   strip.replaceChildren();
   const current=auth?.currentUser;
   const ownStories=docs.filter(item=>item.data().uid===current?.uid)
