@@ -10,6 +10,7 @@
     back: S('<path d="M15 5l-7 7 7 7"/>'),
     aa: "<b>Aa</b>",
     music: S('<path d="M9 18V6l10-2v12"/><circle cx="7" cy="18" r="2.5"/><circle cx="17" cy="16" r="2.5"/>'),
+    image: S('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/>'),
     bg: '<i class="gse-bgdot"></i>',
     color: '<i class="gse-wheel"></i>',
     align: S('<path d="M4 7h16M4 12h10M4 17h16"/>'),
@@ -35,6 +36,7 @@
   const tools = el("div", "gse-tools");
   tools.append(
     tool("Text", ic.aa, () => ta.focus()),
+    tool("Image", ic.image, () => click("storyImageFile")),
     tool("Music", ic.music, () => click("openStoryMusic")),
     tool("Background", ic.bg, cycleBg),
     tool("Colour", ic.color, () => click("storyTextColorToggle")),
