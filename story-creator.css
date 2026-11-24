@@ -145,3 +145,5 @@
 #storyCreateDialog #storyText{inset:auto!important}
 #storyCreateDialog.story-kind-image #storyPreviewCanvas > #storyImagePreview{transform:translate(-50%,-50%) scale(var(--story-image-scale,1))!important}
 #storyViewerStage.has-story-image > #storyViewerImage{transform:translate(-50%,-50%) scale(var(--story-image-scale,1))!important}
+
+#storyCreateDialog #storyText{width:82%!important;height:auto!important;min-height:44px!important;max-height:65%!important;padding:0!important}
