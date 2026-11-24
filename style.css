@@ -2045,3 +2045,13 @@ body.light.public-profile-open .ig-profile > .public-profile-highlights[hidden] 
   margin:0!important;
   border:0!important;
 }
+
+/* Separate profile-menu destination pages */
+.settings-menu[hidden],.settings-content[hidden]{display:none!important}
+.settings-back{width:38px;height:38px;display:grid;place-items:center;margin-left:auto;margin-right:8px;font-size:25px;line-height:1}
+.settings-head{gap:8px}
+.settings-head>div{min-width:0}
+.settings-panel[hidden]{display:none!important}
+.settings-panel{animation:gramoraSettingsPageIn .2s ease both}
+@keyframes gramoraSettingsPageIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+@media(max-width:680px){.settings-dialog .settings-head{display:flex!important;align-items:center!important}.settings-dialog .settings-back{flex:0 0 38px!important}.settings-dialog .settings-content{min-height:55vh}}
