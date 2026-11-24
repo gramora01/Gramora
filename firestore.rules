@@ -355,7 +355,7 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly([
           'uid','displayName','text','lyrics','songTitle','songArtist','songUrl','previewUrl',
-          'songArtwork','songStart','background','imageUrl','imagePath','createdAt','expiresAt'
+          'songArtwork','songStart','background','imageUrl','imagePath','textX','textY','createdAt','expiresAt'
         ])
         && request.resource.data.background is string
         && request.resource.data.background.size() <= 200
@@ -366,6 +366,10 @@ service cloud.firestore {
         && (request.resource.data.get('imagePath','') == '' || request.resource.data.imagePath.matches(request.auth.uid + '/stories/.*'))
         && request.resource.data.text is string
         && request.resource.data.text.size() <= 500
+        && request.resource.data.get('textX',50) is number
+        && request.resource.data.get('textY',50) is number
+        && request.resource.data.get('textX',50) >= 0 && request.resource.data.get('textX',50) <= 100
+        && request.resource.data.get('textY',50) >= 0 && request.resource.data.get('textY',50) <= 100
         && request.resource.data.songTitle is string
         && request.resource.data.lyrics is string
         && request.resource.data.lyrics.size() <= 1200
@@ -388,7 +392,7 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'text','lyrics','background','songTitle','songArtist','songUrl','previewUrl','songArtwork','songStart','imageUrl','imagePath'
+          'text','lyrics','background','songTitle','songArtist','songUrl','previewUrl','songArtwork','songStart','imageUrl','imagePath','textX','textY'
         ])
         && request.resource.data.text is string
         && request.resource.data.text.size() <= 500
