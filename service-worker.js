@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v140-post-music-overlay";
+const CACHE_NAME = "gramora-shell-v141-stop-background-music";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=164",
   "./script.js?v=74",
-  "./auth.js?v=247",
+  "./auth.js?v=248",
   "./auth.css?v=62",
   "./story-creator.css?v=3",
   "./story-creator.js?v=3",
