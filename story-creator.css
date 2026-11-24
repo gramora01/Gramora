@@ -164,3 +164,25 @@
 #storyCreateDialog.story-kind-image .gse-tools .gse-tool:nth-child(5){display:flex!important}
 #storyCreateDialog.story-kind-image .gse-tools .gse-tool:nth-child(n+6){display:none!important}
 #storyCreateDialog.story-kind-image .gse-tools .gse-tool{min-width:84px!important}
+
+
+/* Image-story tools: icon-only vertical rail on the right edge of the photo canvas. */
+#storyCreateDialog.story-kind-image #storyPreviewCanvas{position:relative!important}
+#storyCreateDialog.story-kind-image #storyPreviewCanvas .gse-tools{
+  position:absolute!important;right:10px!important;left:auto!important;top:50%!important;
+  transform:translateY(-50%)!important;z-index:12!important;
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  gap:14px!important;width:48px!important;max-height:calc(100% - 110px)!important;
+  overflow:visible!important;padding:0!important;
+}
+#storyCreateDialog.story-kind-image #storyPreviewCanvas .gse-tool{
+  display:grid!important;grid-template-columns:1fr!important;place-items:center!important;
+  width:46px!important;min-width:46px!important;height:46px!important;min-height:46px!important;
+  padding:0!important;margin:0!important;border:0!important;background:transparent!important;
+}
+#storyCreateDialog.story-kind-image #storyPreviewCanvas .gse-tool span{display:none!important}
+#storyCreateDialog.story-kind-image #storyPreviewCanvas .gse-c{
+  width:44px!important;height:44px!important;min-width:44px!important;flex:0 0 44px!important;
+  background:rgba(25,25,30,.76)!important;border:1px solid #ffffff30!important;
+  box-shadow:0 2px 10px #0007!important;
+}
