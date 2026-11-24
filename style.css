@@ -1633,3 +1633,33 @@ body.light .people-results .person-result:active{
   background:#f5f5fa!important;
 }
 body.light .explore-history-row{border-color:#e4e5eb!important}
+
+
+/* Light theme: remove the dark strip behind profile story highlights (own and public profiles). */
+body.light.profile-active .ig-profile > .ig-highlights,
+body.light.public-profile-open .ig-profile > .public-profile-highlights,
+body.light .ig-profile .ig-highlights,
+body.light .ig-profile .public-profile-highlights{
+  background:#fff!important;
+  background-color:#fff!important;
+  background-image:none!important;
+  color:#30333b!important;
+  border-top-color:#e5e6eb!important;
+  border-bottom-color:#e5e6eb!important;
+}
+body.light.profile-active .ig-profile > .ig-highlights:empty,
+body.light.public-profile-open .ig-profile > .public-profile-highlights:empty{
+  min-height:0!important;
+}
+body.light .ig-profile .ig-highlights .ig-highlight,
+body.light .ig-profile .public-profile-highlights .ig-highlight,
+body.light .ig-profile .ig-highlight small,
+body.light .ig-profile .public-profile-highlights .ig-highlight small{
+  color:#30333b!important;
+}
+body.light .ig-profile .ig-highlights .ig-highlight>span,
+body.light .ig-profile .public-profile-highlights .ig-highlight>span{
+  background:#f6f7fa!important;
+  border-color:#d9dce5!important;
+  color:#30333b!important;
+}
