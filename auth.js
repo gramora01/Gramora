@@ -1250,12 +1250,9 @@ async function getVisibleContentUids(user){
   if(cached&&cached.expiresAt>Date.now())return cached.uids;
   if(visibleContentUidPending.has(user.uid))return visibleContentUidPending.get(user.uid);
   const pending=(async()=>{
-    const [profilesSnap,followsSnap]=await Promise.all([
-      getDocs(query(collection(db,"userProfiles"),limit(100))),
-      getDocs(query(collection(db,"follows"),where("followerUid","==",user.uid),limit(200)))
-    ]);
-    const followed=new Set(followsSnap.docs.map(item=>item.data().followingUid));
-    const uids=[...new Set([user.uid,...profilesSnap.docs.filter(item=>item.id===user.uid||item.data().isPrivate!==true||followed.has(item.id)).map(item=>item.id)])];
+    // Home feed is limited to the signed-in user and accounts they follow.
+    const followsSnap=await getDocs(query(collection(db,"follows"),where("followerUid","==",user.uid),limit(500)));
+    const uids=[...new Set([user.uid,...followsSnap.docs.map(item=>item.data().followingUid).filter(Boolean)])];
     visibleContentUidCache.set(user.uid,{uids,expiresAt:Date.now()+60000});
     return uids;
   })();
@@ -1296,10 +1293,13 @@ function startPostsFeed(user){
   getVisibleContentUids(user).then(uids=>{
     if(cancelled)return;
     const groups=[];for(let i=0;i<uids.length;i+=30)groups.push(uids.slice(i,i+30));
-    total=uids.length+groups.length*groups.length;
+    total=groups.length+groups.length*groups.length;
     if(!total){completed=true;clearTimeout(feedLoadTimer);renderPosts([]);return;}
-    uids.forEach(uid=>{
-      offs.push(onSnapshot(query(collection(db,"posts"),where("uid","==",uid),limit(100)),snap=>{posts=posts.filter(item=>item.data().uid!==uid).concat(snap.docs);ready++;renderCombined();},error=>{console.warn("A profile's posts are not visible:",error.code||error);ready++;renderCombined();}));
+    groups.forEach(uidBatch=>{
+      offs.push(onSnapshot(query(collection(db,"posts"),where("uid","in",uidBatch),limit(100)),snap=>{
+        posts=posts.filter(item=>!uidBatch.includes(item.data().uid)).concat(snap.docs);
+        ready++;renderCombined();
+      },error=>{console.warn("A followed account's posts are not visible:",error.code||error);ready++;renderCombined();}));
     });
     groups.forEach(reposterBatch=>groups.forEach(originalBatch=>{
       offs.push(onSnapshot(query(collection(db,"repostFeed"),where("uid","in",reposterBatch),where("originalUid","in",originalBatch),limit(100)),snap=>{
