@@ -1905,3 +1905,11 @@ body.light #postDetailCard.has-photo-post .post-detail-caption{display:block;wid
 #notificationBtn .gramora-ui-icon path{fill:none!important;stroke:currentColor!important}
 body.light #notificationBtn{color:#292b35!important;background:transparent!important}
 body.light #notificationBtn .gramora-ui-icon{stroke:#292b35!important}
+
+/* Explicit notification bell contrast for the light theme. */
+body.light #notificationBtn,
+body.light .topbar #notificationBtn{color:#252833!important;-webkit-text-fill-color:#252833!important}
+body.light #notificationBtn svg.gramora-ui-icon,
+body.light #notificationBtn .gramora-ui-icon{color:#252833!important;stroke:#252833!important;opacity:1!important;visibility:visible!important}
+body.light #notificationBtn svg.gramora-ui-icon path,
+body.light #notificationBtn .gramora-ui-icon path{stroke:#252833!important;fill:none!important;opacity:1!important}
