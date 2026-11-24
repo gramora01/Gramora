@@ -194,6 +194,8 @@ service cloud.firestore {
           'musicPreviewUrl',
           'musicUrl',
           'musicStart',
+          'taggedUsers',
+          'location',
           'createdAt'
         ])
         && request.resource.data.get('musicTitle', '') is string
@@ -207,6 +209,10 @@ service cloud.firestore {
         && request.resource.data.get('musicUrl', '') is string
         && request.resource.data.get('musicUrl', '').size() <= 2000
         && request.resource.data.get('musicStart', 0) is int
+        && request.resource.data.get('taggedUsers', []) is list
+        && request.resource.data.get('taggedUsers', []).size() <= 10
+        && request.resource.data.get('location', '') is string
+        && request.resource.data.get('location', '').size() <= 120
         && request.resource.data.text is string
         && request.resource.data.text.size() <= 2000
         && (
