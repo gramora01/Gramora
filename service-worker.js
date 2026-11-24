@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v187-story-no-eager-preload";
+const CACHE_NAME = "gramora-shell-v188-feed-image-decode";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=179",
+  "./style.css?v=180",
   "./script.js?v=8",
-  "./auth.js?v=269",
+  "./auth.js?v=270",
   "./auth.css?v=63",
   "./story-creator.css?v=10",
   "./story-creator.js?v=5",
