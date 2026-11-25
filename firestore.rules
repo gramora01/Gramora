@@ -373,7 +373,7 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly([
           'uid','displayName','text','lyrics','songTitle','songArtist','songUrl','previewUrl',
-          'songArtwork','songStart','background','imageUrl','imagePath','textX','textY','imageScale','imageX','imageY','imageEffect','textColor','createdAt','expiresAt'
+          'songArtwork','songStart','background','imageUrl','imagePath','textX','textY','imageScale','imageX','imageY','imageRotation','imageEffect','textColor','textSize','createdAt','expiresAt'
         ])
         && request.resource.data.background is string
         && request.resource.data.background.size() <= 200
@@ -398,6 +398,10 @@ service cloud.firestore {
         && request.resource.data.get('imageEffect',0) >= 0 && request.resource.data.get('imageEffect',0) <= 5
         && request.resource.data.get('textColor','#ffffff') is string
         && request.resource.data.get('textColor','#ffffff').size() <= 20
+        && (request.resource.data.get('imageRotation',0) is int || request.resource.data.get('imageRotation',0) is float)
+        && request.resource.data.get('imageRotation',0) >= 0 && request.resource.data.get('imageRotation',0) <= 360
+        && (request.resource.data.get('textSize',34) is int || request.resource.data.get('textSize',34) is float)
+        && request.resource.data.get('textSize',34) >= 10 && request.resource.data.get('textSize',34) <= 120
         && request.resource.data.songTitle is string
         && request.resource.data.lyrics is string
         && request.resource.data.lyrics.size() <= 1200
@@ -420,7 +424,7 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'text','lyrics','background','songTitle','songArtist','songUrl','previewUrl','songArtwork','songStart','imageUrl','imagePath','textX','textY','imageScale','imageX','imageY','imageEffect','textColor'
+          'text','lyrics','background','songTitle','songArtist','songUrl','previewUrl','songArtwork','songStart','imageUrl','imagePath','textX','textY','imageScale','imageX','imageY','imageRotation','imageEffect','textColor','textSize'
         ])
         && request.resource.data.text is string
         && request.resource.data.text.size() <= 500
@@ -438,6 +442,10 @@ service cloud.firestore {
         && request.resource.data.get('imageEffect',0) >= 0 && request.resource.data.get('imageEffect',0) <= 5
         && request.resource.data.get('textColor','#ffffff') is string
         && request.resource.data.get('textColor','#ffffff').size() <= 20
+        && (request.resource.data.get('imageRotation',0) is int || request.resource.data.get('imageRotation',0) is float)
+        && request.resource.data.get('imageRotation',0) >= 0 && request.resource.data.get('imageRotation',0) <= 360
+        && (request.resource.data.get('textSize',34) is int || request.resource.data.get('textSize',34) is float)
+        && request.resource.data.get('textSize',34) >= 10 && request.resource.data.get('textSize',34) <= 120
         && request.resource.data.songTitle is string
         && request.resource.data.lyrics is string
         && request.resource.data.lyrics.size() <= 1200
