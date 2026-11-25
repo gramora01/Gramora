@@ -101,7 +101,7 @@
     ta.style.position="absolute";ta.style.inset="auto";ta.style.left=px+"%";ta.style.top=py+"%";ta.style.transform="translate(-50%,-50%)";ta.style.width="82%";
     $("storyTextX").value=String(px);$("storyTextY").value=String(py);
   };
-  const revealText=(x,y)=>{
+  const openTextAt=(x,y)=>{
     if(typeof x==="number")setTextPosition(x,y);
     ta.hidden=false;ta.style.pointerEvents="none";dlg.classList.add("gse-editing");
     try{ta.focus({preventScroll:true});}catch(_){ta.focus();}
@@ -121,7 +121,7 @@
     if(activePointers.size<2){pinchStart=0;pinchMid=null;if(current?.kind==="pinch")gesture=null;}
     if(!current||current.kind==="pinch"||current.id!==e.pointerId)return;
     if(current.kind==="photo"&&!current.moved){
-      revealText(e.clientX,e.clientY);
+      openTextAt(e.clientX,e.clientY);
     }else if(current.kind==="text"&&!current.moved){
       try{ta.focus({preventScroll:true});}catch(_){ta.focus();}
     }
