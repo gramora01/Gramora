@@ -4,6 +4,10 @@
   const dlg=$("storyCreateDialog"),form=$("storyForm"),ta=$("storyText");
   if(!dlg||!form||!ta||form.dataset.gseInitialized==="1")return;
   form.dataset.gseInitialized="1";
+  window.addEventListener("error",event=>{
+    if(event?.filename?.includes("story-creator.js"))console.error("GRAMORA Story Studio error:",event.message);
+  });
+
   const stage=$("storyPreviewCanvas");
   const S=p=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+p+"</svg>";
   const icons={
