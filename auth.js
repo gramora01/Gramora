@@ -3824,16 +3824,13 @@ document.getElementById("createAddedAccountForm")?.addEventListener("submit",asy
   }finally{button.disabled=false;button.innerHTML='Create account and add <span>↗</span>';}
 });
 
-document.getElementById("closeSettings")?.addEventListener("click",closeSettingsDrawer);
 settingsDialog?.addEventListener("click",event=>{if(event.target===settingsDialog)closeSettingsDrawer();});
 const settingsMenu=document.querySelector(".settings-menu");
 const settingsContent=document.querySelector(".settings-content");
 const settingsTitle=document.getElementById("settingsTitle");
-const settingsBack=document.getElementById("settingsBack");
 function showSettingsMenu(){
   if(settingsMenu)settingsMenu.hidden=false;
   if(settingsContent)settingsContent.hidden=true;
-  if(settingsBack)settingsBack.hidden=true;
   if(settingsTitle)settingsTitle.textContent="Menu";
   document.querySelectorAll(".settings-panel").forEach(panel=>panel.hidden=true);
   document.querySelectorAll(".settings-tab").forEach(tab=>tab.classList.remove("active"));
@@ -3843,15 +3840,30 @@ function openSettingsPage(tab){
   const page=tab.dataset.settings;
   if(settingsMenu)settingsMenu.hidden=true;
   if(settingsContent)settingsContent.hidden=false;
-  if(settingsBack)settingsBack.hidden=false;
   if(settingsTitle)settingsTitle.textContent=tab.textContent.trim();
   document.querySelectorAll(".settings-tab").forEach(x=>x.classList.toggle("active",x===tab));
   document.querySelectorAll(".settings-panel").forEach(panel=>panel.hidden=panel.dataset.panel!==page);
   if(page==="privacy")loadPrivacySettings();
 }
 document.querySelectorAll(".settings-tab").forEach(tab=>tab.addEventListener("click",()=>openSettingsPage(tab)));
-settingsBack?.addEventListener("click",showSettingsMenu);
 showSettingsMenu();
+
+// Left-swipe navigation for the profile menu: detail page -> menu, menu -> close.
+let settingsSwipeStart=null;
+settingsDialog?.addEventListener("touchstart",event=>{
+  const touch=event.touches?.[0];
+  if(touch)settingsSwipeStart={x:touch.clientX,y:touch.clientY};
+},{passive:true});
+settingsDialog?.addEventListener("touchend",event=>{
+  const touch=event.changedTouches?.[0],start=settingsSwipeStart;
+  settingsSwipeStart=null;
+  if(!touch||!start)return;
+  const dx=touch.clientX-start.x,dy=touch.clientY-start.y;
+  if(dx>-70||Math.abs(dx)<Math.abs(dy)*1.25)return;
+  if(settingsMenu?.hidden===false)closeSettingsDrawer();
+  else showSettingsMenu();
+},{passive:true});
+
 document.getElementById("settingsBlockedRefresh")?.addEventListener("click",renderBlockedAccounts);
 document.getElementById("followRequestsRefresh")?.addEventListener("click",renderFollowRequests);
 
