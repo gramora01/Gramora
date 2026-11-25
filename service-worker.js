@@ -43,6 +43,19 @@ self.addEventListener("fetch", event => {
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
   event.respondWith((async () => {
+    const isNavigation = request.mode === "navigate";
+    const isStaticAsset = ["script", "style", "image", "font"].includes(request.destination);
+    const cached = await caches.match(request);
+
+    // Versioned scripts/styles/images are cache-first for instant repeat opens.
+    // A background refresh keeps the shell current without blocking rendering.
+    if (!isNavigation && isStaticAsset && cached) {
+      fetch(request).then(fresh => {
+        if (fresh && fresh.ok) caches.open(CACHE_NAME).then(cache => cache.put(request, fresh));
+      }).catch(() => {});
+      return cached;
+    }
+
     try {
       const fresh = await fetch(request);
       if (fresh && fresh.ok) {
@@ -51,11 +64,8 @@ self.addEventListener("fetch", event => {
       }
       return fresh;
     } catch (error) {
-      const cached = await caches.match(request);
       if (cached) return cached;
-      if (request.mode === "navigate") {
-        return (await caches.match("./index.html")) || Response.error();
-      }
+      if (isNavigation) return (await caches.match("./index.html")) || Response.error();
       return Response.error();
     }
   })());
