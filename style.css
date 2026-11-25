@@ -2087,3 +2087,19 @@ body:has(#storyActivitySheet:not([hidden])){position:fixed!important;inset:0!imp
 .post-media-gallery img.gramora-feed-photo.has-error{opacity:1;filter:none;animation:none;background:#171923}
 @keyframes gramoraPhotoShimmer{to{background-position-x:-220%}}
 @media(prefers-reduced-motion:reduce){.post-media-gallery img.gramora-feed-photo{transition:none!important;animation:none!important}}
+
+
+/* Feed double-tap like animation */
+.post-content{position:relative;touch-action:manipulation}
+.gramora-double-tap-heart{
+ position:absolute;z-index:30;pointer-events:none;transform:translate(-50%,-50%) scale(.25);
+ color:#ff3040;font-size:clamp(76px,22vw,124px);line-height:1;
+ text-shadow:0 5px 22px #0006;
+ animation:gramoraDoubleTapHeart .72s cubic-bezier(.18,.82,.28,1) forwards;
+}
+@keyframes gramoraDoubleTapHeart{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(-18deg)}
+  35%{opacity:1;transform:translate(-50%,-50%) scale(1.18) rotate(5deg)}
+  65%{opacity:1;transform:translate(-50%,-50%) scale(.94) rotate(0)}
+  100%{opacity:0;transform:translate(-50%,-58%) scale(1.04)}
+}
