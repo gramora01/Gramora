@@ -148,7 +148,7 @@
 
 #storyCreateDialog #storyText{width:82%!important;height:auto!important;min-height:44px!important;max-height:65%!important;padding:0!important}
 
-/* Simplified image-story toolbar: only Text, Add image, Song, Effects and Align */
+/* Image-story toolbar: Text, Add image, Song, Effects, Align and Crop */
 #storyCreateDialog.story-kind-image .gramora-story-tools,
 #storyCreateDialog.story-kind-image #storyImagePickButton,
 #storyCreateDialog.story-kind-image #storyImageRemove,
@@ -161,8 +161,9 @@
 #storyCreateDialog.story-kind-image .gse-tools .gse-tool:nth-child(2),
 #storyCreateDialog.story-kind-image .gse-tools .gse-tool:nth-child(3),
 #storyCreateDialog.story-kind-image .gse-tools .gse-tool:nth-child(4),
-#storyCreateDialog.story-kind-image .gse-tools .gse-tool:nth-child(5){display:flex!important}
-#storyCreateDialog.story-kind-image .gse-tools .gse-tool:nth-child(n+6){display:none!important}
+#storyCreateDialog.story-kind-image .gse-tools .gse-tool:nth-child(5),
+#storyCreateDialog.story-kind-image .gse-tools .gse-tool:nth-child(6){display:flex!important}
+#storyCreateDialog.story-kind-image .gse-tools .gse-tool:nth-child(n+7){display:none!important}
 #storyCreateDialog.story-kind-image .gse-tools .gse-tool{min-width:84px!important}
 
 
