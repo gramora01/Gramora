@@ -267,3 +267,9 @@
 .gse-rotate-label{font:700 12px Arial,sans-serif;white-space:nowrap}.gse-rotate-range{width:112px;accent-color:#fff;touch-action:pan-x}.gse-rotate-reset{border:0;border-radius:12px;padding:5px 8px;background:#ffffff20;color:#fff;font-size:11px;font-weight:700}
 #storyCreateDialog.story-kind-image .gse-rotate-control{pointer-events:auto}
 @media(max-width:480px){.gse-rotate-control{top:70px;gap:6px;padding:7px 9px}.gse-rotate-range{width:88px}}
+
+
+/* Clean Instagram-like editor: gesture controls stay active without visible sliders. */
+#storyCreateDialog .gse-zoom-control,
+#storyCreateDialog .gse-rotate-control,
+#storyCreateDialog .gse-text-size-control{display:none!important;visibility:hidden!important;pointer-events:none!important}
