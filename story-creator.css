@@ -252,3 +252,11 @@
 #storyCreateDialog.story-kind-image #storyText:not([hidden]){position:absolute!important;inset:auto!important;left:var(--story-text-x,50%)!important;top:var(--story-text-y,50%)!important;right:auto!important;bottom:auto!important;width:82%!important;height:auto!important;min-height:44px!important;max-height:65%!important;margin:0!important;padding:0!important;transform:translate(-50%,-50%)!important;pointer-events:none!important;}
 #storyCreateDialog.story-kind-image #storyPreviewCanvas{touch-action:none!important;}
 #storyCreateDialog.story-kind-image #storyImagePreview{pointer-events:none!important;}
+
+/* Instagram-style direct manipulation and text sizing */
+.gse-text-size-control{position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:16;display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 7px;border:1px solid #ffffff35;border-radius:22px;background:rgba(12,12,18,.58);backdrop-filter:blur(14px)}
+.gse-text-size-label{font:800 18px Arial,sans-serif;color:#fff;text-shadow:0 1px 4px #000}
+.gse-text-size-range{height:150px;width:24px;writing-mode:vertical-lr;direction:rtl;accent-color:#fff;touch-action:pan-y}
+#storyCreateDialog.story-kind-image .gse-text-size-control{pointer-events:auto}
+#storyCreateDialog.story-kind-image #storyPreviewCanvas{touch-action:none!important;overscroll-behavior:contain!important}
+@media(max-width:480px){.gse-text-size-control{right:8px}.gse-text-size-range{height:120px}}
