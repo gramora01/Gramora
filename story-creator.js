@@ -118,7 +118,7 @@
     if(pointers.size>1&&gesture){
       const d=distance(),c=center();
       if(gesture.kind==="photo-pinch"){
-        if(pinchDistance&&d){scale=Math.max(1,Math.min(4,pinchScale*d/pinchDistance));rotation=pinchRotation+angleDelta(angle(),pinchAngle);rotateRange.value=String(Math.max(-180,Math.min(180,rotation)));}
+        if(pinchDistance&&d){scale=Math.max(1,Math.min(4,pinchScale*d/pinchDistance));rotation=(rotation+angleDelta(angle(),pinchAngle)+360)%360;pinchAngle=angle();rotateRange.value=String(rotation);}
         if(c&&pinchCenter){imageX+=c.x-pinchCenter.x;imageY+=c.y-pinchCenter.y;pinchCenter=c;}
         applyPhotoTransform();
       }else if(gesture.kind==="text-pinch"&&pinchDistance&&d){applyTextSize(pinchTextSize*d/pinchDistance);}
@@ -140,14 +140,14 @@
   zoomOut.addEventListener("click",()=>setZoom(scale-.15));zoomIn.addEventListener("click",()=>setZoom(scale+.15));zoomRange.addEventListener("input",()=>setZoom(zoomRange.value));resetView.addEventListener("click",()=>{imageX=0;imageY=0;rotation=0;rotateRange.value="0";setZoom(1);});
   zoom.append(zoomOut,zoomRange,zoomIn,resetView);host.append(zoom);
   const rotateBox=el("div","gse-rotate-control"),rotateLabel=el("label","gse-rotate-label","↻ Rotate"),rotateRange=el("input","gse-rotate-range");
-  const rotateRangeAlias=rotateRange;rotateRange.type="range";rotateRange.min="-180";rotateRange.max="180";rotateRange.step="1";rotateRange.value=String(rotation);rotateRange.setAttribute("aria-label","Rotate photo 360 degrees");
+  const rotateRangeAlias=rotateRange;rotateRange.type="range";rotateRange.min="0";rotateRange.max="360";rotateRange.step="1";rotateRange.value=String(rotation);rotateRange.setAttribute("aria-label","Rotate photo 360 degrees");
   const rotateRangeControl=rotateRange;rotateRangeControl.addEventListener("input",()=>{rotation=Number(rotateRangeControl.value)||0;applyPhotoTransform();});
   const rotateReset=el("button","gse-rotate-reset","0°");rotateReset.type="button";rotateReset.addEventListener("click",()=>{rotation=0;rotateRange.value="0";applyPhotoTransform();});
   rotateBox.append(rotateLabel,rotateRange,rotateReset);host.append(rotateBox);
   const textSizeBox=el("div","gse-text-size-control"),textSizeLabel=el("label","gse-text-size-label","Aa"),textSizeRange=el("input","gse-text-size-range");
   textSizeRange.type="range";textSizeRange.min="12";textSizeRange.max="88";textSizeRange.step="1";textSizeRange.value=String(textSize);textSizeRange.setAttribute("aria-label","Text size");
   textSizeRange.addEventListener("input",()=>applyTextSize(textSizeRange.value));textSizeBox.append(textSizeLabel,textSizeRange);host.append(textSizeBox);applyTextSize(textSize);applyPhotoTransform();
-  window.gramoraApplyStoryRotation=value=>{rotation=((Number(value)||0)%360+360)%360;if(rotation>180)rotation-=360;rotateRange.value=String(rotation);applyPhotoTransform();};
+  window.gramoraApplyStoryRotation=value=>{rotation=((Number(value)||0)%360+360)%360;rotateRange.value=String(rotation);applyPhotoTransform();};
   const imageFile=$("storyImageFile");imageFile?.addEventListener("change",()=>{if(imageFile.files?.length){scale=1;imageX=0;imageY=0;rotation=0;rotateRange.value="0";applyPhotoTransform();effectIndex=0;applyImageEffect();}});
   $("storyImageRemove")?.addEventListener("click",()=>{scale=1;imageX=0;imageY=0;rotation=0;rotateRange.value="0";applyPhotoTransform();});
   const reset=()=>{ta.value="";ta.hidden=true;ta.style.pointerEvents="none";scale=1;imageX=0;imageY=0;rotation=0;rotateRange.value="0";applyPhotoTransform();effectIndex=0;applyImageEffect();ta.style.position="";ta.style.left="";ta.style.top="";ta.style.transform="";colorInput.value="#ffffff";ta.style.color="#ffffff";applyTextSize(34);palette.classList.remove("is-open");};
