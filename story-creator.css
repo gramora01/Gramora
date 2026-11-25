@@ -235,3 +235,15 @@
 }
 #storyCreateDialog.story-kind-image #storyPreviewCanvas{touch-action:none!important}
 #storyCreateDialog.story-kind-image .gramora-story-style-strip{pointer-events:auto!important}
+
+/* Unified story interactions: one gesture owner for the canvas */
+#storyCreateDialog.story-kind-image #storyPreviewCanvas{position:relative!important;overflow:hidden!important;touch-action:none!important;overscroll-behavior:contain!important}
+#storyCreateDialog.story-kind-image #storyImagePreview{position:absolute!important;left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:cover!important;pointer-events:none!important;transform:translate(calc(-50% + var(--story-image-x,0px)),calc(-50% + var(--story-image-y,0px))) scale(var(--story-image-scale,1))!important;transform-origin:center center!important;will-change:transform}
+#storyCreateDialog.story-kind-image #storyText{pointer-events:none!important;user-select:none!important;-webkit-user-select:none!important;touch-action:none!important;z-index:5!important;inset:auto!important}
+#storyCreateDialog.story-kind-image #storyText[hidden]{display:none!important}
+.gse-zoom-control{position:absolute;left:12px;top:50%;transform:translateY(-50%);z-index:16;display:flex;flex-direction:column;align-items:center;gap:9px;padding:10px 7px;border:1px solid #ffffff35;border-radius:22px;background:rgba(12,12,18,.58);backdrop-filter:blur(14px);box-shadow:0 8px 25px #0005}
+.gse-zoom-button,.gse-zoom-reset{border:0;border-radius:50%;width:32px;height:32px;background:#ffffff20;color:#fff;font-size:20px;font-weight:700;display:grid;place-items:center}
+.gse-zoom-reset{width:auto;height:27px;padding:0 9px;border-radius:12px;font-size:11px}
+.gse-zoom-range{height:100px;width:24px;writing-mode:vertical-lr;direction:rtl;accent-color:#fff;touch-action:pan-y}
+#storyCreateDialog.story-kind-image .gse-zoom-control{pointer-events:auto}
+@media(max-width:480px){.gse-zoom-control{left:8px;gap:7px}.gse-zoom-range{height:88px}}
