@@ -1,4 +1,4 @@
-const CACHE_NAME = "gramora-shell-v211-story-gestures";
+const CACHE_NAME = "gramora-shell-v212-story-text-position";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,8 +6,8 @@ const APP_SHELL = [
   "./script.js?v=8",
   "./auth.js?v=279",
   "./auth.css?v=63",
-  "./story-creator.css?v=24",
-  "./story-creator.js?v=18",
+  "./story-creator.css?v=25",
+  "./story-creator.js?v=19",
   "./gramora-icons.css?v=2",
   "./post-action-spacing.css?v=1",
   "./public-profile-layout.css?v=3",
