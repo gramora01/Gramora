@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v206-double-tap-like";
+const CACHE_NAME = "gramora-shell-v207-mobile-double-tap";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=181",
   "./script.js?v=8",
-  "./auth.js?v=278",
+  "./auth.js?v=279",
   "./auth.css?v=63",
   "./story-creator.css?v=20",
   "./story-creator.js?v=14",
