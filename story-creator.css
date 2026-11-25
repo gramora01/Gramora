@@ -247,3 +247,8 @@
 .gse-zoom-range{height:100px;width:24px;writing-mode:vertical-lr;direction:rtl;accent-color:#fff;touch-action:pan-y}
 #storyCreateDialog.story-kind-image .gse-zoom-control{pointer-events:auto}
 @media(max-width:480px){.gse-zoom-control{left:8px;gap:7px}.gse-zoom-range{height:88px}}
+
+/* Final gesture fix: CSS inset shorthand was overriding JS left/top. Keep overlay coordinates in stage variables. */
+#storyCreateDialog.story-kind-image #storyText:not([hidden]){position:absolute!important;inset:auto!important;left:var(--story-text-x,50%)!important;top:var(--story-text-y,50%)!important;right:auto!important;bottom:auto!important;width:82%!important;height:auto!important;min-height:44px!important;max-height:65%!important;margin:0!important;padding:0!important;transform:translate(-50%,-50%)!important;pointer-events:none!important;}
+#storyCreateDialog.story-kind-image #storyPreviewCanvas{touch-action:none!important;}
+#storyCreateDialog.story-kind-image #storyImagePreview{pointer-events:none!important;}
