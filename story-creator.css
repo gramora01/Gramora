@@ -235,3 +235,137 @@
 }
 #storyCreateDialog.story-kind-image #storyPreviewCanvas{touch-action:none!important}
 #storyCreateDialog.story-kind-image .gramora-story-style-strip{pointer-events:auto!important}
+
+
+/* ===== GRAMORA Story Studio: premium glass + depth + motion ===== */
+#storyCreateDialog::backdrop{background:radial-gradient(ellipse at 50% 20%,#4c1d955c,#030308eF);backdrop-filter:blur(18px)}
+#storyCreateDialog[open]{animation:gseDialogIn .38s cubic-bezier(.18,.82,.22,1) both}
+@keyframes gseDialogIn{from{opacity:0;transform:scale(.975) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+#storyCreateDialog .gramora-story-type-chooser{
+  position:relative;isolation:isolate;overflow:hidden;min-height:100%!important;
+  padding:clamp(26px,7vw,46px)!important;
+  background:radial-gradient(circle at 15% 18%,#9333ea55,transparent 34%),radial-gradient(circle at 88% 78%,#06b6d455,transparent 34%),linear-gradient(145deg,#090914,#171329 55%,#080b18)!important;
+}
+#storyCreateDialog .gramora-story-type-chooser:before,
+#storyCreateDialog .gramora-story-type-chooser:after{content:"";position:absolute;z-index:-1;width:230px;height:230px;border-radius:50%;filter:blur(2px);opacity:.42;pointer-events:none;animation:gseOrbFloat 9s ease-in-out infinite alternate}
+#storyCreateDialog .gramora-story-type-chooser:before{top:8%;right:-90px;background:radial-gradient(circle at 35% 35%,#f0abfc,#7c3aed 48%,transparent 72%)}
+#storyCreateDialog .gramora-story-type-chooser:after{bottom:-100px;left:-80px;background:radial-gradient(circle at 40% 35%,#67e8f9,#2563eb 48%,transparent 72%);animation-delay:-4s}
+@keyframes gseOrbFloat{to{transform:translate3d(-22px,24px,0) scale(1.14)}}
+#storyCreateDialog .gramora-story-type-chooser h2{font:800 clamp(25px,6vw,34px) Manrope,Arial,sans-serif;letter-spacing:-.8px;text-shadow:0 8px 28px #0008}
+#storyCreateDialog .gramora-story-type-chooser p{color:#c4b5fd;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px}
+#storyCreateDialog .gramora-story-type-chooser button{
+  position:relative;isolation:isolate;min-height:116px!important;padding:22px!important;
+  border:1px solid #ffffff2b!important;border-radius:24px!important;
+  background:linear-gradient(135deg,#ffffff20,#ffffff08)!important;
+  box-shadow:0 18px 36px #0005,inset 0 1px #ffffff35!important;
+  backdrop-filter:blur(18px);transform:perspective(700px) rotateX(0deg) translateZ(0);
+  transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;
+}
+#storyCreateDialog .gramora-story-type-chooser button:active{transform:perspective(700px) rotateX(3deg) scale(.975);border-color:#c4b5fd!important;box-shadow:0 8px 18px #0007!important}
+#storyCreateDialog .gramora-story-type-chooser button>span{display:grid;place-items:center;width:54px;height:54px;border-radius:18px;background:linear-gradient(145deg,#a855f7,#4f46e5);box-shadow:0 8px 22px #7c3aed66;color:#fff}
+#storyCreateDialog .gramora-story-type-chooser button:nth-of-type(2)>span{background:linear-gradient(145deg,#22d3ee,#2563eb);box-shadow:0 8px 22px #0891b266}
+#storyCreateDialog .gramora-story-type-chooser button b{font:800 17px Manrope,Arial,sans-serif}
+#storyCreateDialog .gramora-story-type-chooser button small{color:#d4d4e8;font-size:12px}
+#storyCreateDialog .gramora-story-topbar{
+  min-height:62px!important;padding:10px 14px!important;
+  background:linear-gradient(180deg,#090910b8,transparent)!important;
+  backdrop-filter:blur(12px);
+}
+#storyCreateDialog #closeStoryCreate,#storyCreateDialog #storyBackToChooser{
+  border:1px solid #ffffff2c!important;background:#ffffff18!important;
+  box-shadow:0 5px 18px #0005,inset 0 1px #ffffff25;
+  transition:transform .2s ease,background .2s ease;
+}
+#storyCreateDialog #closeStoryCreate:active,#storyCreateDialog #storyBackToChooser:active{transform:scale(.9) rotate(-8deg)}
+#storyCreateDialog #storyModeLabel{font:800 10px Manrope,Arial,sans-serif;letter-spacing:.18em;color:#e9d5ff;text-shadow:0 2px 12px #a855f7aa}
+#storyCreateDialog #storyEditorDone{border-radius:999px!important;padding:9px 17px!important;background:linear-gradient(120deg,#a855f7,#4f46e5)!important;color:#fff!important;box-shadow:0 7px 20px #7c3aed55;font-size:14px!important}
+#storyCreateDialog .gramora-story-stage{background:radial-gradient(ellipse at 50% 45%,#29203e,#090910 72%)!important}
+#storyCreateDialog #storyPreviewCanvas{
+  border:1px solid #ffffff1b!important;border-radius:24px!important;
+  box-shadow:0 24px 65px #0008,inset 0 1px #ffffff24!important;
+  transform:translateZ(0);isolation:isolate;
+}
+#storyCreateDialog #storyPreviewCanvas:after{
+  content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(135deg,#ffffff12,transparent 28%,transparent 70%,#ffffff0c);
+  border-radius:inherit;
+}
+#storyCreateDialog.story-kind-image #storyPreviewCanvas{background:radial-gradient(ellipse at 50% 50%,#30303d,#08080d)!important}
+#storyCreateDialog.story-kind-image #storyText{z-index:6!important;text-shadow:0 3px 14px #000c,0 1px 3px #000!important}
+#storyCreateDialog .gse-tool .gse-c{
+  border:1px solid #ffffff38!important;
+  background:linear-gradient(145deg,#ffffff32,#171725c9)!important;
+  box-shadow:0 7px 18px #0008,inset 0 1px #ffffff35!important;
+  backdrop-filter:blur(16px);
+  transition:transform .2s ease,box-shadow .2s ease;
+}
+#storyCreateDialog .gse-tool:active .gse-c{transform:translateY(2px) scale(.9);box-shadow:0 2px 7px #0008!important}
+#storyCreateDialog .gse-tool span{font-weight:800!important;text-shadow:0 2px 8px #000!important}
+#storyCreateDialog .gse-bottom{
+  background:linear-gradient(180deg,#08080d00,#08080df2 24%)!important;
+  backdrop-filter:blur(14px);
+}
+#storyCreateDialog .gse-pill{
+  border:1px solid #ffffff28!important;background:linear-gradient(145deg,#ffffff22,#ffffff0a)!important;
+  box-shadow:0 8px 22px #0007,inset 0 1px #ffffff2c!important;
+}
+#storyCreateDialog .gse-av{box-shadow:0 0 0 2px #ffffff45,0 0 18px #ec489966}
+#storyCreateDialog .gse-send{
+  background:linear-gradient(145deg,#c084fc,#6d28d9 55%,#4338ca)!important;
+  box-shadow:0 9px 26px #7c3aed77,inset 0 1px #ffffff66!important;
+  transition:transform .2s ease,filter .2s ease;
+  animation:gseSendPulse 2.8s ease-in-out infinite;
+}
+#storyCreateDialog .gse-send:active{transform:scale(.9) rotate(-8deg);filter:brightness(1.2)}
+@keyframes gseSendPulse{0%,100%{box-shadow:0 8px 22px #7c3aed55,inset 0 1px #ffffff66}50%{box-shadow:0 10px 30px #a855f799,inset 0 1px #ffffff66}}
+#storyCreateDialog .gse-adjust{
+  position:absolute;z-index:14;left:12px;top:76px;
+  display:flex;align-items:center;gap:7px;padding:8px 10px;
+  border:1px solid #ffffff38;border-radius:16px;
+  background:linear-gradient(145deg,#242333d9,#090910c9);
+  box-shadow:0 9px 26px #0008,inset 0 1px #ffffff30;
+  backdrop-filter:blur(18px);color:#fff;
+}
+#storyCreateDialog .gse-adjust button{
+  display:grid;place-items:center;width:28px;height:28px;padding:0;
+  border:1px solid #ffffff25;border-radius:9px;background:#ffffff18;color:#fff;
+  font-size:19px;font-weight:800;line-height:1;
+}
+#storyCreateDialog .gse-adjust button:active{transform:scale(.88)}
+#storyCreateDialog .gse-zoom-slider{width:78px;height:4px;accent-color:#c084fc;touch-action:pan-y}
+#storyCreateDialog .gse-zoom-value{min-width:35px;text-align:right;font:800 10px Manrope,Arial,sans-serif;color:#e9d5ff}
+#storyCreateDialog.story-kind-text .gse-adjust{display:none!important}
+#storyCreateDialog .gramora-story-style-strip button{
+  border:1px solid #ffffff32!important;background:#151522bb!important;
+  box-shadow:0 5px 14px #0006,inset 0 1px #ffffff20;
+  backdrop-filter:blur(12px);transition:transform .2s ease,background .2s ease;
+}
+#storyCreateDialog .gramora-story-style-strip button.active{
+  background:linear-gradient(120deg,#c084fc,#6366f1)!important;color:#fff!important;
+  box-shadow:0 7px 20px #7c3aed66!important;
+}
+#storyCreateDialog .gse-color-palette{
+  border:1px solid #ffffff38!important;background:linear-gradient(145deg,#292638ed,#090910ed)!important;
+  box-shadow:0 16px 36px #000a,inset 0 1px #ffffff30!important;backdrop-filter:blur(20px);
+}
+#storyCreateDialog .gse-color-swatch{transition:transform .18s ease,box-shadow .18s ease}
+#storyCreateDialog .gse-color-swatch:active{transform:scale(.82)}
+#storyCreateDialog .gse-tools{perspective:700px}
+#storyCreateDialog .gse-tool{animation:gseToolIn .42s both}
+#storyCreateDialog .gse-tool:nth-child(2){animation-delay:.035s}
+#storyCreateDialog .gse-tool:nth-child(3){animation-delay:.07s}
+#storyCreateDialog .gse-tool:nth-child(4){animation-delay:.105s}
+#storyCreateDialog .gse-tool:nth-child(5){animation-delay:.14s}
+#storyCreateDialog .gse-tool:nth-child(6){animation-delay:.175s}
+@keyframes gseToolIn{from{opacity:0;transform:translateX(16px) rotateY(-18deg)}to{opacity:1;transform:translateX(0) rotateY(0)}}
+#storyCreateDialog #storyCreateStatus{padding:8px 12px;border-radius:12px;background:#111827c9;color:#fff;backdrop-filter:blur(12px)}
+@media(max-width:420px){
+  #storyCreateDialog .gse-adjust{left:8px;top:72px;gap:5px;padding:7px}
+  #storyCreateDialog .gse-zoom-slider{width:62px}
+  #storyCreateDialog .gse-tools{right:7px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  #storyCreateDialog[open],#storyCreateDialog .gse-tool,#storyCreateDialog .gse-send,
+  #storyCreateDialog .gramora-story-type-chooser:before,#storyCreateDialog .gramora-story-type-chooser:after{animation:none!important}
+  #storyCreateDialog *{scroll-behavior:auto!important;transition:none!important}
+}
