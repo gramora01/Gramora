@@ -77,71 +77,102 @@
   function toggleTextColors(){palette.classList.toggle("is-open");}
   window.gramoraApplyStoryTextColor=color=>{if(!color)return;ta.style.setProperty("color",color,"important");colorInput.value=color;};
 
-  // Reliable touch controls: tap photo to type, drag photo to pan, pinch to zoom, drag text to move.
+  // Robust mobile gesture engine: drag/pinch photo and drag text directly.
   const photo=$("storyImagePreview");
   const scaleInput=(()=>{let x=$("storyImageScale");if(!x){x=document.createElement("input");x.type="hidden";x.id="storyImageScale";x.value="1";form.append(x);}return x;})();
   const xInput=(()=>{let x=$("storyImageX");if(!x){x=document.createElement("input");x.type="hidden";x.id="storyImageX";x.value="0";form.append(x);}return x;})();
   const yInput=(()=>{let x=$("storyImageY");if(!x){x=document.createElement("input");x.type="hidden";x.id="storyImageY";x.value="0";form.append(x);}return x;})();
-  let imageX=0,imageY=0,scale=1,activePointers=new Map(),gesture=null,pinchStart=0,pinchScale=1,lastTapAt=0;
-  const applyPhotoTransform=()=>{stage?.style.setProperty("--story-image-scale",String(scale));stage?.style.setProperty("--story-image-x",imageX+"px");stage?.style.setProperty("--story-image-y",imageY+"px");scaleInput.value=String(scale);xInput.value=String(imageX);yInput.value=String(imageY);};
-  const pointerDistance=()=>{const p=[...activePointers.values()];return p.length<2?0:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);};
-  const isTool=e=>!!e.target.closest(".gse-tools,.gse-bottom,.gse-color-palette,button,.gramora-story-style-strip");
-  const textAtPoint=(x,y)=>{if(!ta.value.trim()||ta.hidden)return false;const r=ta.getBoundingClientRect();return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom;};
-  const placeTextAt=(x,y)=>{revealText(x,y);requestAnimationFrame(()=>{try{ta.focus({preventScroll:true});}catch(_){ta.focus();}});};
+  let imageX=0,imageY=0,scale=1,activePointers=new Map(),gesture=null,pinchStart=0,pinchScale=1,pinchMid=null;
+  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+  const syncZoom=()=>{const slider=stage?.querySelector(".gse-zoom-slider");if(slider)slider.value=String(scale);const label=stage?.querySelector(".gse-zoom-value");if(label)label.textContent=Math.round(scale*100)+"%";};
+  const applyPhotoTransform=()=>{
+    stage?.style.setProperty("--story-image-scale",String(scale));
+    stage?.style.setProperty("--story-image-x",imageX+"px");
+    stage?.style.setProperty("--story-image-y",imageY+"px");
+    scaleInput.value=String(scale);xInput.value=String(imageX);yInput.value=String(imageY);syncZoom();
+  };
+  const pointerValues=()=>[...activePointers.values()];
+  const pointerDistance=()=>{const p=pointerValues();return p.length<2?0:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);};
+  const pointerMid=()=>{const p=pointerValues();return p.length<2?null:{x:(p[0].x+p[1].x)/2,y:(p[0].y+p[1].y)/2};};
+  const isTool=e=>!!e.target.closest(".gse-tools,.gse-bottom,.gse-color-palette,.gse-adjust,.gramora-story-style-strip,button,input,select,audio,video");
+  const textAtPoint=(x,y)=>{if(!ta.value.trim()||ta.hidden)return false;const r=ta.getBoundingClientRect();return x>=r.left-8&&x<=r.right+8&&y>=r.top-8&&y<=r.bottom+8;};
+  const setTextPosition=(x,y)=>{
+    const r=stage.getBoundingClientRect(),px=clamp((x-r.left)/r.width*100,5,95),py=clamp((y-r.top)/r.height*100,6,92);
+    ta.style.position="absolute";ta.style.inset="auto";ta.style.left=px+"%";ta.style.top=py+"%";ta.style.transform="translate(-50%,-50%)";ta.style.width="82%";
+    $("storyTextX").value=String(px);$("storyTextY").value=String(py);
+  };
+  const revealText=(x,y)=>{
+    if(typeof x==="number")setTextPosition(x,y);
+    ta.hidden=false;ta.style.pointerEvents="none";dlg.classList.add("gse-editing");
+    try{ta.focus({preventScroll:true});}catch(_){ta.focus();}
+  };
+  const zoomHud=el("div","gse-adjust",'<button type="button" class="gse-zoom-minus" aria-label="Zoom out">−</button><input class="gse-zoom-slider" type="range" min="1" max="3" step=".05" value="1" aria-label="Photo zoom"><button type="button" class="gse-zoom-plus" aria-label="Zoom in">+</button><button type="button" class="gse-zoom-reset" aria-label="Reset photo position">↺</button><span class="gse-zoom-value">100%</span>');
+  stage?.append(zoomHud);
+  const setZoom=v=>{scale=clamp(Number(v)||1,1,3);const r=stage.getBoundingClientRect();const maxX=r.width*(scale-1)/2,maxY=r.height*(scale-1)/2;imageX=clamp(imageX,-maxX,maxX);imageY=clamp(imageY,-maxY,maxY);applyPhotoTransform();};
+  zoomHud.querySelector(".gse-zoom-slider").addEventListener("input",e=>setZoom(e.target.value));
+  zoomHud.querySelector(".gse-zoom-minus").addEventListener("click",()=>setZoom(scale-.2));
+  zoomHud.querySelector(".gse-zoom-plus").addEventListener("click",()=>setZoom(scale+.2));
+  zoomHud.querySelector(".gse-zoom-reset").addEventListener("click",()=>{imageX=0;imageY=0;setZoom(1);});
+  const finishPointers=e=>{
+    if(!activePointers.has(e.pointerId))return;
+    const current=gesture,wasSingle=activePointers.size===1;
+    activePointers.delete(e.pointerId);
+    try{if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);}catch(_){}
+    if(activePointers.size<2){pinchStart=0;pinchMid=null;if(current?.kind==="pinch")gesture=null;}
+    if(!current||current.kind==="pinch"||current.id!==e.pointerId)return;
+    if(current.kind==="photo"&&!current.moved){
+      revealText(e.clientX,e.clientY);
+    }else if(current.kind==="text"&&!current.moved){
+      try{ta.focus({preventScroll:true});}catch(_){ta.focus();}
+    }
+    if(wasSingle)gesture=null;
+  };
   stage?.addEventListener("pointerdown",e=>{
-    if(isTool(e)||e.pointerType==="mouse"&&e.button!==0)return;
-    const onText=textAtPoint(e.clientX,e.clientY);
+    if(isTool(e)||(e.pointerType==="mouse"&&e.button!==0))return;
+    if(dlg.dataset.storyKind!=="image"||!photo||photo.hidden)return;
     activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
     try{stage.setPointerCapture(e.pointerId);}catch(_){}
-    if(activePointers.size===2){gesture={kind:"pinch",moved:true};pinchStart=pointerDistance();pinchScale=scale;e.preventDefault();return;}
-    const r=stage.getBoundingClientRect();
-    gesture=onText
-      ?{kind:"text",id:e.pointerId,x:e.clientX,y:e.clientY,startX:parseFloat(ta.style.left)||50,startY:parseFloat(ta.style.top)||50,moved:false}
-      :{kind:"photo",id:e.pointerId,x:e.clientX,y:e.clientY,startX:imageX,startY:imageY,rect:r,moved:false};
-    if(onText)e.preventDefault();
+    if(activePointers.size===2){
+      gesture={kind:"pinch",moved:true};pinchStart=pointerDistance();pinchScale=scale;pinchMid=pointerMid();e.preventDefault();return;
+    }
+    if(activePointers.size>2)return;
+    const onText=textAtPoint(e.clientX,e.clientY);
+    gesture={kind:onText?"text":"photo",id:e.pointerId,x:e.clientX,y:e.clientY,startX:onText?(parseFloat(ta.style.left)||50):imageX,startY:onText?(parseFloat(ta.style.top)||50):imageY,moved:false};
+    e.preventDefault();
   },{passive:false});
   stage?.addEventListener("pointermove",e=>{
     if(!activePointers.has(e.pointerId))return;
     activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(activePointers.size>=2&&gesture?.kind==="pinch"){
-      const d=pointerDistance();if(pinchStart&&d){scale=Math.max(1,Math.min(3,pinchScale*d/pinchStart));applyPhotoTransform();}
+      const d=pointerDistance(),mid=pointerMid();
+      if(pinchStart&&d){
+        const next=clamp(pinchScale*d/pinchStart,1,3);
+        if(pinchMid&&mid){imageX+=mid.x-pinchMid.x;imageY+=mid.y-pinchMid.y;pinchMid=mid;}
+        scale=next;const r=stage.getBoundingClientRect(),maxX=r.width*(scale-1)/2,maxY=r.height*(scale-1)/2;
+        imageX=clamp(imageX,-maxX,maxX);imageY=clamp(imageY,-maxY,maxY);applyPhotoTransform();
+      }
       e.preventDefault();return;
     }
     if(!gesture||gesture.id!==e.pointerId)return;
     const dx=e.clientX-gesture.x,dy=e.clientY-gesture.y;
-    if(Math.hypot(dx,dy)>7)gesture.moved=true;
+    if(Math.hypot(dx,dy)>5)gesture.moved=true;
     if(!gesture.moved)return;
     if(gesture.kind==="photo"){
-      imageX=gesture.startX+dx;imageY=gesture.startY+dy;applyPhotoTransform();
+      const r=stage.getBoundingClientRect(),maxX=r.width*(scale-1)/2,maxY=r.height*(scale-1)/2;
+      imageX=clamp(gesture.startX+dx,-maxX,maxX);imageY=clamp(gesture.startY+dy,-maxY,maxY);applyPhotoTransform();
     }else if(gesture.kind==="text"){
-      const r=stage.getBoundingClientRect(),px=Math.max(5,Math.min(95,(e.clientX-r.left)/r.width*100)),py=Math.max(5,Math.min(95,(e.clientY-r.top)/r.height*100));
-      ta.style.position="absolute";ta.style.inset="auto";ta.style.left=px+"%";ta.style.top=py+"%";ta.style.transform="translate(-50%,-50%)";ta.style.width="82%";
-      $("storyTextX").value=String(px);$("storyTextY").value=String(py);
+      setTextPosition(e.clientX,e.clientY);
     }
     e.preventDefault();
   },{passive:false});
-  const finishGesture=e=>{
-    if(!activePointers.has(e.pointerId))return;
-    const g=gesture;activePointers.delete(e.pointerId);
-    if(activePointers.size<2){gesture=null;pinchStart=0;}
-    if(!g||g.id!==e.pointerId||g.moved)return;
-    if(g.kind==="photo"){
-      lastTapAt=Date.now();placeTextAt(e.clientX,e.clientY);
-    }else if(g.kind==="text"){
-      ta.blur();
-    }
-  };
-  stage?.addEventListener("pointerup",finishGesture);
-  stage?.addEventListener("pointercancel",e=>{activePointers.delete(e.pointerId);gesture=null;pinchStart=0;});
-  // Fallback for browsers that dispatch click but suppress pointerup on the canvas.
-  stage?.addEventListener("click",e=>{
-    if(isTool(e)||e.target===ta||Date.now()-lastTapAt<450||!photo||photo.hidden)return;
-    const x=e.clientX,y=e.clientY;if(x&&y)placeTextAt(x,y);
-  });
+  stage?.addEventListener("pointerup",finishPointers);
+  stage?.addEventListener("pointercancel",e=>{activePointers.delete(e.pointerId);gesture=null;pinchStart=0;pinchMid=null;});
+  stage?.addEventListener("lostpointercapture",e=>{activePointers.delete(e.pointerId);if(!activePointers.size){gesture=null;pinchStart=0;pinchMid=null;}});
+  ta.addEventListener("input",()=>{if(ta.value.trim()){ta.hidden=false;dlg.classList.add("gse-editing");}});
   applyPhotoTransform();
   const imageFile=$("storyImageFile");
   imageFile?.addEventListener("change",()=>{if(imageFile.files?.length){scale=1;imageX=0;imageY=0;applyPhotoTransform();effectIndex=0;applyImageEffect();}});
-  $("storyImageRemove")?.addEventListener("click",()=>{scaleInput.value="1";stage?.style.setProperty("--story-image-scale","1");});
+  $("storyImageRemove")?.addEventListener("click",()=>{scaleInput.value="1";imageX=0;imageY=0;setZoom(1);stage?.style.setProperty("--story-image-x","0px");stage?.style.setProperty("--story-image-y","0px");});
   const reset=()=>{ta.value="";ta.hidden=true;ta.style.pointerEvents="none";scale=1;imageX=0;imageY=0;applyPhotoTransform();effectIndex=0;applyImageEffect();ta.style.position="";ta.style.left="";ta.style.top="";ta.style.transform="";colorInput.value="#ffffff";ta.style.color="#ffffff";palette.classList.remove("is-open");};
   form.addEventListener("reset",()=>setTimeout(reset,0));
   dlg.addEventListener("close",reset);
