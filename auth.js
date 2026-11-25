@@ -1936,6 +1936,42 @@ function renderPosts(docs){
     repost.addEventListener("click",()=>{if(repostHoldState())return;createPostRepost(originalId,originalData,repost);});
     actions.append(like,comment,repost,save);
     article.append(head,content,actions);
+    // Instagram-style double tap anywhere on the post content (photo or text).
+    let lastContentTap=null,doubleTapBusy=false;
+    content.addEventListener("pointerup",async event=>{
+      if(event.pointerType==="mouse"&&event.button!==0)return;
+      if(event.target.closest("button,a,input,textarea,select,audio,video,[contenteditable='true']")){lastContentTap=null;return;}
+      const now=Date.now(),point={x:event.clientX,y:event.clientY};
+      if(lastContentTap&&now-lastContentTap.time<380&&Math.hypot(point.x-lastContentTap.x,point.y-lastContentTap.y)<55){
+        lastContentTap=null;
+        event.preventDefault();
+        if(doubleTapBusy)return;
+        const viewer=auth?.currentUser,likeButton=actions.querySelector(".like");
+        if(!viewer||!likeButton||likeButton.disabled)return;
+        doubleTapBusy=true;
+        try{
+          const ownLike=await getDoc(doc(db,"postLikes",originalId+"_"+viewer.uid));
+          if(!ownLike.exists())await togglePostLike(originalId,authorUid,likeButton,likeCount);
+          else{
+            likeButton.classList.add("liked");
+            likeButton.setAttribute("aria-pressed","true");
+            likeButton.setAttribute("aria-label","Unlike post");
+          }
+          const heart=document.createElement("span");
+          heart.className="gramora-double-tap-heart";
+          heart.setAttribute("aria-hidden","true");
+          heart.textContent="♥";
+          const bounds=content.getBoundingClientRect();
+          heart.style.left=(point.x-bounds.left)+"px";
+          heart.style.top=(point.y-bounds.top)+"px";
+          content.append(heart);
+          heart.addEventListener("animationend",()=>heart.remove(),{once:true});
+          setTimeout(()=>heart.remove(),850);
+        }catch(error){console.warn("Double-tap like failed:",error);}
+        finally{doubleTapBusy=false;}
+      }else lastContentTap={time:now,...point};
+    },{passive:false});
+    content.addEventListener("pointercancel",()=>{lastContentTap=null;});
     if(!isRepost&&auth?.currentUser?.uid===data.uid){
       const edit=document.createElement("button");edit.className="edit-post";edit.type="button";edit.textContent="Edit";edit.addEventListener("click",()=>openPostEditor({id:postDoc.id,...data}));actions.append(edit);
       const del=document.createElement("button");del.className="delete-post";del.type="button";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(postDoc.id,del,()=>getDocsForFeed()));actions.append(del);
