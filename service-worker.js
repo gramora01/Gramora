@@ -1,8 +1,8 @@
-const CACHE_NAME = "gramora-shell-v205-story-gesture-hitfix";
+const CACHE_NAME = "gramora-shell-v206-double-tap-like";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=180",
+  "./style.css?v=181",
   "./script.js?v=8",
   "./auth.js?v=278",
   "./auth.css?v=63",
