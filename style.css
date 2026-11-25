@@ -2103,3 +2103,16 @@ body:has(#storyActivitySheet:not([hidden])){position:fixed!important;inset:0!imp
   65%{opacity:1;transform:translate(-50%,-50%) scale(.94) rotate(0)}
   100%{opacity:0;transform:translate(-50%,-58%) scale(1.04)}
 }
+
+
+/* Feed performance: skip layout/paint work for off-screen cards. */
+#feed{overflow-anchor:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+#feed>.post{content-visibility:auto;contain-intrinsic-size:auto 680px;contain:layout style paint}
+.post-media-gallery{contain:layout paint;overflow:hidden}
+.post-media-gallery img.gramora-feed-photo{display:block;max-width:100%;height:auto;object-fit:contain;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+@media(prefers-reduced-motion:no-preference){
+  .post-media-gallery img.gramora-feed-photo{transition:opacity .16s ease}
+}
+@media(prefers-reduced-motion:reduce){
+  #feed>.post,.post-media-gallery,.post-media-gallery img.gramora-feed-photo{scroll-behavior:auto;transition:none!important;animation:none!important}
+}
