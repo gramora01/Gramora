@@ -13,7 +13,8 @@
     effects:S('<path d="M12 3.5 14 9l5.5 2-5.5 2-2 5.5-2-5.5-5.5-2L10 9l2-5.5Z"/><path d="m19 3 .7 2.3L22 6l-2.3.7L19 9l-.7-2.3L16 6l2.3-.7L19 3Z"/><path d="m5 15 .7 2.3L8 18l-2.3.7L5 21l-.7-2.3L2 18l2.3-.7L5 15Z"/>'),
     align:S('<path d="M4 7h16M4 12h10M4 17h16"/>'),
     color:S('<path d="M12 3a9 9 0 1 0 0 18h1.2a2 2 0 0 0 1.5-3.3 1.7 1.7 0 0 1 1.3-2.8H18a3 3 0 0 0 3-3c0-5-4-9-9-9Z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="15" cy="8" r="1"/>'),
-    send:S('<path d="M5 12h14M13 6l6 6-6 6"/>')
+    send:S('<path d="M5 12h14M13 6l6 6-6 6"/>'),
+    crop:S('<path d="M7 3v14a2 2 0 0 0 2 2h12M17 21V7a2 2 0 0 0-2-2H3"/>')
   };
   const el=(tag,cls,html)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(html)n.innerHTML=html;return n;};
   const click=id=>$(id)?.click();
@@ -35,8 +36,70 @@
     tool("Song",icons.music,()=>click("openStoryMusic")),
     tool("Effects",icons.effects,()=>cycleImageEffect()),
     tool("Align",icons.align,()=>click("storyTextAlignToggle")),
-    tool("Color",icons.color,()=>toggleTextColors())
+    tool("Color",icons.color,()=>toggleTextColors()),
+    tool("Crop",icons.crop,openStoryCrop)
   );
+
+  // Photo crop editor with draggable/pinchable framing and common story ratios.
+  let cropState=null;
+  const cropLayer=el("section","gse-crop-layer");
+  cropLayer.hidden=true;
+  cropLayer.innerHTML='<header><button type="button" data-crop-close aria-label="Close crop">×</button><b>Crop photo</b><button type="button" data-crop-apply>Done</button></header><div class="gse-crop-work"><canvas aria-label="Photo crop preview"></canvas></div><nav class="gse-crop-ratios"><button type="button" data-ratio="9:16" class="active">9:16</button><button type="button" data-ratio="original">Original</button><button type="button" data-ratio="1:1">1:1</button><button type="button" data-ratio="4:5">4:5</button></nav><footer><button type="button" data-crop-zoom="-">−</button><span>Drag or pinch to adjust</span><button type="button" data-crop-zoom="+">＋</button></footer>';
+  dlg.append(cropLayer);
+  const cropCanvas=cropLayer.querySelector("canvas"),cropCtx=cropCanvas.getContext("2d");
+  function drawCrop(){
+    if(!cropState)return;
+    const box=cropCanvas.getBoundingClientRect(),w=Math.max(240,Math.round(box.width*2)),h=Math.max(240,Math.round(box.height*2));
+    if(cropCanvas.width!==w||cropCanvas.height!==h){cropCanvas.width=w;cropCanvas.height=h;}
+    const {image,zoom,x,y}=cropState,cover=Math.max(w/image.width,h/image.height)*zoom,iw=image.width*cover,ih=image.height*cover;
+    cropCtx.fillStyle="#000";cropCtx.fillRect(0,0,w,h);
+    cropCtx.drawImage(image,(w-iw)/2+x*2,(h-ih)/2+y*2,iw,ih);
+  }
+  function setCropRatio(value){
+    if(!cropState)return;
+    cropState.ratio=value;
+    const ratio=value==="original"?cropState.image.width/cropState.image.height:value==="1:1"?1:value==="4:5"?.8:9/16;
+    cropLayer.querySelector(".gse-crop-work").style.setProperty("--crop-ratio",String(ratio));
+    cropLayer.querySelectorAll("[data-ratio]").forEach(b=>b.classList.toggle("active",b.dataset.ratio===value));
+    requestAnimationFrame(drawCrop);
+  }
+  async function openStoryCrop(){
+    const file=imageFile?.files?.[0];
+    if(!file){const status=$("storyCreateStatus");if(status)status.textContent="Crop karne ke liye pehle gallery se photo select karein.";return;}
+    try{
+      const image=await createImageBitmap(file);
+      cropState={image,ratio:"9:16",zoom:1,x:0,y:0};
+      cropLayer.hidden=false;cropLayer.classList.add("is-open");
+      setCropRatio("9:16");
+    }catch(error){const status=$("storyCreateStatus");if(status)status.textContent="Is photo ko crop nahi kar paaye. Dusri photo try karein.";}
+  }
+  cropLayer.querySelector("[data-crop-close]").addEventListener("click",()=>{cropLayer.hidden=true;cropLayer.classList.remove("is-open");cropState?.image.close?.();cropState=null;});
+  cropLayer.querySelectorAll("[data-ratio]").forEach(b=>b.addEventListener("click",()=>setCropRatio(b.dataset.ratio)));
+  cropLayer.querySelectorAll("[data-crop-zoom]").forEach(b=>b.addEventListener("click",()=>{if(!cropState)return;cropState.zoom=Math.max(1,Math.min(4,cropState.zoom+(b.dataset.cropZoom==="+"?.15:-.15)));drawCrop();}));
+  let cropPointers=new Map(),cropGesture=null;
+  cropCanvas.addEventListener("pointerdown",e=>{if(!cropState)return;cropCanvas.setPointerCapture(e.pointerId);cropPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(cropPointers.size===1)cropGesture={x:e.clientX,y:e.clientY,zoom:cropState.zoom};else if(cropPointers.size===2){const p=[...cropPointers.values()];cropGesture={dist:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),zoom:cropState.zoom};}});
+  cropCanvas.addEventListener("pointermove",e=>{if(!cropPointers.has(e.pointerId)||!cropState)return;cropPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});const p=[...cropPointers.values()];if(p.length===1&&cropGesture?.x!==undefined){cropState.x+=e.clientX-cropGesture.x;cropState.y+=e.clientY-cropGesture.y;cropGesture.x=e.clientX;cropGesture.y=e.clientY;}else if(p.length===2&&cropGesture?.dist){const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);cropState.zoom=Math.max(1,Math.min(4,cropGesture.zoom*d/cropGesture.dist));}drawCrop();e.preventDefault();});
+  const endCropPointer=e=>{cropPointers.delete(e.pointerId);if(!cropPointers.size)cropGesture=null;};
+  cropCanvas.addEventListener("pointerup",endCropPointer);cropCanvas.addEventListener("pointercancel",endCropPointer);
+  cropLayer.querySelector("[data-crop-apply]").addEventListener("click",()=>{
+    if(!cropState)return;
+    const ratio=cropState.ratio==="original"?cropState.image.width/cropState.image.height:cropState.ratio==="1:1"?1:cropState.ratio==="4:5"?.8:9/16;
+    const outW=1080,outH=Math.round(outW/ratio),output=document.createElement("canvas");output.width=outW;output.height=outH;
+    const ctx=output.getContext("2d"),image=cropState.image,cover=Math.max(outW/image.width,outH/image.height)*cropState.zoom;
+    const viewW=cropCanvas.width,viewH=cropCanvas.height,previewCover=Math.max(viewW/image.width,viewH/image.height)*cropState.zoom;
+    const previewX=(viewW-image.width*previewCover)/2+cropState.x*2,previewY=(viewH-image.height*previewCover)/2+cropState.y*2;
+    const sourceX=-previewX/previewCover,sourceY=-previewY/previewCover;
+    ctx.drawImage(image,sourceX,sourceY,outW/cover,outH/cover,0,0,outW,outH);
+    output.toBlob(blob=>{
+      if(!blob)return;
+      const cropped=new File([blob],"gramora-story-crop.jpg",{type:"image/jpeg",lastModified:Date.now()});
+      const transfer=new DataTransfer();transfer.items.add(cropped);imageFile.files=transfer.files;
+      photo.src=URL.createObjectURL(cropped);photo.hidden=false;
+      imageX=0;imageY=0;scale=1;rotation=0;rotateRange.value="0";applyPhotoTransform();
+      const old=cropState.image;cropState=null;old.close?.();cropLayer.hidden=true;cropLayer.classList.remove("is-open");
+    },"image/jpeg",.92);
+  });
+
   const imageEffects=[{name:"Normal",filter:"none"},{name:"Warm",filter:"sepia(.28) saturate(1.2)"},{name:"Vintage",filter:"sepia(.48) contrast(.92) brightness(1.04)"},{name:"B&W",filter:"grayscale(1)"},{name:"Cool",filter:"saturate(1.12) hue-rotate(12deg)"},{name:"Vivid",filter:"saturate(1.55) contrast(1.08)"}];
   const effectInput=(()=>{let x=$("storyImageEffect");if(!x){x=document.createElement("input");x.type="hidden";x.id="storyImageEffect";x.value="0";form.append(x);}return x;})();
   let effectIndex=0;
