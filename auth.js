@@ -1936,13 +1936,12 @@ function renderPosts(docs){
     repost.addEventListener("click",()=>{if(repostHoldState())return;createPostRepost(originalId,originalData,repost);});
     actions.append(like,comment,repost,save);
     article.append(head,content,actions);
-    // Instagram-style double tap anywhere on the post content (photo or text).
+    // Detect two quick taps on post content using click events for mobile compatibility.
     let lastContentTap=null,doubleTapBusy=false;
-    content.addEventListener("pointerup",async event=>{
-      if(event.pointerType==="mouse"&&event.button!==0)return;
+    content.addEventListener("click",async event=>{
       if(event.target.closest("button,a,input,textarea,select,audio,video,[contenteditable='true']")){lastContentTap=null;return;}
       const now=Date.now(),point={x:event.clientX,y:event.clientY};
-      if(lastContentTap&&now-lastContentTap.time<380&&Math.hypot(point.x-lastContentTap.x,point.y-lastContentTap.y)<55){
+      if(lastContentTap&&now-lastContentTap.time<500&&Math.hypot(point.x-lastContentTap.x,point.y-lastContentTap.y)<75){
         lastContentTap=null;
         event.preventDefault();
         if(doubleTapBusy)return;
@@ -1951,8 +1950,6 @@ function renderPosts(docs){
         doubleTapBusy=true;
         try{
           const ownLike=await getDoc(doc(db,"postLikes",originalId+"_"+viewer.uid));
-          // Sync the button with Firestore before toggling, so double-tap
-          // consistently switches liked -> unliked and unliked -> liked.
           likeButton.classList.toggle("liked",ownLike.exists());
           likeButton.setAttribute("aria-pressed",String(ownLike.exists()));
           likeButton.setAttribute("aria-label",ownLike.exists()?"Unlike post":"Like post");
@@ -1970,8 +1967,7 @@ function renderPosts(docs){
         }catch(error){console.warn("Double-tap like failed:",error);}
         finally{doubleTapBusy=false;}
       }else lastContentTap={time:now,...point};
-    },{passive:false});
-    content.addEventListener("pointercancel",()=>{lastContentTap=null;});
+    });
     if(!isRepost&&auth?.currentUser?.uid===data.uid){
       const edit=document.createElement("button");edit.className="edit-post";edit.type="button";edit.textContent="Edit";edit.addEventListener("click",()=>openPostEditor({id:postDoc.id,...data}));actions.append(edit);
       const del=document.createElement("button");del.className="delete-post";del.type="button";del.textContent="Delete";del.addEventListener("click",()=>deleteOwnPost(postDoc.id,del,()=>getDocsForFeed()));actions.append(del);
