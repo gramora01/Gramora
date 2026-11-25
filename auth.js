@@ -1951,12 +1951,12 @@ function renderPosts(docs){
         doubleTapBusy=true;
         try{
           const ownLike=await getDoc(doc(db,"postLikes",originalId+"_"+viewer.uid));
-          if(!ownLike.exists())await togglePostLike(originalId,authorUid,likeButton,likeCount);
-          else{
-            likeButton.classList.add("liked");
-            likeButton.setAttribute("aria-pressed","true");
-            likeButton.setAttribute("aria-label","Unlike post");
-          }
+          // Sync the button with Firestore before toggling, so double-tap
+          // consistently switches liked -> unliked and unliked -> liked.
+          likeButton.classList.toggle("liked",ownLike.exists());
+          likeButton.setAttribute("aria-pressed",String(ownLike.exists()));
+          likeButton.setAttribute("aria-label",ownLike.exists()?"Unlike post":"Like post");
+          await togglePostLike(originalId,authorUid,likeButton,likeCount);
           const heart=document.createElement("span");
           heart.className="gramora-double-tap-heart";
           heart.setAttribute("aria-hidden","true");
