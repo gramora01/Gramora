@@ -1891,7 +1891,8 @@ function createPostMediaElement(urls,className="post-media-gallery",priority=fal
     image.className="gramora-feed-photo is-loading";
     image.alt="Post photo";image.decoding="async";
     image.loading=priority?"eager":"lazy";
-    if(priority&&index===0)image.fetchPriority="high";
+    image.fetchPriority=priority&&index===0?"high":"low";
+    image.setAttribute("draggable","false");
     image.style.display="block";image.style.width="100%";image.style.height=list.length===1?"auto":"220px";image.style.maxHeight="560px";image.style.objectFit="contain";image.style.background="#111";
     image.addEventListener("load",()=>{image.classList.remove("is-loading");image.classList.add("is-loaded");},{once:true});
     image.addEventListener("error",()=>{image.classList.remove("is-loading");image.classList.add("has-error");},{once:true});
@@ -1925,7 +1926,7 @@ function renderPosts(docs){
     const data=postDoc.data(),isRepost=!!data._isRepost;
     const authorUid=isRepost?data.originalUid:data.uid,authorName=isRepost?data.originalDisplayName:data.displayName;
     const authorUsername=isRepost?data.originalUsername:data.username,authorPhoto=isRepost?data.originalPhotoURL:data.photoURL;
-    const article=document.createElement("article");article.className="post";
+    const article=document.createElement("article");article.className="post";article.style.contentVisibility="auto";article.style.containIntrinsicSize="auto 680px";
     let repostAvatar=null,repostText=null;
     if(isRepost){
       const by=document.createElement("button");by.type="button";by.className="post-reposted-by";
