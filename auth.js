@@ -22,6 +22,15 @@ let postMusicObserver=null;
 let postMusicSoundEnabled=false;
 try { savedAccounts = JSON.parse(localStorage.getItem("gramoraAccounts") || "[]"); } catch { savedAccounts = []; }
 function saveAccountList(){ localStorage.setItem("gramoraAccounts", JSON.stringify(savedAccounts)); }
+function getAccountCycleOrder(){
+  let order=[];
+  try{order=JSON.parse(localStorage.getItem("gramoraAccountOrder")||"[]");}catch(error){order=[];}
+  if(!Array.isArray(order))order=[];
+  order=order.filter(uid=>savedAccounts.some(record=>record.uid===uid));
+  savedAccounts.forEach(record=>{if(record.uid&&!order.includes(record.uid))order.push(record.uid);});
+  try{localStorage.setItem("gramoraAccountOrder",JSON.stringify(order));}catch(error){}
+  return order;
+}
 function accountAppName(uid){ return "gramora-account-" + uid; }
 function getAccountInstance(uid){
   if(accountInstances.has(uid)) return accountInstances.get(uid);
@@ -38,6 +47,7 @@ function rememberAccount(user, appName){
   if(!user)return;
   const record={uid:user.uid,email:user.email||"",displayName:user.displayName||"",appName};
   savedAccounts=[record,...savedAccounts.filter(x=>x.uid!==user.uid)];
+  getAccountCycleOrder();
   try{localStorage.setItem("gramoraActiveAccountUid",user.uid);}catch(error){}
   saveAccountList();
   renderAccountSwitcher();
@@ -138,6 +148,31 @@ function renderAccountSwitcher(){
     row.append(info,button);list.append(row);
   });
 }
+async function cycleToNextSavedAccount(){
+  const order=getAccountCycleOrder();
+  if(order.length<2)return;
+  const currentUid=auth?.currentUser?.uid;
+  const currentIndex=order.indexOf(currentUid);
+  const nextUid=order[(currentIndex+1+order.length)%order.length];
+  const record=savedAccounts.find(item=>item.uid===nextUid);
+  if(!record)return;
+  try{
+    const instance=record.appName==="[DEFAULT]"?{app,auth:getAuth(app),db:getFirestore(app)}:getAccountInstance(record.uid);
+    localStorage.setItem("gramoraActiveAccountUid",record.uid);
+    activateAccount(instance);
+    closeSettingsDrawer();
+  }catch(error){
+    console.error("Quick account switch failed:",error);
+    alert("Account switch nahi ho paya. Dobara try karein.");
+  }
+}
+const mobileProfileButton=document.querySelector('.mobile-nav [data-view="profile"]');
+mobileProfileButton?.addEventListener("dblclick",event=>{
+  event.preventDefault();
+  event.stopPropagation();
+  cycleToNextSavedAccount();
+});
+mobileProfileButton?.setAttribute("title","Double tap to switch accounts");
 
 const gate = document.getElementById("authGate");
 const loginForm = document.getElementById("loginForm");
