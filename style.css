@@ -2116,3 +2116,13 @@ body:has(#storyActivitySheet:not([hidden])){position:fixed!important;inset:0!imp
 @media(prefers-reduced-motion:reduce){
   #feed>.post,.post-media-gallery,.post-media-gallery img.gramora-feed-photo{scroll-behavior:auto;transition:none!important;animation:none!important}
 }
+
+
+/* GRAMORA story transitions: subtle premium slide on story change and soft entrance on open. */
+.gramora-viewer-stage.story-viewer-enter{animation:gramoraStorySlideIn .38s cubic-bezier(.22,.75,.24,1) both;will-change:transform,opacity}
+@keyframes gramoraStorySlideIn{from{opacity:.45;transform:translate3d(var(--story-slide-x,0px),0,0) scale(.985);filter:brightness(.82)}to{opacity:1;transform:translate3d(0,0,0) scale(1);filter:brightness(1)}}
+.gramora-story-viewer[open]{animation:gramoraStoryViewerOpen .32s cubic-bezier(.2,.75,.25,1) both}
+@keyframes gramoraStoryViewerOpen{from{opacity:0}to{opacity:1}}
+.gramora-story-editor[open]{animation:gramoraStoryEditorOpen .38s cubic-bezier(.2,.8,.25,1) both;transform-origin:center bottom}
+@keyframes gramoraStoryEditorOpen{from{opacity:.55;transform:translate3d(0,24px,0) scale(.985)}to{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+@media(prefers-reduced-motion:reduce){.gramora-viewer-stage.story-viewer-enter,.gramora-story-viewer[open],.gramora-story-editor[open]{animation:none!important;filter:none!important;transform:none!important}}
