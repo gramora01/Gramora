@@ -1,10 +1,10 @@
-const CACHE_NAME = "gramora-shell-v220-account-cycle";
+const CACHE_NAME = "gramora-shell-v221-menu-swipe";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css?v=181",
   "./script.js?v=8",
-  "./auth.js?v=282",
+  "./auth.js?v=283",
   "./auth.css?v=63",
   "./story-creator.css?v=31",
   "./story-creator.js?v=22",
