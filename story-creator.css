@@ -260,3 +260,10 @@
 #storyCreateDialog.story-kind-image .gse-text-size-control{pointer-events:auto}
 #storyCreateDialog.story-kind-image #storyPreviewCanvas{touch-action:none!important;overscroll-behavior:contain!important}
 @media(max-width:480px){.gse-text-size-control{right:8px}.gse-text-size-range{height:120px}}
+
+
+/* 360-degree photo rotation control */
+.gse-rotate-control{position:absolute;left:50%;top:76px;transform:translateX(-50%);z-index:17;display:flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid #ffffff35;border-radius:18px;background:rgba(12,12,18,.68);backdrop-filter:blur(14px);box-shadow:0 8px 25px #0005;color:#fff}
+.gse-rotate-label{font:700 12px Arial,sans-serif;white-space:nowrap}.gse-rotate-range{width:112px;accent-color:#fff;touch-action:pan-x}.gse-rotate-reset{border:0;border-radius:12px;padding:5px 8px;background:#ffffff20;color:#fff;font-size:11px;font-weight:700}
+#storyCreateDialog.story-kind-image .gse-rotate-control{pointer-events:auto}
+@media(max-width:480px){.gse-rotate-control{top:70px;gap:6px;padding:7px 9px}.gse-rotate-range{width:88px}}
