@@ -287,3 +287,9 @@
 .gse-crop-ratios button{border:1px solid #666;border-radius:20px;background:#242424;color:#fff;padding:9px 13px}
 .gse-crop-ratios button.active{background:#fff;color:#111;border-color:#fff}
 .gse-crop-layer footer span{font-size:12px;color:#bbb}
+
+/* Fix: Crop is the seventh item in the right-side story toolbar. */
+#storyCreateDialog.story-kind-image #storyPreviewCanvas .gse-tools .gse-tool:nth-child(7){display:grid!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
+#storyCreateDialog.story-kind-image #storyPreviewCanvas .gse-tools .gse-tool:nth-child(n+8){display:none!important}
+#storyCreateDialog .gse-crop-layer{position:absolute!important;inset:0!important}
+#storyCreateDialog .gse-crop-work canvas{height:min(68vh,620px)!important;width:auto!important;max-width:100%!important;max-height:100%!important}
