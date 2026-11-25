@@ -644,6 +644,7 @@ function navigateStoryViewer(direction){
   if(!storyViewerSequence.length)return;
   const next=storyViewerIndex+direction;
   if(next>=0&&next<storyViewerSequence.length){
+    const viewer=document.getElementById("storyViewerDialog");if(viewer)viewer.dataset.slideDirection=direction>0?"1":"-1";
     openStoryViewer(storyViewerSequence,storyViewerSequence[next].id);return;
   }
   const dialog=document.getElementById("storyViewerDialog");
@@ -656,6 +657,7 @@ function navigateStoryViewer(direction){
   const groupIndex=storyViewerUserGroups.findIndex(group=>group.some(item=>item.data().uid===uid));
   const targetGroup=storyViewerUserGroups[groupIndex+direction];
   if(targetGroup?.length){
+    const viewer=document.getElementById("storyViewerDialog");if(viewer)viewer.dataset.slideDirection=direction>0?"1":"-1";
     openStoryViewer(targetGroup,direction>0?targetGroup[0].id:targetGroup[targetGroup.length-1].id);return;
   }
   if(next<0){storyViewerIndex=0;return;}
@@ -695,6 +697,7 @@ async function openStoryViewer(docs,id){
   const storyDoc=docs.find(item=>item.id===id);if(!storyDoc)return;
   const data=storyDoc.data(),dialog=document.getElementById("storyViewerDialog");
   const openRequest=++storyOpenRequest;
+  const wasViewerOpen=dialog.open;
   const activitySheet=document.getElementById("storyActivitySheet");
   if(activitySheet)activitySheet.hidden=true;
   storyViewerPaused=false;
@@ -761,7 +764,8 @@ async function openStoryViewer(docs,id){
     }
   }
   viewerStage?.classList.toggle("has-story-image",!!data.imageUrl);
-  viewerStage?.classList.remove("story-viewer-enter");void viewerStage?.offsetWidth;viewerStage?.classList.add("story-viewer-enter");
+  if(viewerStage){const slide=wasViewerOpen?(Number(dialog.dataset.slideDirection)||1):0;viewerStage.style.setProperty("--story-slide-x",slide>0?"34px":slide<0?"-34px":"0px");viewerStage.classList.remove("story-viewer-enter");void viewerStage.offsetWidth;viewerStage.classList.add("story-viewer-enter");}
+  dialog.dataset.slideDirection="1";
   const viewerLyrics=document.getElementById("storyViewerLyrics");if(viewerLyrics){viewerLyrics.textContent=data.lyrics||"";viewerLyrics.hidden=!(data.lyrics||"").trim();}
   const viewerName=document.getElementById("storyViewerName");if(viewerName)viewerName.textContent=data.displayName||"GRAMORA member";
   const viewerTime=document.getElementById("storyViewerTime");if(viewerTime)viewerTime.textContent=formatPostDate(data.createdAt);
